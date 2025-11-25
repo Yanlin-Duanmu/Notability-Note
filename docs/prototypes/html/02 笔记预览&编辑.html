@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Smart Note Editor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#13a4ec",
+              "background-light": "#f6f7f8",
+              "background-dark": "#101c22",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark text-gray-800 dark:text-gray-200">
+<div class="w-full max-w-2xl mx-auto flex flex-col h-[100svh] bg-white dark:bg-gray-900/50 shadow-lg">
+<!-- Top App Bar -->
+<header class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+<button class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50">
+<span class="material-icons-outlined text-gray-600 dark:text-gray-400">arrow_back</span>
+</button>
+<input class="flex-grow mx-4 text-lg font-semibold bg-transparent border-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" placeholder="Untitled Note" type="text" value="UI/UX Design Principles"/>
+<button class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50">
+<span class="material-icons-outlined text-gray-600 dark:text-gray-400">more_vert</span>
+</button>
+</header>
+<!-- Main Content Area -->
+<main class="flex-grow overflow-y-auto px-6 py-8">
+<div class="prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl 2xl:prose-2xl max-w-none dark:prose-invert prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-headings:text-gray-900 dark:prose-headings:text-white prose-strong:text-gray-900 dark:prose-strong:text-white prose-a:text-primary hover:prose-a:text-primary/80 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:p-1 prose-code:rounded prose-code:font-mono prose-blockquote:border-primary/50">
+<p>In user interface (UI) and user experience (UX) design, several core principles guide the creation of effective and enjoyable digital products. Understanding these is key to building intuitive applications.</p>
+<h2 class="font-bold">1. Clarity and Simplicity</h2>
+<p>The design should be clear and easy to understand. Avoid unnecessary elements that could confuse the user. Every element should have a purpose.</p>
+<img alt="Abstract colorful geometric shapes on a dark background representing design clarity and structure." class="rounded-lg my-6 w-full object-cover aspect-video" data-alt="Abstract colorful geometric shapes on a dark background representing design clarity and structure." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXaVLScTBftM6SSsafeBLUJCRqG96KTSlpwmVhmGLiglyJFLYxUz0Pkiye6uopp8bYZNVsJQRzCdzNn2mVpCPOPbc2IRv6wRNSEtTT2rVeIaXhUKjYs2Yephk-CKMpfhMkmvJpVw1Qs0tfhFZJIm0JEoSkjDCzaT4tUBiFgkfTxsoDOLWW0SpBYg8TZwVOYoBhbieQpHlIN9oiEj3dutG_4yGgrGTI4UrGL9gtQR630fM4iP5xLsh7ZEOpJuDZlcgY-xZVTXt4c-Sw"/>
+<h2 class="font-bold">2. Consistency</h2>
+<p>Maintain consistency in design elements and terminology throughout the app. This helps users learn the interface faster and reduces confusion. For example, a button for saving should always look and behave the same way.</p>
+<blockquote>
+<p>Consistency is one of the most powerful usability principles: when things always behave the same, users don’t have to worry about what will happen.</p>
+</blockquote>
+<h2 class="font-bold">3. Feedback</h2>
+<p>Provide immediate and clear feedback for every user action. This can be a visual cue, a sound, or a vibration. This reassures the user that the system has received their input.</p>
+<p>For example, when saving a file, a small toast notification or loading spinner is effective. Here's an example of how a code snippet might look in a note:</p>
+<pre class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 text-sm"><code class="language-javascript">function showFeedback(message) {
+  const feedbackElement = document.getElementById('toast');
+  feedbackElement.innerText = message;
+  feedbackElement.classList.add('show');
+  setTimeout(() =&gt; {
+    feedbackElement.classList.remove('show');
+  }, 3000);
+}</code></pre>
+<p>These principles, when applied correctly, result in a product that is not only functional but also a pleasure to use.</p>
+</div>
+</main>
+<!-- Floating Action Toolbar -->
+<footer class="flex-shrink-0 p-2">
+<div class="bg-white/80 dark:bg-background-dark/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700/60 rounded-xl shadow-lg w-full max-w-md mx-auto">
+<div class="flex items-center justify-between p-2 space-x-1 overflow-x-auto">
+<!-- Standard Formatting Icons -->
+<button class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"><span class="material-icons-outlined text-xl">format_bold</span></button>
+<button class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"><span class="material-icons-outlined text-xl">format_italic</span></button>
+<button class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"><span class="material-icons-outlined text-xl">format_list_bulleted</span></button>
+<button class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"><span class="material-icons-outlined text-xl">format_quote</span></button>
+<button class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"><span class="material-icons-outlined text-xl">data_object</span></button>
+<div class="border-l border-gray-300 dark:border-gray-600 h-6 mx-1"></div>
+<!-- Insertion Icons -->
+<button class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"><span class="material-icons-outlined text-xl">add_photo_alternate</span></button>
+<button class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"><span class="material-icons-outlined text-xl">add_link</span></button>
+<div class="border-l border-gray-300 dark:border-gray-600 h-6 mx-1"></div>
+<!-- AI Feature Buttons -->
+<button class="flex items-center space-x-2 p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary dark:bg-primary/20 dark:hover:bg-primary/30 dark:text-primary/90">
+<span class="material-icons-outlined text-xl">auto_awesome</span>
+</button>
+<button class="flex items-center space-x-2 p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary dark:bg-primary/20 dark:hover:bg-primary/30 dark:text-primary/90">
+<span class="material-icons-outlined text-xl">brush</span>
+</button>
+</div>
+</div>
+</footer>
+</div>
+</body></html>

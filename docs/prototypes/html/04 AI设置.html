@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html class="light" lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI 功能设置</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#13a4ec",
+            "background-light": "#f6f7f8",
+            "background-dark": "#101c22",
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          transitionProperty: {
+            'height': 'height',
+            'spacing': 'margin, padding',
+          },
+          boxShadow: {
+            'card': '0 4px 12px 0 rgba(0,0,0,0.07)',
+            'card-dark': '0 4px 12px 0 rgba(0,0,0,0.15)'
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24;
+      font-size: 24px;
+    }
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark text-zinc-800 dark:text-zinc-200">
+<div class="relative flex min-h-screen w-full flex-col">
+<div class="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-zinc-200/80 bg-background-light/80 px-4 backdrop-blur-sm dark:border-zinc-800/80 dark:bg-background-dark/80">
+<div class="flex size-10 shrink-0 items-center justify-center text-zinc-800 dark:text-zinc-200">
+<span class="material-symbols-outlined">arrow_back</span>
+</div>
+<h1 class="flex-1 text-center text-lg font-bold text-zinc-900 dark:text-zinc-100">AI 功能设置</h1>
+<div class="size-10 shrink-0"></div> 
+</div>
+<main class="flex-1 p-4">
+<div class="space-y-6">
+<div class="flex items-center gap-4 rounded-xl bg-white p-4 shadow-card dark:bg-zinc-800/50 dark:shadow-card-dark">
+<div class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary">
+<span class="material-symbols-outlined">auto_awesome</span>
+</div>
+<div class="flex flex-1 flex-col justify-center">
+<p class="text-base font-medium text-zinc-900 dark:text-zinc-100">启用AI增强功能</p>
+<p class="text-sm text-zinc-500 dark:text-zinc-400">一键开启或关闭所有AI功能。</p>
+</div>
+<div class="shrink-0">
+<label class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full bg-zinc-200 p-0.5 transition-colors has-[:checked]:bg-primary dark:bg-zinc-700">
+<input checked="" class="peer sr-only" type="checkbox"/>
+<div class="h-full w-[27px] transform rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[20px]"></div>
+</label>
+</div>
+</div>
+<div class="overflow-hidden rounded-xl bg-white shadow-card dark:bg-zinc-800/50 dark:shadow-card-dark">
+<div x-data="{ open: true }">
+<button @click="open = !open" class="flex w-full items-center justify-between p-4">
+<div class="flex items-center gap-4">
+<div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+<span class="material-symbols-outlined">model_training</span>
+</div>
+<div class="text-left">
+<p class="text-base font-medium text-zinc-900 dark:text-zinc-100">AI模型配置</p>
+<p class="text-sm text-zinc-500 dark:text-zinc-400">OpenAI GPT-4o</p>
+</div>
+</div>
+<span :class="{ 'rotate-180': open }" class="material-symbols-outlined text-zinc-500 transition-transform dark:text-zinc-400">expand_more</span>
+</button>
+<div class="overflow-hidden transition-[max-height] duration-500 ease-in-out" style="max-height: 0px;" x-bind:style="open ? 'max-height: ' + $refs.container1.scrollHeight + 'px' : ''" x-ref="container1">
+<div class="border-t border-zinc-200/80 p-4 dark:border-zinc-700/80">
+<div class="mb-4">
+<div class="grid grid-cols-2 gap-2 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900/50">
+<button class="rounded-md bg-white py-2 text-sm font-semibold text-primary shadow dark:bg-zinc-700">在线模型</button>
+<button class="rounded-md py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300">本地模型</button>
+</div>
+</div>
+<div class="space-y-4">
+<p class="text-sm font-medium text-zinc-800 dark:text-zinc-200">选择模型</p>
+<div class="space-y-3">
+<label class="flex cursor-pointer items-center justify-between rounded-lg border border-primary bg-primary/10 p-3 dark:border-primary/70 dark:bg-primary/20">
+<span class="font-medium text-primary dark:text-primary/90">GPT-4o</span>
+<div class="relative flex size-5 items-center justify-center rounded-full border-2 border-primary">
+<div class="size-2.5 rounded-full bg-primary"></div>
+</div>
+<input checked="" class="sr-only" name="model-selection" type="radio"/>
+</label>
+<label class="flex cursor-pointer items-center justify-between rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+<span class="font-medium text-zinc-700 dark:text-zinc-300">GPT-5.1</span>
+<div class="relative flex size-5 items-center justify-center rounded-full border-2 border-zinc-300 dark:border-zinc-600"></div>
+<input class="sr-only" name="model-selection" type="radio"/>
+</label>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-medium text-zinc-800 dark:text-zinc-200" for="api-key">OpenAI API 密钥</label>
+<div class="relative flex w-full items-stretch">
+<input class="form-input h-12 flex-1 rounded-l-lg border border-zinc-300 bg-background-light p-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-primary focus:ring-0 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500" id="api-key" placeholder="在此处粘贴您的API密钥" type="password" value="sk-•••••••••••••••••••••••••••••••Mnpq"/>
+<div class="flex cursor-pointer items-center justify-center rounded-r-lg border border-l-0 border-zinc-300 bg-background-light px-3 text-zinc-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+<span class="material-symbols-outlined">visibility_off</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<hr class="mx-4 border-zinc-200/80 dark:border-zinc-700/80"/>
+<div x-data="{ open: false }">
+<button @click="open = !open" class="flex w-full items-center justify-between p-4">
+<div class="flex items-center gap-4">
+<div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+<span class="material-symbols-outlined">article</span>
+</div>
+<div class="text-left">
+<p class="text-base font-medium text-zinc-900 dark:text-zinc-100">智能摘要</p>
+<p class="text-sm text-zinc-500 dark:text-zinc-400">自动生成核心内容摘要</p>
+</div>
+</div>
+<span :class="{ 'rotate-180': open }" class="material-symbols-outlined text-zinc-500 transition-transform dark:text-zinc-400">expand_more</span>
+</button>
+<div class="overflow-hidden transition-[max-height] duration-500 ease-in-out" style="max-height: 0px;" x-bind:style="open ? 'max-height: ' + $refs.container2.scrollHeight + 'px' : ''" x-ref="container2">
+<div class="border-t border-zinc-200/80 px-4 pb-4 dark:border-zinc-700/80">
+<div class="flex flex-col gap-3 pt-4">
+<div class="flex items-center justify-between">
+<p class="font-medium">启用智能摘要</p>
+<label class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full bg-zinc-200 p-0.5 transition-colors has-[:checked]:bg-primary dark:bg-zinc-700">
+<input checked="" class="peer sr-only" type="checkbox"/>
+<div class="h-full w-[27px] transform rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[20px]"></div>
+</label>
+</div>
+<p class="text-sm font-medium text-zinc-800 dark:text-zinc-200">摘要长度偏好</p>
+<div class="grid grid-cols-3 gap-2 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900/50">
+<button class="rounded-md py-1.5 text-sm font-medium text-zinc-600 dark:text-zinc-300">短</button>
+<button class="rounded-md bg-white py-1.5 text-sm font-semibold text-primary shadow dark:bg-zinc-700">中</button>
+<button class="rounded-md py-1.5 text-sm font-medium text-zinc-600 dark:text-zinc-300">长</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<hr class="mx-4 border-zinc-200/80 dark:border-zinc-700/80"/>
+<div x-data="{ open: false }">
+<button @click="open = !open" class="flex w-full items-center justify-between p-4">
+<div class="flex items-center gap-4">
+<div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+<span class="material-symbols-outlined">label</span>
+</div>
+<div class="text-left">
+<p class="text-base font-medium text-zinc-900 dark:text-zinc-100">智能标签</p>
+<p class="text-sm text-zinc-500 dark:text-zinc-400">自动生成相关主题标签</p>
+</div>
+</div>
+<span :class="{ 'rotate-180': open }" class="material-symbols-outlined text-zinc-500 transition-transform dark:text-zinc-400">expand_more</span>
+</button>
+<div class="overflow-hidden transition-[max-height] duration-500 ease-in-out" style="max-height: 0px;" x-bind:style="open ? 'max-height: ' + $refs.container3.scrollHeight + 'px' : ''" x-ref="container3">
+<div class="border-t border-zinc-200/80 px-4 pb-4 dark:border-zinc-700/80">
+<div class="flex flex-col gap-3 pt-4">
+<div class="flex items-center justify-between">
+<p class="font-medium">启用智能标签</p>
+<label class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full bg-zinc-200 p-0.5 transition-colors has-[:checked]:bg-primary dark:bg-zinc-700">
+<input checked="" class="peer sr-only" type="checkbox"/>
+<div class="h-full w-[27px] transform rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[20px]"></div>
+</label>
+</div>
+<p class="text-sm font-medium text-zinc-800 dark:text-zinc-200">建议标签数量</p>
+<div class="grid grid-cols-3 gap-2 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900/50">
+<button class="rounded-md py-1.5 text-sm font-medium text-zinc-600 dark:text-zinc-300">3</button>
+<button class="rounded-md bg-white py-1.5 text-sm font-semibold text-primary shadow dark:bg-zinc-700">5</button>
+<button class="rounded-md py-1.5 text-sm font-medium text-zinc-600 dark:text-zinc-300">10</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<hr class="mx-4 border-zinc-200/80 dark:border-zinc-700/80"/>
+<div x-data="{ open: false }">
+<button @click="open = !open" class="flex w-full items-center justify-between p-4">
+<div class="flex items-center gap-4">
+<div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+<span class="material-symbols-outlined">edit_note</span>
+</div>
+<div class="text-left">
+<p class="text-base font-medium text-zinc-900 dark:text-zinc-100">笔记润色</p>
+<p class="text-sm text-zinc-500 dark:text-zinc-400">优化语法、调整语气和措辞</p>
+</div>
+</div>
+<span :class="{ 'rotate-180': open }" class="material-symbols-outlined text-zinc-500 transition-transform dark:text-zinc-400">expand_more</span>
+</button>
+<div class="overflow-hidden transition-[max-height] duration-500 ease-in-out" style="max-height: 0px;" x-bind:style="open ? 'max-height: ' + $refs.container4.scrollHeight + 'px' : ''" x-ref="container4">
+<div class="border-t border-zinc-200/80 px-4 pb-4 dark:border-zinc-700/80">
+<div class="flex flex-col gap-3 pt-4">
+<div class="flex items-center justify-between">
+<p class="font-medium">启用笔记润色</p>
+<label class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full bg-zinc-200 p-0.5 transition-colors has-[:checked]:bg-primary dark:bg-zinc-700">
+<input class="peer sr-only" type="checkbox"/>
+<div class="h-full w-[27px] transform rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[20px]"></div>
+</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script defer="" src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+</body></html>
