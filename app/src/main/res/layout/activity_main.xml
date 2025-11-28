@@ -1,55 +1,182 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="@android:color/background_light"
     tools:context=".MainActivity">
 
-    <!-- 应用标题 -->
-    <TextView
-        android:id="@+id/welcomeText"
-        android:layout_width="wrap_content"
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="欢迎使用 MyNote 应用"
-        android:textSize="24sp"
-        android:textColor="@color/black"
-        android:fontFamily="sans-serif-medium"
-        android:layout_marginBottom="32dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/testDatabaseButton"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_bias="0.4" />
-
-    <!-- 数据库测试按钮 -->
-    <Button
-        android:id="@+id/testDatabaseButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="测试数据库功能"
-        android:textSize="18sp"
-        android:paddingHorizontal="32dp"
-        android:paddingVertical="16dp"
         android:background="@color/purple_500"
-        android:textColor="@color/white"
         android:elevation="4dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="我的笔记"
+            android:textSize="20sp"
+            android:fontFamily="sans-serif-medium" />
+        <ImageView
+            android:id="@+id/menuButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="end"
+            android:src="@drawable/ic_menu"
+            android:padding="8dp" />
+    </androidx.appcompat.widget.Toolbar>
 
-    <!-- 应用版本信息 -->
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginTop="?attr/actionBarSize">
+
+        <!-- 搜索区域 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:background="@android:color/white">
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_search_category_default"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="8dp" />
+            <EditText
+                android:id="@+id/searchEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="搜索笔记内容或标签"
+                android:textSize="16sp"
+                android:background="@android:color/transparent"
+                android:inputType="text" />
+            <ImageView
+                android:id="@+id/filterButton"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_more"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
+        <!-- 标签分类区域 -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="12dp">
+            <LinearLayout
+                android:id="@+id/tagsContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <!-- 标签会通过代码动态添加 -->
+                <TextView
+                    android:id="@+id/tagAll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="6dp"
+                    android:text="全部"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/purple_500"
+                    android:background="#E8DEF8"
+                    android:gravity="center"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:onClick="@null" />
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <!-- 内容容器，包含笔记列表、加载指示器、空状态和错误状态 -->
+        <FrameLayout
+            android:id="@+id/contentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <!-- 笔记列表 -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/notesRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="16dp"
+                android:background="#F5F5F5" />
+
+            <!-- 加载指示器 -->
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/loadingIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:layout_gravity="center"
+                app:indicatorColor="@color/purple_500" />
+
+            <!-- 空状态视图 -->
+            <TextView
+                android:id="@+id/emptyStateView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="暂无笔记，点击右下角按钮添加"
+                android:textSize="16sp"
+                android:textColor="@android:color/darker_gray"
+                android:visibility="gone"
+                android:layout_gravity="center" />
+
+            <!-- 错误状态视图 -->
+            <TextView
+                android:id="@+id/errorStateView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="加载失败，点击重试"
+                android:textSize="16sp"
+                android:textColor="@color/error_color"
+                android:visibility="gone"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="16dp"
+                android:layout_gravity="center" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- 底部导航栏上方的新建笔记按钮 -->
+    <Button
+        android:id="@+id/addNoteButton"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="80dp"
+        android:text="新建笔记"
+        android:textSize="16sp"
+        android:textColor="@color/white"
+        android:background="@color/purple_500"
+        android:elevation="8dp"
+        android:gravity="center"
+        android:fontFamily="sans-serif-medium"
+        android:contentDescription="新建笔记"
+        android:layout_gravity="center|bottom" />
+
+    <!-- 底部导航栏 -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigationView"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="版本 1.0.0"
-        android:textSize="14sp"
-        android:textColor="#808080"
-        android:layout_marginTop="32dp"
-        app:layout_constraintTop_toBottomOf="@+id/testDatabaseButton"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:layout_gravity="bottom"
+        android:background="@android:color/white"
+        app:itemIconTint="@color/bottom_navigation_item_color"
+        app:itemTextColor="@color/bottom_navigation_item_color"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_navigation_menu" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
