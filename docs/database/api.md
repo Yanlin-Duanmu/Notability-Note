@@ -2,7 +2,7 @@
 
 ## 1. 数据库概述
 
-MyNote 应用使用 Room 数据库实现本地数据持久化。数据库名称为 `mynote_database`，当前版本为 **2**。
+MyNote 应用使用 Room 数据库实现本地数据持久化。数据库名称为 `mynote_database`，当前版本为 **4**。
 
 ### 1.1 主要功能
 - 用户账户管理
@@ -33,6 +33,7 @@ MyNote 应用使用 Room 数据库实现本地数据持久化。数据库名称�
 | `tagId` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | 标签ID |
 | `userId` | `INTEGER` | `FOREIGN KEY REFERENCES users(userId) ON DELETE CASCADE NOT NULL` | 所属用户ID |
 | `name` | `TEXT` | `NOT NULL` | 标签名称 |
+| `noteCount` | `INTEGER` | `DEFAULT 0` | 该标签下的笔记数量
 
 ### 2.3 notes 表
 
@@ -86,10 +87,10 @@ interface TagDao {
     suspend fun insertTag(tag: Tag): Long
 
     @Update
-    suspend fun updateTag(tag: Tag)
+    suspend fun updateTag(tag: Tag): Int
 
     @Delete
-    suspend fun deleteTag(tag: Tag)
+    suspend fun deleteTag(tag: Tag): Int
 
     @Query("SELECT * FROM tags WHERE userId = :userId ORDER BY name ASC")
     suspend fun getTagsByUserId(userId: Long): List<Tag>
@@ -99,9 +100,12 @@ interface TagDao {
 
     @Query("SELECT * FROM tags WHERE userId = :userId AND name = :tagName LIMIT 1")
     suspend fun getTagByName(userId: Long, tagName: String): Tag?
+    
+    @Query("SELECT * FROM tags WHERE userId = :userId AND name LIKE '%' || :query || '%' ORDER BY name ASC")
+    suspend fun getTagsByNameContaining(userId: Long, query: String): List<Tag>
 
     @Query("DELETE FROM tags WHERE userId = :userId AND tagId = :tagId")
-    suspend fun deleteTagById(userId: Long, tagId: Long)
+    suspend fun deleteTagById(userId: Long, tagId: Long): Int
 }
 ```
 
@@ -114,6 +118,7 @@ interface TagDao {
 | `getTagsByUserId` | `userId: Long` | `List<Tag>` | 获取用户的所有标签（按名称排序） |
 | `getTagById` | `userId: Long, tagId: Long` | `Tag?` | 根据ID查找标签 |
 | `getTagByName` | `userId: Long, tagName: String` | `Tag?` | 根据名称查找标签 |
+| `getTagsByNameContaining` | `userId: Long, query: String` | `List<Tag>` | 根据名称模糊搜索标签，返回符合条件的标签列表 |
 | `deleteTagById` | `userId: Long, tagId: Long` | `Int` | 根据ID删除标签，返回受影响的行数 |
 
 ### 3.3 NoteDao
@@ -128,10 +133,10 @@ interface NoteDao {
     suspend fun insertNote(note: Note): Long
 
     @Update
-    suspend fun updateNote(note: Note)
+    suspend fun updateNote(note: Note): Int
 
     @Delete
-    suspend fun deleteNote(note: Note)
+    suspend fun deleteNote(note: Note): Int
 
     // 查询操作
     @Query("SELECT * FROM notes WHERE userId = :userId ORDER BY updatedAt DESC")
@@ -155,17 +160,17 @@ interface NoteDao {
     suspend fun insertArticle(note: Note): Long
 
     @Query("UPDATE notes SET title = :newTitle, content = :newContent, updatedAt = :updatedTime WHERE noteId = :id")
-    suspend fun updateArticle(id: Long, newTitle: String, newContent: String, updatedTime: Long)
+    suspend fun updateArticle(id: Long, newTitle: String, newContent: String, updatedTime: Long): Int
 
     // 便捷方法 - 自动处理时间戳的插入和更新
     @Query("INSERT INTO notes (title, content, userId, tagId, createdAt, updatedAt) VALUES (:title, :content, :userId, :tagId, :createdTime, :updatedTime)")
     suspend fun insertArticleWithTimestamp(title: String, content: String, userId: Long, tagId: Long, createdTime: Long, updatedTime: Long): Long
 
     @Query("UPDATE notes SET title = :newTitle, content = :newContent, updatedAt = :updatedTime WHERE noteId = :id")
-    suspend fun updateArticleWithTimestamp(id: Long, newTitle: String, newContent: String, updatedTime: Long)
+    suspend fun updateArticleWithTimestamp(id: Long, newTitle: String, newContent: String, updatedTime: Long): Int
 
     @Query("UPDATE notes SET tagId = :newTagId WHERE noteId = :id")
-    suspend fun updateNoteTag(id: Long, newTagId: Long)
+    suspend fun updateNoteTag(id: Long, newTagId: Long): Int
 
     // 统计相关
     @Query("SELECT COUNT(*) FROM notes WHERE userId = :userId")
@@ -176,13 +181,13 @@ interface NoteDao {
 
     // 批量操作
     @Query("DELETE FROM notes WHERE userId = :userId")
-    suspend fun deleteAllNotesByUser(userId: Long)
+    suspend fun deleteAllNotesByUser(userId: Long): Int
 
     @Query("DELETE FROM notes WHERE userId = :userId AND tagId = :tagId")
-    suspend fun deleteNotesByTagId(userId: Long, tagId: Long)
+    suspend fun deleteNotesByTagId(userId: Long, tagId: Long): Int
 
     @Query("DELETE FROM notes WHERE noteId = :id")
-    suspend fun deleteNoteById(id: Long)
+    suspend fun deleteNoteById(id: Long): Int
 }
 ```
 
@@ -215,7 +220,7 @@ interface NoteDao {
 ```kotlin
 @Database(
     entities = [User::class, Note::class, Tag::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -372,6 +377,7 @@ val searchResults = noteDao.searchNotesByTitleOrContent(newUserId, "Java")
 
 | 版本 | 变更内容 | 日期 |
 | :--- | :--- | :--- |
+| 4 | 1. 在Tag表中新增noteCount字段，用于存储标签下的笔记数量<br>2. 在TagDao中新增getTagsByNameContaining方法，支持标签名称模糊搜索 | 2025-11-27 |
 | 3 | 更新所有更新和删除方法，使其返回受影响的行数，便于检查操作是否成功 | 2025-11-27 |
 | 2 | 1. 在Note表中添加tagId字段和外键关系<br>2. 增强TagDao功能（添加更新、删除、查询方法）<br>3. 增强NoteDao功能（添加按标签查询、更新标签等方法） | 2025-11-27 |
 | 1 | 初始版本，包含用户、笔记和标签表基础功能 | 2025-11-25 |

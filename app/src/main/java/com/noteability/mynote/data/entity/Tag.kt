@@ -13,11 +13,15 @@ import androidx.room.ForeignKey
             childColumns = ["userId"],
             onDelete = ForeignKey.CASCADE
         )
+    ],
+    indices = [
+        androidx.room.Index(value = ["userId"])
     ]
 )
 data class Tag(
     @PrimaryKey(autoGenerate = true)
     val tagId: Long = 0,
     val userId: Long, // 用户级标签
-    val name: String
+    val name: String,
+    val noteCount: Int = 0
 )

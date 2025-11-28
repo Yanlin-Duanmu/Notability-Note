@@ -51,6 +51,7 @@ dependencies {
     // ========== 核心 UI ==========
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.activity:activity-ktx:1.9.1")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.0")
 
@@ -69,6 +70,9 @@ dependencies {
 
     // ========== Kotlin 协程 ==========
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    
+    // ========== Gson（JSON序列化/反序列化）==========
+    implementation("com.google.code.gson:gson:2.11.0")
 
     // ========== 单元测试 ==========
     testImplementation("junit:junit:4.13.2")

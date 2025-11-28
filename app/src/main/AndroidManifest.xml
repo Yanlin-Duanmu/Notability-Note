@@ -29,6 +29,24 @@
             android:exported="false"
             android:label="数据库测试"
             android:theme="@style/Theme.MyNote" />
+        
+        <activity
+            android:name=".TagManagementActivity"
+            android:exported="false"
+            android:label="标签管理"
+            android:theme="@style/Theme.MyNote" />
+        
+        <activity
+            android:name=".NoteEditActivity"
+            android:exported="false"
+            android:label="笔记编辑"
+            android:theme="@style/Theme.MyNote" />
+            
+        <activity
+            android:name=".ui.activity.LoginActivity"
+            android:exported="false"
+            android:label="登录"
+            android:theme="@style/Theme.MyNote" />
     </application>
 
 </manifest>

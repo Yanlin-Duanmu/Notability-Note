@@ -27,6 +27,9 @@ interface TagDao {
 
     @Query("SELECT * FROM tags WHERE userId = :userId AND name = :tagName LIMIT 1")
     suspend fun getTagByName(userId: Long, tagName: String): Tag?
+    
+    @Query("SELECT * FROM tags WHERE userId = :userId AND name LIKE '%' || :query || '%' ORDER BY name ASC")
+    suspend fun getTagsByNameContaining(userId: Long, query: String): List<Tag>
 
     @Query("DELETE FROM tags WHERE userId = :userId AND tagId = :tagId")
     suspend fun deleteTagById(userId: Long, tagId: Long): Int

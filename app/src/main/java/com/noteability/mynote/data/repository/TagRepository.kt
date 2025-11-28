@@ -1,49 +1,27 @@
 package com.noteability.mynote.data.repository
 
-import com.noteability.mynote.data.dao.TagDao
 import com.noteability.mynote.data.entity.Tag
+import kotlinx.coroutines.flow.Flow
 
-class TagRepository(private val tagDao: TagDao) {
-
-    // 获取默认用户的ID（与NoteRepository保持一致）
-    private val defaultUserId = 1L
-
-    // 创建标签
-    suspend fun createTag(tagName: String): Long {
-        val tag = Tag(
-            userId = defaultUserId,
-            name = tagName
-        )
-        return tagDao.insertTag(tag)
-    }
-
-    // 更新标签
-    suspend fun updateTag(tag: Tag): Int {
-        return tagDao.updateTag(tag)
-    }
-
-    // 删除标签
-    suspend fun deleteTag(tag: Tag): Int {
-        return tagDao.deleteTag(tag)
-    }
-
-    // 根据ID删除标签
-    suspend fun deleteTagById(tagId: Long): Int {
-        return tagDao.deleteTagById(defaultUserId, tagId)
-    }
-
+interface TagRepository {
     // 获取所有标签
-    suspend fun getAllTags(): List<Tag> {
-        return tagDao.getTagsByUserId(defaultUserId)
-    }
-
+    fun getAllTags(): Flow<List<Tag>>
+    
     // 根据ID获取标签
-    suspend fun getTagById(tagId: Long): Tag? {
-        return tagDao.getTagById(defaultUserId, tagId)
-    }
-
-    // 根据名称获取标签
-    suspend fun getTagByName(tagName: String): Tag? {
-        return tagDao.getTagByName(defaultUserId, tagName)
-    }
+    fun getTagById(tagId: Long): Flow<Tag?>
+    
+    // 搜索标签
+    fun searchTags(query: String): Flow<List<Tag>>
+    
+    // 保存标签
+    suspend fun saveTag(tag: Tag)
+    
+    // 更新标签
+    suspend fun updateTag(tag: Tag)
+    
+    // 删除标签
+    suspend fun deleteTag(tagId: Long)
+    
+    // 更新标签的笔记数量
+    suspend fun updateTagNoteCount(tagId: Long, noteCount: Int)
 }
