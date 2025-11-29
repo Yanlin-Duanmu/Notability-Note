@@ -53,17 +53,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="搜索笔记内容或标签"
+                android:hint="搜索笔记内容或标题"
                 android:textSize="16sp"
                 android:background="@android:color/transparent"
                 android:inputType="text" />
-            <ImageView
-                android:id="@+id/filterButton"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_more"
-                android:layout_gravity="center_vertical"
-                android:layout_marginStart="8dp" />
         </LinearLayout>
 
         <!-- 标签分类区域 -->
