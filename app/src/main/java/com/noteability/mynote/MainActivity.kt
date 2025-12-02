@@ -21,9 +21,10 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import androidx.lifecycle.ViewModelProvider
 import com.noteability.mynote.data.repository.impl.NoteRepositoryImpl
-import com.noteability.mynote.data.repository.impl.TagRepositoryImpl
+import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.ui.adapter.NoteAdapter
 import com.noteability.mynote.ui.viewmodel.NotesViewModel
+import com.noteability.mynote.ui.viewmodel.TagsViewModel
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -38,26 +39,28 @@ class MainActivity : AppCompatActivity() {
     private lateinit var loadingIndicator: CircularProgressIndicator
     private lateinit var emptyStateView: TextView
     private lateinit var errorStateView: TextView
-
-    // 为NotesViewModel创建工厂类
-    private class NotesViewModelFactory(private val applicationContext: Context) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(NotesViewModel::class.java)) {
-                // 创建带Context的NoteRepositoryImpl实例
-                val repository = NoteRepositoryImpl(applicationContext)
-                val viewModel = NotesViewModel(repository)
-                return viewModel as? T ?: throw IllegalArgumentException("Cannot create ViewModel for class: $modelClass")
-            }
-            throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
-        }
-    }
-
-    // 使用自定义工厂类获取NotesViewModel实例
-    private val viewModel: NotesViewModel by viewModels { NotesViewModelFactory(applicationContext) }
+    
+    // ViewModel实例
+    private lateinit var viewModel: NotesViewModel
+    private lateinit var tagsViewModel: TagsViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        
+        // 检查用户登录状态
+        val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 0L)
+        
+        // 如果用户未登录，跳转到登录页面
+        if (loggedInUserId <= 0) {
+            startActivity(Intent(this, com.noteability.mynote.ui.activity.LoginActivity::class.java))
+            finish()
+            return
+        }
+        
+        // 初始化ViewModels
+        initViewModels(loggedInUserId)
 
         // 初始化界面组件
         notesRecyclerView = findViewById(R.id.notesRecyclerView)
@@ -98,14 +101,34 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun initViewModels(loggedInUserId: Long) {
+        // 从ServiceLocator获取仓库
+        val noteRepository = ServiceLocator.provideNoteRepository()
+        val tagRepository = ServiceLocator.provideTagRepository()
+        
+        // 初始化ViewModels
+        viewModel = NotesViewModel(noteRepository)
+        tagsViewModel = TagsViewModel(tagRepository)
+        
+        // 设置当前登录用户ID
+        viewModel.setLoggedInUserId(loggedInUserId)
+        tagsViewModel.setLoggedInUserId(loggedInUserId)
+    }
+    
     private fun setupRecyclerView() {
-        // 初始化TagRepository获取标签数据
-        val tagRepository = TagRepositoryImpl(applicationContext)
         val tagNameMap = mutableMapOf<Long, String>()
-
-        // 立即加载标签数据
+        
+        // 先创建适配器，初始为空的标签映射
+        noteAdapter = NoteAdapter(emptyList(), onNoteClick = { note ->
+            // 处理笔记点击事件，跳转到笔记编辑页面
+            val intent = Intent(this, NoteEditActivity::class.java)
+            intent.putExtra("noteId", note.noteId)
+            startActivity(intent)
+        }, tagNameMap = tagNameMap)
+        
+        // 然后再设置标签数据收集
         lifecycleScope.launch {
-            tagRepository.getAllTags().collect { tagsList ->
+            tagsViewModel.tags.collect { tagsList ->
                 tagNameMap.clear()
                 tagsList.forEach { tag ->
                     tagNameMap[tag.tagId] = tag.name
@@ -114,14 +137,6 @@ class MainActivity : AppCompatActivity() {
                 noteAdapter.updateTagNameMap(tagNameMap)
             }
         }
-
-        // 创建适配器，初始为空的标签映射
-        noteAdapter = NoteAdapter(emptyList(), onNoteClick = { note ->
-            // 处理笔记点击事件，跳转到笔记编辑页面
-            val intent = Intent(this, NoteEditActivity::class.java)
-            intent.putExtra("noteId", note.noteId)
-            startActivity(intent)
-        }, tagNameMap = tagNameMap)
 
         notesRecyclerView.layoutManager = LinearLayoutManager(this)
         notesRecyclerView.adapter = noteAdapter
@@ -157,14 +172,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadTags() {
-        // 清除现有的标签按钮
-        tagsContainer.removeAllViews()
-
-        // 初始化TagRepository获取真实的标签数据
-        val tagRepository = TagRepositoryImpl(applicationContext)
-
+        // 观察标签数据变化
         lifecycleScope.launch {
-            tagRepository.getAllTags().collect { tags ->
+            tagsViewModel.tags.collect { tags ->
                 // 清除现有的标签按钮
                 tagsContainer.removeAllViews()
 

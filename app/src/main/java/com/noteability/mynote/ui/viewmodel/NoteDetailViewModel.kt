@@ -10,6 +10,9 @@ import kotlinx.coroutines.launch
 
 class NoteDetailViewModel(private val noteRepository: NoteRepository) : ViewModel() {
     
+    // 当前登录用户ID
+    private var loggedInUserId = 0L
+    
     private val _note = MutableStateFlow<Note?>(null)
     val note: StateFlow<Note?> = _note
     
@@ -85,8 +88,17 @@ class NoteDetailViewModel(private val noteRepository: NoteRepository) : ViewMode
         _isSaved.value = false
     }
     
+    // 设置当前登录用户ID
+    fun setLoggedInUserId(userId: Long) {
+        loggedInUserId = userId
+        // 更新仓库中的用户ID
+        if (noteRepository is com.noteability.mynote.data.repository.impl.NoteRepositoryImpl) {
+            noteRepository.updateCurrentUserId(userId)
+        }
+    }
+    
     // 创建新的空笔记
     fun createNewNote(): Note {
-        return Note(noteId = 0, userId = 1, tagId = 1, title = "", content = "")
+        return Note(noteId = 0, userId = loggedInUserId, tagId = 0, title = "", content = "")
     }
 }

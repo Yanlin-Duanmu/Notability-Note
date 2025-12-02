@@ -1,8 +1,12 @@
 package com.noteability.mynote.di
 
+import android.content.Context
+import androidx.room.Room
+import com.noteability.mynote.data.AppDatabase
 import com.noteability.mynote.data.repository.NoteRepository
 import com.noteability.mynote.data.repository.TagRepository
 import com.noteability.mynote.data.repository.UserRepository
+// UserRepository是一个类而不是接口，不需要导入Impl实现
 import com.noteability.mynote.data.repository.impl.NoteRepositoryImpl
 import com.noteability.mynote.data.repository.impl.TagRepositoryImpl
 import com.noteability.mynote.ui.viewmodel.NoteDetailViewModel
@@ -16,38 +20,76 @@ import com.noteability.mynote.data.entity.User
  */
 object ServiceLocator {
     
-    // Repository实例现在通过各Activity中的ViewModelFactory创建，此处不再初始化
-    // 模拟的UserDao实现
-    private val mockUserDao = object : com.noteability.mynote.data.dao.UserDao {
-        override suspend fun insertUser(user: User): Long {
-            return 1 // 总是返回1作为用户ID
-        }
-        
-        override suspend fun getUserByUsername(username: String): User? {
-            // 返回默认用户用于测试
-            return User(userId = 1, username = username, passwordHash = "hash")
-        }
-        
-        override suspend fun getUserById(id: Long): User? {
-            // 返回默认用户用于测试
-            return User(userId = 1, username = "default", passwordHash = "hash")
-        }
+    // 初始化应用上下文
+    private var context: Context? = null
+    
+    // 设置上下文
+    fun setContext(appContext: Context) {
+        this.context = appContext
+    }
+    
+    // 获取数据库实例
+    private val database: AppDatabase by lazy {
+        requireNotNull(context) { "Context must be set before using ServiceLocator" }
+        Room.databaseBuilder(
+            context!!,
+            AppDatabase::class.java,
+            "mynote_database"
+        ).build()
     }
     
     private val userRepository: UserRepository by lazy { 
-        // 使用模拟的UserDao创建UserRepository实例
-        UserRepository(mockUserDao)
+        // 直接使用UserRepository类，并传入userDao
+        UserRepository(database.userDao())
     }
     
     // ViewModel现在通过各Activity中的ViewModelFactory创建，此处不再提供
     
     // NoteDetailViewModel现在通过NoteEditActivity中的ViewModelFactory创建，此处不再提供
     
-    // Repository提供者方法
-    // 注意：由于NoteRepository和TagRepository现在需要Context参数，这些方法已被禁用
-    // 请通过各Activity中的ViewModelFactory获取对应的Repository和ViewModel实例
+    // 初始化NoteRepository和TagRepository
+    private val noteRepository: NoteRepository by lazy {
+        requireNotNull(context) { "Context must be set before using ServiceLocator" }
+        val repository = NoteRepositoryImpl(context!!)
+        // 设置当前登录用户ID
+        val sharedPreferences = context!!.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val userId = sharedPreferences.getLong("logged_in_user_id", 0L)
+        if (userId > 0) {
+            (repository as NoteRepositoryImpl).updateCurrentUserId(userId)
+        }
+        repository
+    }
     
+    private val tagRepository: TagRepository by lazy {
+        requireNotNull(context) { "Context must be set before using ServiceLocator" }
+        val repository = TagRepositoryImpl(context!!)
+        // 设置当前登录用户ID
+        val sharedPreferences = context!!.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val userId = sharedPreferences.getLong("logged_in_user_id", 0L)
+        if (userId > 0) {
+            (repository as TagRepositoryImpl).updateCurrentUserId(userId)
+        }
+        repository
+    }
+    
+    // Repository提供者方法
     fun provideUserRepository(): UserRepository {
         return userRepository
+    }
+    
+    fun provideNoteRepository(): NoteRepository {
+        return noteRepository
+    }
+    
+    fun provideTagRepository(): TagRepository {
+        return tagRepository
+    }
+    
+    // 更新当前登录用户ID到所有需要的仓库
+    fun updateLoggedInUserId(userId: Long) {
+        // 更新NoteRepository
+        (noteRepository as? NoteRepositoryImpl)?.updateCurrentUserId(userId)
+        // 更新TagRepository
+        (tagRepository as? TagRepositoryImpl)?.updateCurrentUserId(userId)
     }
 }
