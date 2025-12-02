@@ -1,4 +1,4 @@
-package com.noteability.mynote.viewmodel
+package com.noteability.mynote.ui.aiDemo
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
