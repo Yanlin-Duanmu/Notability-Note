@@ -172,9 +172,24 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     tagsContainer.addView(tagView)
+                    tagViews[tag.tagId] = tagView
                 }
+                updateTagSelectionState() // 初始化状态
             }
         }
+    }
+
+    private fun updateTagSelectionState() {
+        // 重置所有标签的样式
+        (tagViews.values + allTagView).forEach { view ->
+            view?.setBackgroundResource(R.drawable.tag_unselected_background)
+            view?.setTextColor(ContextCompat.getColor(this, R.color.tag_unselected_text_color))
+        }
+
+        // 设置选中标签的样式
+        val selectedView = if (currentSelectedTagId == 0L) allTagView else tagViews[currentSelectedTagId]
+        selectedView?.setBackgroundResource(R.drawable.tag_selected_background)
+        selectedView?.setTextColor(Color.WHITE)
     }
 
     private fun setupSearchListener() {
