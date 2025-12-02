@@ -142,35 +142,6 @@ class MainActivity : AppCompatActivity() {
         notesRecyclerView.adapter = noteAdapter
     }
 
-    private fun setupSwipeToDelete() {
-        val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(
-            0, ItemTouchHelper.LEFT
-        ) {
-            override fun onMove(
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-                target: RecyclerView.ViewHolder
-            ): Boolean {
-                return false // 我们不关心拖动操作
-            }
-
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
-                val noteToDelete = noteAdapter.getNoteAt(position)
-                viewModel.deleteNote(noteToDelete.noteId)
-
-                Snackbar.make(notesRecyclerView, "笔记已删除", Snackbar.LENGTH_LONG)
-                    .setAction("撤销") { 
-                        viewModel.saveNote(noteToDelete)
-                    }
-                    .show()
-            }
-        }
-
-        val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
-        itemTouchHelper.attachToRecyclerView(notesRecyclerView)
-    }
-
     private fun loadTags() {
         // 观察标签数据变化
         lifecycleScope.launch {
@@ -211,24 +182,9 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     tagsContainer.addView(tagView)
-                    tagViews[tag.tagId] = tagView
                 }
-                updateTagSelectionState() // 初始化状态
             }
         }
-    }
-
-    private fun updateTagSelectionState() {
-        // 重置所有标签的样式
-        (tagViews.values + allTagView).forEach { view ->
-            view?.setBackgroundResource(R.drawable.tag_unselected_background)
-            view?.setTextColor(ContextCompat.getColor(this, R.color.tag_unselected_text_color))
-        }
-
-        // 设置选中标签的样式
-        val selectedView = if (currentSelectedTagId == 0L) allTagView else tagViews[currentSelectedTagId]
-        selectedView?.setBackgroundResource(R.drawable.tag_selected_background)
-        selectedView?.setTextColor(Color.WHITE)
     }
 
     private fun setupSearchListener() {

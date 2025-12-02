@@ -2,8 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.INTERNET" />
-
     <application
         android:name=".MyNoteApplication"
         android:allowBackup="true"
@@ -14,11 +12,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MyNote">
-        <activity
-            android:name=".ui.aiDemo.AiActivity"
-            android:exported="true"
-            android:label="@string/title_activity_ai_activity.kt"
-            android:theme="@style/Theme.MyNote" />
         <activity
             android:name=".MainActivity"
             android:exported="false"
@@ -42,21 +35,25 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
         <activity
             android:name=".DatabaseTestActivity"
             android:exported="false"
             android:label="数据库测试"
             android:theme="@style/Theme.MyNote" />
+        
         <activity
             android:name=".TagManagementActivity"
             android:exported="false"
             android:label="标签管理"
             android:theme="@style/Theme.MyNote" />
+        
         <activity
             android:name=".NoteEditActivity"
             android:exported="false"
             android:label="笔记编辑"
             android:theme="@style/Theme.MyNote" />
+            
         <activity
             android:name=".ui.activity.RegisterActivity"
             android:exported="false"
