@@ -34,7 +34,7 @@ android {
             "OPENAI_API_KEY",
             "\"${localProperties.getProperty("OPENAI_API_KEY") ?: ""}\""
         )
-        buildConfigField("String", "OPENAI_BASE_URL", "\"${localProperties.getProperty("OPENAI_BASE_URL") ?: "https://apis.iflow.cn/"}\"")
+        buildConfigField("String", "OPENAI_BASE_URL", "\"${localProperties.getProperty("OPENAI_BASE_URL") ?: ""}\"")
     }
 
     buildTypes {
