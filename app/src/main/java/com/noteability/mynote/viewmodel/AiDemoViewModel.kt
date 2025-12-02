@@ -19,3 +19,52 @@ data class AiUiState(
     val error: String? = null          // error message
 )
 
+class AiDemoViewModel : ViewModel() {
+
+    private val _uiState = MutableStateFlow(AiUiState())
+
+    // Read-only state exposed to UI
+    val uiState = _uiState.asStateFlow()
+
+    private val apiKey = "Bearer sk-" // TODO: insert your key
+
+    // Update input fields
+    fun onSourceTextChanged(text: String) {
+        _uiState.update { it.copy(sourceText = text) }
+    }
+
+    fun onTagsInputChanged(text: String) {
+        _uiState.update { it.copy(existingTags = text) }
+    }
+
+    // Make AI request
+    private fun callAi(systemPrompt: String, userPrompt: String, onSuccess: (String) -> Unit) {
+        viewModelScope.launch {
+            // Set loading state
+            _uiState.update { it.copy(isLoading = true, error = null) }
+
+            try {
+                // Make network request
+                val response = NetworkModule.api.chat(
+                    token = apiKey,
+                    request = ChatRequest(
+                        messages = listOf(
+                            Message("system", systemPrompt),
+                            Message("user", userPrompt)
+                        )
+                    )
+                )
+                // Get result
+                val content = response.choices.firstOrNull()?.message?.content ?: ""
+                onSuccess(content)
+            } catch (e: Exception) {
+                // Handle error
+                _uiState.update { it.copy(error = "请求失败: ${e.message}") }
+            } finally {
+                // Clear loading state
+                _uiState.update { it.copy(isLoading = false) }
+            }
+        }
+    }
+
+}
