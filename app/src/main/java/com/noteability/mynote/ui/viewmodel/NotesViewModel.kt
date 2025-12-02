@@ -97,7 +97,22 @@ class NotesViewModel(private val noteRepository: NoteRepository) : ViewModel() {
         }
     }
     
-
+    // 保存笔记
+    fun saveNote(note: Note) {
+        viewModelScope.launch {
+            try {
+                noteRepository.saveNote(note)
+                // 保存成功后重新加载笔记
+                if (currentTagId != null) {
+                    loadNotesByTag(currentTagId!!)
+                } else {
+                    loadNotes()
+                }
+            } catch (e: Exception) {
+                _error.value = "保存笔记失败"
+            }
+        }
+    }
     
     // 删除笔记
     fun deleteNote(noteId: Long) {

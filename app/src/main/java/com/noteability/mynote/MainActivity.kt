@@ -2,6 +2,7 @@ package com.noteability.mynote
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -11,15 +12,18 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.activity.viewModels
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.material.snackbar.Snackbar
 import com.noteability.mynote.data.repository.impl.NoteRepositoryImpl
 import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.ui.adapter.NoteAdapter
@@ -39,6 +43,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var loadingIndicator: CircularProgressIndicator
     private lateinit var emptyStateView: TextView
     private lateinit var errorStateView: TextView
+    private var allTagView: TextView? = null
+    private val tagViews = mutableMapOf<Long, TextView>()
     
     // ViewModel实例
     private lateinit var viewModel: NotesViewModel
@@ -75,6 +81,7 @@ class MainActivity : AppCompatActivity() {
 
         // 初始化RecyclerView
         setupRecyclerView()
+        setupSwipeToDelete()
 
         // 加载标签
         loadTags()
@@ -177,37 +184,43 @@ class MainActivity : AppCompatActivity() {
             tagsViewModel.tags.collect { tags ->
                 // 清除现有的标签按钮
                 tagsContainer.removeAllViews()
+                tagViews.clear()
+
 
                 // 动态添加 "全部" 标签
-                val allTagView = LayoutInflater.from(this@MainActivity)
-                    .inflate(R.layout.item_tag, tagsContainer, false) as TextView
-                allTagView.text = "全部"
-                allTagView.setOnClickListener {
-                    // 清空搜索框
-                    searchEditText.text.clear()
-                    // 加载所有笔记
-                    currentSelectedTagId = 0L
-                    viewModel.loadNotes()
+                allTagView = (LayoutInflater.from(this@MainActivity)
+                    .inflate(R.layout.item_tag, tagsContainer, false) as TextView).apply {
+                    text = "全部"
+                    setOnClickListener {
+                        // 清空搜索框
+                        searchEditText.text.clear()
+                        // 加载所有笔记
+                        currentSelectedTagId = 0L
+                        viewModel.loadNotes()
+                        updateTagSelectionState()
+                    }
                 }
                 tagsContainer.addView(allTagView)
 
                 // 动态添加其他标签按钮
                 for (tag in tags) {
-                    val tagView = LayoutInflater.from(this@MainActivity)
-                        .inflate(R.layout.item_tag, tagsContainer, false) as TextView
-                    tagView.text = tag.name
-                    tagView.setOnClickListener {
-                        // 清空搜索框
-                        searchEditText.text.clear()
-                        
-                        // 如果点击的标签就是当前选中的标签，则取消选中并显示所有笔记
-                        if (currentSelectedTagId == tag.tagId) {
-                            currentSelectedTagId = 0L
-                            viewModel.loadNotes()
-                        } else {
-                            // 否则，切换到新点击的标签
-                            currentSelectedTagId = tag.tagId
-                            viewModel.loadNotesByTag(tag.tagId)
+                    val tagView = (LayoutInflater.from(this@MainActivity)
+                        .inflate(R.layout.item_tag, tagsContainer, false) as TextView).apply{
+                        text = tag.name
+                        setOnClickListener {
+                            // 清空搜索框
+                            searchEditText.text.clear()
+                            
+                            // 如果点击的标签就是当前选中的标签，则取消选中并显示所有笔记
+                            if (currentSelectedTagId == tag.tagId) {
+                                currentSelectedTagId = 0L
+                                viewModel.loadNotes()
+                            } else {
+                                // 否则，切换到新点击的标签
+                                currentSelectedTagId = tag.tagId
+                                viewModel.loadNotesByTag(tag.tagId)
+                            }
+                            updateTagSelectionState()
                         }
                     }
                     tagsContainer.addView(tagView)
@@ -220,9 +233,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateTagSelectionState() {
         // 重置所有标签的样式
-        (tagViews.values + allTagView).forEach { view ->
-            view?.setBackgroundResource(R.drawable.tag_unselected_background)
-            view?.setTextColor(ContextCompat.getColor(this, R.color.tag_unselected_text_color))
+        (tagViews.values + listOfNotNull(allTagView)).forEach { view ->
+            view.setBackgroundResource(R.drawable.tag_unselected_background)
+            view.setTextColor(ContextCompat.getColor(this, R.color.tag_unselected_text_color))
         }
 
         // 设置选中标签的样式
@@ -267,7 +280,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupBottomNavigationListener() {
-        bottomNavigationView.setOnNavigationItemSelectedListener {
+        bottomNavigationView.setOnItemSelectedListener {
             when (it.itemId) {
                 R.id.nav_notes -> {
                     // 检查是否当前处于特定标签筛选模式
@@ -276,6 +289,7 @@ class MainActivity : AppCompatActivity() {
                         currentSelectedTagId = 0L
                         viewModel.loadNotes()
                         showToast("显示所有笔记")
+                        updateTagSelectionState()
                     }
                     // 无论是否处于筛选模式，都返回true
                     true
