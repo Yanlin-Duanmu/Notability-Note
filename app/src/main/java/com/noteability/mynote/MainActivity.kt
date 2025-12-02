@@ -81,7 +81,7 @@ class MainActivity : AppCompatActivity() {
 
         // 初始化RecyclerView
         setupRecyclerView()
-        setupSwipeToDelete()
+        // setupSwipeToDelete()
 
         // 加载标签
         loadTags()
