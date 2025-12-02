@@ -67,4 +67,17 @@ class AiDemoViewModel : ViewModel() {
         }
     }
 
+    // Fetch summary
+    fun fetchSummary() {
+        val text = _uiState.value.sourceText
+        if (text.isBlank()) return
+
+        callAi(
+            systemPrompt = "你是一个专业的摘要助手。",
+            userPrompt = "请对以下文本进行精简摘要，控制在200字以内：\n\n$text"
+        ) { result ->
+            _uiState.update { it.copy(summaryResult = result) }
+        }
+    }
+
 }
