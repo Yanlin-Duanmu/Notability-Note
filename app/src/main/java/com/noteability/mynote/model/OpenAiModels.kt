@@ -17,4 +17,13 @@ data class Message(
     val content: String
 )
 
+// API response payload
+@Serializable
+data class ChatResponse(
+    val choices: List<Choice>
+)
 
+@Serializable
+data class Choice(
+    val message: Message
+)
