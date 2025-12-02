@@ -53,7 +53,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="搜索笔记内容或标题"
+                android:hint="搜索笔记内容"
                 android:textSize="16sp"
                 android:background="@android:color/transparent"
                 android:inputType="text" />

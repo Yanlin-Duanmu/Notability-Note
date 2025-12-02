@@ -13,6 +13,9 @@ class TagsViewModel(private val tagRepository: TagRepository) : ViewModel() {
     private val _tags = MutableStateFlow<List<Tag>>(emptyList())
     val tags: StateFlow<List<Tag>> = _tags
     
+    // 当前登录用户ID
+    private var loggedInUserId = 0L
+    
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
     
@@ -59,11 +62,22 @@ class TagsViewModel(private val tagRepository: TagRepository) : ViewModel() {
         }
     }
     
+    // 设置当前登录用户ID
+    fun setLoggedInUserId(userId: Long) {
+        loggedInUserId = userId
+        // 更新仓库中的用户ID
+        if (tagRepository is com.noteability.mynote.data.repository.impl.TagRepositoryImpl) {
+            tagRepository.updateCurrentUserId(userId)
+        }
+        // 重新加载标签，确保只显示当前用户的标签
+        loadTags()
+    }
+    
     // 创建新标签
     fun createTag(name: String) {
         viewModelScope.launch {
             try {
-                val newTag = Tag(tagId = 0, userId = 1, name = name)
+                val newTag = Tag(tagId = 0, userId = loggedInUserId, name = name)
                 tagRepository.saveTag(newTag)
                 loadTags() // 创建成功后重新加载标签列表
             } catch (e: Exception) {

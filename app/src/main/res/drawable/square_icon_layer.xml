@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 直接引用图片资源，避免复杂的 layer-list 配置 -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/my_note"
+    android:gravity="fill"/>
