@@ -3,6 +3,7 @@ package com.noteability.mynote
 import android.app.Application
 import com.noteability.mynote.data.AppDatabase
 import com.noteability.mynote.data.entity.User
+import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.util.SecurityUtils
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -11,6 +12,9 @@ class MyNoteApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        
+        // 设置ServiceLocator上下文
+        ServiceLocator.setContext(this)
 
         // 初始化数据库
         AppDatabase.getDatabase(this)

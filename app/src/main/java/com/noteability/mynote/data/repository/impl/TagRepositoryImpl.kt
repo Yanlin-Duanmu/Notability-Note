@@ -14,7 +14,12 @@ class TagRepositoryImpl(private val context: Context) : TagRepository {
     }
     
     // 当前用户ID（实际应用中应该从登录状态获取）
-    private val currentUserId = 1L
+    private var currentUserId = 0L
+    
+    // 更新当前用户ID
+    fun updateCurrentUserId(userId: Long) {
+        this.currentUserId = userId
+    }
     
     // 初始化默认标签（如果数据库中没有标签）
     init {

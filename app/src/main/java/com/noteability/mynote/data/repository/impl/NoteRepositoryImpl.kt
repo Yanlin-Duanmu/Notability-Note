@@ -15,7 +15,12 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     }
     
     // 当前用户ID（实际应用中应该从登录状态获取）
-    private val currentUserId = 1L
+    private var currentUserId = 1L // 默认值，会在登录后更新
+    
+    // 更新当前用户ID
+    fun updateCurrentUserId(userId: Long) {
+        this.currentUserId = userId
+    }
     
     override fun getAllNotes(): Flow<List<Note>> = flow {
         emit(noteDao.getNotesByUserId(currentUserId))
@@ -26,7 +31,10 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     }
     
     override fun getNoteById(noteId: Long): Flow<Note?> = flow {
-        emit(noteDao.getNoteById(noteId))
+        // 获取笔记后验证是否属于当前用户
+        val note = noteDao.getNoteById(noteId)
+        // 只有当笔记存在且属于当前用户时才返回，否则返回null
+        emit(if (note?.userId == currentUserId) note else null)
     }
     
     override fun searchNotes(query: String): Flow<List<Note>> = flow {
@@ -57,6 +65,10 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     }
     
     override suspend fun deleteNote(noteId: Long) {
-        noteDao.deleteNoteById(noteId)
+        // 验证笔记是否属于当前用户后再删除
+        val note = noteDao.getNoteById(noteId)
+        if (note?.userId == currentUserId) {
+            noteDao.deleteNoteById(noteId)
+        }
     }
 }

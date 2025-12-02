@@ -21,6 +21,18 @@ class NotesViewModel(private val noteRepository: NoteRepository) : ViewModel() {
     
     private var currentTagId: Long? = null
     private var currentSearchQuery: String = ""
+    private var loggedInUserId: Long = 1L // 默认ID，在实际登录后会被更新
+    
+    // 设置当前登录用户ID
+    fun setLoggedInUserId(userId: Long) {
+        loggedInUserId = userId
+        // 更新仓库中的用户ID
+        if (noteRepository is com.noteability.mynote.data.repository.impl.NoteRepositoryImpl) {
+            noteRepository.updateCurrentUserId(userId)
+        }
+        // 重新加载笔记，确保只显示当前用户的笔记
+        loadNotes()
+    }
     
     init {
         loadNotes()

@@ -27,11 +27,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import android.content.Context
+import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.entity.Tag
 import com.noteability.mynote.data.repository.impl.NoteRepositoryImpl
 import com.noteability.mynote.data.repository.impl.TagRepositoryImpl
 import com.noteability.mynote.ui.viewmodel.NoteDetailViewModel
+import com.noteability.mynote.ui.viewmodel.TagsViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -63,7 +65,7 @@ class NoteEditActivity : AppCompatActivity() {
     // TagRepository实例
     private lateinit var tagRepository: TagRepositoryImpl
     
-    // 创建ViewModelFactory
+    // 创建NoteDetailViewModelFactory
     private class NoteDetailViewModelFactory(private val applicationContext: Context) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(NoteDetailViewModel::class.java)) {
@@ -76,14 +78,39 @@ class NoteEditActivity : AppCompatActivity() {
         }
     }
     
+    // 创建TagsViewModelFactory
+    private class TagsViewModelFactory(private val applicationContext: Context) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(TagsViewModel::class.java)) {
+                // 创建带Context的TagRepositoryImpl实例
+                val repository = TagRepositoryImpl(applicationContext)
+                val viewModel = TagsViewModel(repository)
+                return viewModel as? T ?: throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+            }
+            throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+        }
+    }
+    
     // 使用viewModels委托和自定义Factory来获取NoteDetailViewModel实例
     private val noteDetailViewModel: NoteDetailViewModel by viewModels {
         NoteDetailViewModelFactory(applicationContext)
     }
+    
+    // 使用viewModels委托和自定义Factory来获取TagsViewModel实例
+    private val tagsViewModel: TagsViewModel by viewModels {
+        TagsViewModelFactory(applicationContext)
+    }
+    
+    // 当前登录用户ID（可变，将从SharedPreferences获取）
+    private var loggedInUserId: Long = 1L // 默认值，将在onCreate中更新
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_note_edit)
+        
+        // 从SharedPreferences获取当前登录用户ID
+        val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 1L) // 使用1L作为默认值
 
         // 初始化界面组件
         toolbar = findViewById(R.id.toolbar)
@@ -99,16 +126,22 @@ class NoteEditActivity : AppCompatActivity() {
         loadingIndicator = findViewById(R.id.loadingIndicator)
         errorTextView = findViewById(R.id.errorTextView)
         
+        // 设置ServiceLocator上下文
+        ServiceLocator.setContext(applicationContext)
+        
         // 初始化TagRepository
         tagRepository = TagRepositoryImpl(applicationContext)
         
-        // 加载真实标签数据
-        loadRealTags()
-
+        // 初始化ViewModels并设置用户ID
+        initViewModels()
+        
         // 设置工具栏
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "编辑笔记"
+        
+        // 加载标签数据
+        loadTags()
         
         // 使用OnBackPressedDispatcher注册返回按钮处理器（现代方式）
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -125,6 +158,9 @@ class NoteEditActivity : AppCompatActivity() {
         changeTagButton.setOnClickListener {
             showTagSelectionDialog()
         }
+        
+        // 监听标签数据变化
+        observeTags()
 
         // 设置富文本编辑按钮点击事件
         setupFormattingButtons()
@@ -266,7 +302,7 @@ class NoteEditActivity : AppCompatActivity() {
                 // 更新现有笔记
                 Note(
                     noteId = noteId!!,
-                    userId = 1,
+                    userId = loggedInUserId,
                     tagId = currentTag?.tagId ?: 1,
                     title = title,
                     content = content,
@@ -276,7 +312,7 @@ class NoteEditActivity : AppCompatActivity() {
                 // 创建新笔记
                 Note(
                     noteId = 0,
-                    userId = 1,
+                    userId = loggedInUserId,
                     tagId = currentTag?.tagId ?: 1,
                     title = title,
                     content = content,
@@ -330,29 +366,44 @@ class NoteEditActivity : AppCompatActivity() {
         noteDetailViewModel.resetSaveState()
     }
 
-    private fun loadRealTags() {
+    private fun initViewModels() {
+        // 设置当前登录用户ID到ViewModels
+        noteDetailViewModel.setLoggedInUserId(loggedInUserId)
+        tagsViewModel.setLoggedInUserId(loggedInUserId)
+    }
+    
+    private fun loadTags() {
+        // 触发标签加载
+        tagsViewModel.loadTags()
+    }
+    
+    private fun observeTags() {
         lifecycleScope.launch {
-            tagRepository.getAllTags().collect { tags ->
-                // 更新真实标签列表
-                realTags.clear()
-                realTags.addAll(tags)
-                
-                // 如果当前没有选中的标签但列表不为空，设置第一个标签为默认标签
-                if (currentTag == null && realTags.isNotEmpty()) {
-                    val preSelectedTagId = intent.getLongExtra("preSelectedTagId", 0L)
-                    if (preSelectedTagId > 0) {
-                        // 优先使用预选中的标签
-                        currentTag = realTags.find { it.tagId == preSelectedTagId }
-                    }
+            try {
+                // 观察标签数据变化
+                tagsViewModel.tags.collect { tags ->
+                    realTags.clear()
+                    realTags.addAll(tags)
                     
-                    // 如果没有找到预选中的标签或没有预选中的标签，使用第一个标签
-                    if (currentTag == null) {
-                        currentTag = realTags[0]
+                    // 如果没有选择标签且标签列表不为空，默认选择第一个标签
+                    if (currentTag == null && realTags.isNotEmpty()) {
+                        val preSelectedTagId = intent.getLongExtra("preSelectedTagId", 0L)
+                        if (preSelectedTagId > 0) {
+                            // 优先使用预选中的标签
+                            currentTag = realTags.find { it.tagId == preSelectedTagId }
+                        }
+                        
+                        // 如果没有找到预选中的标签或没有预选中的标签，使用第一个标签
+                        if (currentTag == null) {
+                            currentTag = realTags[0]
+                        }
+                        
+                        // 更新标签显示
+                        tagTextView.text = currentTag?.name
                     }
-                    
-                    // 更新标签显示
-                    tagTextView.text = currentTag?.name
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }

@@ -94,6 +94,13 @@ class TagManagementActivity : AppCompatActivity() {
         // 设置底部导航栏
         setupBottomNavigation()
         
+        // 获取当前登录用户ID并设置到ViewModel
+        val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 0L)
+        if (loggedInUserId > 0) {
+            tagsViewModel.setLoggedInUserId(loggedInUserId)
+        }
+        
         // 观察ViewModel中的数据变化
         observeViewModel()
     }
@@ -114,6 +121,12 @@ class TagManagementActivity : AppCompatActivity() {
     private fun observeViewModel() {
         // 创建NoteRepository实例来获取笔记数量
         val noteRepository = com.noteability.mynote.data.repository.impl.NoteRepositoryImpl(applicationContext)
+        // 确保设置正确的用户ID到NoteRepository
+        val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 0L)
+        if (loggedInUserId > 0) {
+            noteRepository.updateCurrentUserId(loggedInUserId)
+        }
         
         // 观察标签列表变化
         lifecycleScope.launch {

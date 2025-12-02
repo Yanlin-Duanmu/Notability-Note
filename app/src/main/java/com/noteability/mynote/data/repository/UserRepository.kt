@@ -10,8 +10,19 @@ class UserRepository(private val userDao: UserDao) {
         return userDao.getUserByUsername(username)
     }
 
+    suspend fun getUserById(userId: Long): User? {
+        return userDao.getUserById(userId)
+    }
+
     suspend fun insertUser(user: User): Long {
         return userDao.insertUser(user)
+    }
+
+    /**
+     * 检查用户名是否已存在
+     */
+    suspend fun isUsernameExists(username: String): Boolean {
+        return userDao.getUserByUsername(username) != null
     }
 
     /**
