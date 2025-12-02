@@ -2,6 +2,7 @@ package com.noteability.mynote.ui.aiDemo
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.noteability.mynote.BuildConfig
 import com.noteability.mynote.model.ChatRequest
 import com.noteability.mynote.model.Message
 import com.noteability.mynote.model.NetworkModule
@@ -26,7 +27,7 @@ class AiDemoViewModel : ViewModel() {
     // Read-only state exposed to UI
     val uiState = _uiState.asStateFlow()
 
-    private val apiKey = "Bearer sk-" // TODO: insert your key
+    private val apiKey = "Bearer ${BuildConfig.OPENAI_API_KEY}"
 
     // Update input fields
     fun onSourceTextChanged(text: String) {
@@ -38,7 +39,12 @@ class AiDemoViewModel : ViewModel() {
     }
 
     // Make AI request
-    private fun callAi(systemPrompt: String, userPrompt: String, onSuccess: (String) -> Unit) {
+    private fun callAi(
+        model: String = "qwen3-max",
+        systemPrompt: String,
+        userPrompt: String,
+        onSuccess: (String) -> Unit
+    ) {
         viewModelScope.launch {
             // Set loading state
             _uiState.update { it.copy(isLoading = true, error = null) }
@@ -48,6 +54,7 @@ class AiDemoViewModel : ViewModel() {
                 val response = NetworkModule.api.chat(
                     token = apiKey,
                     request = ChatRequest(
+                        model = model,
                         messages = listOf(
                             Message("system", systemPrompt),
                             Message("user", userPrompt)
@@ -73,6 +80,7 @@ class AiDemoViewModel : ViewModel() {
         if (text.isBlank()) return
 
         callAi(
+            model = "qwen3-max",
             systemPrompt = "你是一个专业的摘要助手。",
             userPrompt = "请对以下文本进行精简摘要，控制在200字以内：\n\n$text"
         ) { result ->
@@ -99,6 +107,7 @@ class AiDemoViewModel : ViewModel() {
         """.trimIndent()
 
         callAi(
+            model = "qwen3-max",
             systemPrompt = "你是一个分类专家，只输出逗号分隔的标签。",
             userPrompt = prompt
         ) { result ->
