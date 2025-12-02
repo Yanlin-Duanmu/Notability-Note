@@ -47,6 +47,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        compose = true
         // compose = false
     }
 }
@@ -70,6 +71,9 @@ dependencies {
     // ========== Room（数据库）==========
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     kapt("androidx.room:room-compiler:2.6.1")  // 添加的关键依赖
 
     // ========== Kotlin 协程 ==========
