@@ -46,6 +46,46 @@ fun AiDemoScreen(
                 supportingText = { Text("字数: ${uiState.sourceText.length}") }
             )
 
+            // Section 2: Existing tags input
+            Text("现有标签库", style = MaterialTheme.typography.titleMedium)
+            OutlinedTextField(
+                value = uiState.existingTags,
+                onValueChange = viewModel::onTagsInputChanged,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("科技, Kotlin, 旅游") },
+                singleLine = true
+            )
+
+            // Action buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.fetchSummary() },
+                    modifier = Modifier.weight(1f),
+                    enabled = !uiState.isLoading
+                ) {
+                    Text("生成摘要")
+                }
+
+                Button(
+                    onClick = { viewModel.fetchTags() },
+                    modifier = Modifier.weight(1f),
+                    enabled = !uiState.isLoading
+                ) {
+                    Text("智能打标")
+                }
+            }
+
+            // Loading indicator and error message
+            if (uiState.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+
+            uiState.error?.let { err ->
+                Text(text = err, color = MaterialTheme.colorScheme.error)
+            }
 
         }
     }
