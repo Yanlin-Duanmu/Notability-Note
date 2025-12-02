@@ -15,8 +15,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MyNote">
         <activity
-            android:name=".ui.aiDemo.AiActivity.kt"
-            android:exported="false"
+            android:name=".ui.aiDemo.AiActivity"
+            android:exported="true"
             android:label="@string/title_activity_ai_activity.kt"
             android:theme="@style/Theme.MyNote" />
         <activity
