@@ -82,7 +82,7 @@ dependencies {
 
     // For OpenAI Compatible Request Demo
     implementation(libs.retrofit.core)
-    implementation(libs.retrofit.gson)
+    implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(platform(libs.okhttp.bom))
