@@ -1,7 +1,10 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android") version "2.0.21"
+    // id("com.android.application")
+    // id("org.jetbrains.kotlin.android") version "2.0.21"
     id("kotlin-kapt")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -44,7 +47,7 @@ android {
 
     buildFeatures {
         viewBinding = true
-        compose = false
+        // compose = false
     }
 }
 
@@ -71,7 +74,7 @@ dependencies {
 
     // ========== Kotlin 协程 ==========
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    
+
     // ========== Gson（JSON序列化/反序列化）==========
     implementation("com.google.code.gson:gson:2.11.0")
 
