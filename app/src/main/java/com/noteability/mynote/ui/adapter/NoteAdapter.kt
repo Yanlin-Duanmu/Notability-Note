@@ -67,6 +67,10 @@ class NoteAdapter(
         return tagNameMap[tagId] ?: "未分类"
     }
 
+    fun getNoteAt(position: Int): Note {
+        return notes[position]
+    }
+
     inner class NoteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val noteTitle: TextView = itemView.findViewById(R.id.noteTitle)
         private val noteContentPreview: TextView = itemView.findViewById(R.id.noteContentPreview)
