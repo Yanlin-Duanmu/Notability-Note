@@ -127,6 +127,35 @@ class MainActivity : AppCompatActivity() {
         notesRecyclerView.adapter = noteAdapter
     }
 
+    private fun setupSwipeToDelete() {
+        val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(
+            0, ItemTouchHelper.LEFT
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                return false // 我们不关心拖动操作
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                val noteToDelete = noteAdapter.getNoteAt(position)
+                viewModel.deleteNote(noteToDelete.noteId)
+
+                Snackbar.make(notesRecyclerView, "笔记已删除", Snackbar.LENGTH_LONG)
+                    .setAction("撤销") { 
+                        viewModel.saveNote(noteToDelete)
+                    }
+                    .show()
+            }
+        }
+
+        val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
+        itemTouchHelper.attachToRecyclerView(notesRecyclerView)
+    }
+
     private fun loadTags() {
         // 清除现有的标签按钮
         tagsContainer.removeAllViews()
