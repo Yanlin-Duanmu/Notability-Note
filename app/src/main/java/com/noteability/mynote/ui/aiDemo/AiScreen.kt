@@ -102,7 +102,21 @@ fun AiDemoScreen(
                 }
             }
 
- 
+            // Section 4: Tag display
+            if (uiState.tagResult.isNotEmpty()) {
+                Text("匹配标签：", style = MaterialTheme.typography.titleMedium)
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    uiState.tagResult.forEach { tag ->
+                        SuggestionChip(
+                            onClick = { /* Click event */ },
+                            label = { Text(tag) }
+                        )
+                    }
+                }
+            }
         }
     }
 }
