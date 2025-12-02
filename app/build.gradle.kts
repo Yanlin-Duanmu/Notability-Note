@@ -28,6 +28,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "OPENAI_API_KEY",
+            "\"${localProperties.getProperty("OPENAI_API_KEY") ?: ""}\""
+        )
+        buildConfigField("String", "OPENAI_BASE_URL", "\"https://api.openai.com/\"")
     }
 
     buildTypes {
@@ -55,8 +62,8 @@ android {
 
     buildFeatures {
         viewBinding = true
-        compose = true
         // compose = false
+        buildConfig = true
     }
 }
 
