@@ -87,6 +87,22 @@ fun AiDemoScreen(
                 Text(text = err, color = MaterialTheme.colorScheme.error)
             }
 
+            // Section 3: Summary result display
+            if (uiState.summaryResult.isNotEmpty()) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("摘要结果：", style = MaterialTheme.typography.labelLarge)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(uiState.summaryResult)
+                    }
+                }
+            }
+
+ 
         }
     }
 }
