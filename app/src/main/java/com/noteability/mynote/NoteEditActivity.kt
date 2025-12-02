@@ -125,6 +125,11 @@ class NoteEditActivity : AppCompatActivity() {
         numberListButton = findViewById(R.id.numberListButton)
         loadingIndicator = findViewById(R.id.loadingIndicator)
         errorTextView = findViewById(R.id.errorTextView)
+        val saveButton = findViewById<Button>(R.id.button3)
+
+        saveButton.setOnClickListener {
+            saveNote()
+        }
         
         // 设置ServiceLocator上下文
         ServiceLocator.setContext(applicationContext)
@@ -227,7 +232,7 @@ class NoteEditActivity : AppCompatActivity() {
                 note?.let {
                     titleEditText.setText(it.title)
                     contentEditText.setText(it.content)
-                    
+
                     // 设置标签
                     if (realTags.isNotEmpty()) {
                         // 如果标签列表已经加载完成，直接查找对应的标签
@@ -240,7 +245,7 @@ class NoteEditActivity : AppCompatActivity() {
                         // 如果标签列表还未加载完成，先设置标签ID，等待标签加载完成后再更新显示
                         val noteTagId = it.tagId
                         tagTextView.text = "加载中..."
-                        
+
                         // 当标签加载完成后，会在loadRealTags方法中自动更新显示
                         lifecycleScope.launch {
                             tagRepository.getAllTags().collect { tags ->
@@ -257,7 +262,7 @@ class NoteEditActivity : AppCompatActivity() {
                 }
             }
         }
-        
+
         // 观察加载状态
         lifecycleScope.launch {
             noteDetailViewModel.isLoading.collect { isLoading ->
@@ -267,7 +272,7 @@ class NoteEditActivity : AppCompatActivity() {
                 }
             }
         }
-        
+
         // 观察错误状态
         lifecycleScope.launch {
             noteDetailViewModel.error.collect { error ->
@@ -279,7 +284,7 @@ class NoteEditActivity : AppCompatActivity() {
                 }
             }
         }
-        
+
         // 观察保存状态
         lifecycleScope.launch {
             noteDetailViewModel.isSaved.collect { isSaved ->
@@ -297,6 +302,11 @@ class NoteEditActivity : AppCompatActivity() {
         val title = titleEditText.text.toString().trim()
         val content = contentEditText.text.toString().trim()
 
+        // 添加标题验证
+        if (title.isEmpty()) {
+            Toast.makeText(this, "标题为空，请添加一个标题！", Toast.LENGTH_SHORT).show()
+            return
+        }
         if (title.isNotEmpty() || content.isNotEmpty()) {
             val note = if (noteId != null && noteId != -1L) {
                 // 更新现有笔记
@@ -320,7 +330,7 @@ class NoteEditActivity : AppCompatActivity() {
                     updatedAt = System.currentTimeMillis()
                 )
             }
-            
+
             // 使用ViewModel保存笔记
             noteDetailViewModel.saveNote(note)
         }

@@ -7,7 +7,6 @@ import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.repository.NoteRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import java.util.UUID
 
 class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     private val noteDao: NoteDao by lazy {
@@ -37,11 +36,19 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
         emit(if (note?.userId == currentUserId) note else null)
     }
     
-    override fun searchNotes(query: String): Flow<List<Note>> = flow {
+    override fun searchNotes(query: String, tagId: Long?): Flow<List<Note>> = flow {
         if (query.isBlank()) {
-            emit(noteDao.getNotesByUserId(currentUserId))
+            if (tagId != null) {
+                emit(noteDao.getNotesByTagId(currentUserId, tagId))
+            } else {
+                emit(noteDao.getNotesByUserId(currentUserId))
+            }
         } else {
-            emit(noteDao.searchNotesByTitleOrContent(currentUserId, query))
+            if (tagId != null) {
+                emit(noteDao.searchNotesByTagAndTitleOrContent(currentUserId, tagId, query))
+            } else {
+                emit(noteDao.searchNotesByTitleOrContent(currentUserId, query))
+            }
         }
     }
     

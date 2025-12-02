@@ -14,7 +14,7 @@ interface NoteRepository {
     fun getNoteById(noteId: Long): Flow<Note?>
     
     // 搜索笔记
-    fun searchNotes(query: String): Flow<List<Note>>
+    fun searchNotes(query: String, tagId: Long? = null): Flow<List<Note>>
     
     // 获取指定标签下的笔记数量
     suspend fun getNoteCountByTag(tagId: Long): Int

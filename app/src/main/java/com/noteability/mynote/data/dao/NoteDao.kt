@@ -37,6 +37,9 @@ interface NoteDao {
     @Query("SELECT * FROM notes WHERE userId = :userId AND (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%') ORDER BY updatedAt DESC")
     suspend fun searchNotesByTitleOrContent(userId: Long, query: String): List<Note>
 
+    @Query("SELECT * FROM notes WHERE userId = :userId AND tagId = :tagId AND (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%') ORDER BY updatedAt DESC")
+    suspend fun searchNotesByTagAndTitleOrContent(userId: Long, tagId: Long, query: String): List<Note>
+
     // 为富文本模块提供的专用方法
     @Insert
     suspend fun insertArticle(note: Note): Long

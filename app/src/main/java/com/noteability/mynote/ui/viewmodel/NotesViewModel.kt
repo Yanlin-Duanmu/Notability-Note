@@ -40,6 +40,8 @@ class NotesViewModel(private val noteRepository: NoteRepository) : ViewModel() {
     
     // 加载所有笔记
     fun loadNotes() {
+        currentTagId = null // 重置标签筛选
+        currentSearchQuery = ""
         _isLoading.value = true
         _error.value = null
         
@@ -84,14 +86,8 @@ class NotesViewModel(private val noteRepository: NoteRepository) : ViewModel() {
         
         viewModelScope.launch {
             try {
-                noteRepository.searchNotes(query).collect { searchResults ->
-                    // 如果有选择的标签，还要根据标签过滤
-                    val filteredResults = if (currentTagId != null) {
-                        searchResults.filter { it.tagId == currentTagId }
-                    } else {
-                        searchResults
-                    }
-                    _notes.value = filteredResults
+                noteRepository.searchNotes(query, currentTagId).collect { searchResults ->
+                    _notes.value = searchResults
                     _isLoading.value = false
                 }
             } catch (e: Exception) {
@@ -101,12 +97,7 @@ class NotesViewModel(private val noteRepository: NoteRepository) : ViewModel() {
         }
     }
     
-    // 重置筛选和搜索条件
-    fun resetFilters() {
-        currentTagId = null
-        currentSearchQuery = ""
-        loadNotes()
-    }
+
     
     // 删除笔记
     fun deleteNote(noteId: Long) {
