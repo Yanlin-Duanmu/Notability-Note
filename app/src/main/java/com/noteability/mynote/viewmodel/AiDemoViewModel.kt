@@ -80,4 +80,31 @@ class AiDemoViewModel : ViewModel() {
         }
     }
 
+    // Fetch tags
+    fun fetchTags() {
+        val text = _uiState.value.sourceText
+        val tags = _uiState.value.existingTags
+        if (text.isBlank()) return
+
+        // Force AI to return a specific format for parsing
+        val prompt = """
+            文本内容：
+            $text
+            
+            现有标签库：[$tags]
+            
+            请从标签库中选择最匹配的标签，如果都不匹配，生成新标签。
+            请仅输出标签，用英文逗号分隔，不要包含任何其他文字。
+            例如：Android, AI, Coding
+        """.trimIndent()
+
+        callAi(
+            systemPrompt = "你是一个分类专家，只输出逗号分隔的标签。",
+            userPrompt = prompt
+        ) { result ->
+            // Simple parse: split by commas
+            val tagList = result.split(",", "，").map { it.trim() }.filter { it.isNotEmpty() }
+            _uiState.update { it.copy(tagResult = tagList) }
+        }
+    }
 }
