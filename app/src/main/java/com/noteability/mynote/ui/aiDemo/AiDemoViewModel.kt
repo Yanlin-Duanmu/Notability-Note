@@ -102,7 +102,7 @@ class AiDemoViewModel : ViewModel() {
             现有标签库：[$tags]
             
             请从标签库中选择最匹配的标签，如果都不匹配，生成新标签。
-            请仅输出标签，用英文逗号分隔，不要包含任何其他文字。
+            请仅输出标签，用英文逗号分隔，不要包含任何其他文字，至多 3 个标签。
             例如：Android, AI, Coding
         """.trimIndent()
 
