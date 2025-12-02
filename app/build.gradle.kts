@@ -34,7 +34,7 @@ android {
             "OPENAI_API_KEY",
             "\"${localProperties.getProperty("OPENAI_API_KEY") ?: ""}\""
         )
-        buildConfigField("String", "OPENAI_BASE_URL", "\"https://api.openai.com/\"")
+        buildConfigField("String", "OPENAI_BASE_URL", "\"https://apis.iflow.cn\"")
     }
 
     buildTypes {
