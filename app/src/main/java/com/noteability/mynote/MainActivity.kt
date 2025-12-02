@@ -200,8 +200,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-<<<<<<< HEAD
-=======
     private fun updateTagSelectionState() {
         // 重置所有标签的样式
         (tagViews.values + listOfNotNull(allTagView)).forEach { view ->
@@ -215,7 +213,6 @@ class MainActivity : AppCompatActivity() {
         selectedView?.setTextColor(Color.WHITE)
     }
 
->>>>>>> 6c3242375cd4f26dde9c8101d483fc6cf3c8db7a
     private fun setupSearchListener() {
         searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
