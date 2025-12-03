@@ -306,6 +306,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+                Snackbar.make(notesRecyclerView, "笔记已删除", Snackbar.LENGTH_LONG)
+                    .setAction("撤销") {
+                        viewModel.saveNote(noteToDelete)
+                    }
+                    .show()
+            }
+        }
+
+        val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
+        itemTouchHelper.attachToRecyclerView(notesRecyclerView)
+    }
     private fun updateUIState(isEmptyList: Boolean, isSearching: Boolean) {
         if (isEmptyList && !viewModel.isLoading.value) {
             emptyStateView.visibility = View.VISIBLE
