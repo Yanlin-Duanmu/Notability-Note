@@ -117,6 +117,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.activity.compose)
+    implementation("com.google.code.gson:gson:2.10.1")
 }
 
 

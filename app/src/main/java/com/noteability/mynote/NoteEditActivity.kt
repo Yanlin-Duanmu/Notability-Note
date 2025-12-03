@@ -29,6 +29,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import android.content.Context
+import android.graphics.Typeface
 import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.entity.Tag
@@ -127,11 +128,11 @@ class NoteEditActivity : AppCompatActivity() {
         numberListButton = findViewById(R.id.numberListButton)
         loadingIndicator = findViewById(R.id.loadingIndicator)
         errorTextView = findViewById(R.id.errorTextView)
-        val saveButton = findViewById<Button>(R.id.button3)
+//        val saveButton = findViewById<Button>(R.id.button3)
 
-        saveButton.setOnClickListener {
-            saveNote()
-        }
+//        saveButton.setOnClickListener {
+//            saveNote()
+//        }
         
         // 设置ServiceLocator上下文
         ServiceLocator.setContext(applicationContext)
@@ -233,7 +234,12 @@ class NoteEditActivity : AppCompatActivity() {
             noteDetailViewModel.note.collect { note ->
                 note?.let {
                     titleEditText.setText(it.title)
-                    contentEditText.setText(it.content)
+
+                    val styleData = StyleManager.jsonToStyles(it.styleData)
+                    val spannable = StyleManager.applyStylesToText(it.content, styleData)
+                    contentEditText.setText(spannable)
+
+//                    contentEditText.setText(it.content)
 
                     // 设置标签
                     if (realTags.isNotEmpty()) {
@@ -303,6 +309,14 @@ class NoteEditActivity : AppCompatActivity() {
     private fun saveNote() {
         val title = titleEditText.text.toString().trim()
         val content = contentEditText.text.toString().trim()
+        val spannable = if (contentEditText.text is Spannable) {
+            contentEditText.text as Spannable
+        } else {
+            SpannableString(contentEditText.text)
+        }
+
+        val styleData = StyleManager.extractStylesFromSpannable(spannable)
+        val styleJson = StyleManager.stylesToJson(styleData)
 
         // 添加标题验证
         if (title.isEmpty()) {
@@ -318,6 +332,7 @@ class NoteEditActivity : AppCompatActivity() {
                     tagId = currentTag?.tagId ?: 1,
                     title = title,
                     content = content,
+                    styleData = styleJson,
                     updatedAt = System.currentTimeMillis()
                 )
             } else {
@@ -328,6 +343,7 @@ class NoteEditActivity : AppCompatActivity() {
                     tagId = currentTag?.tagId ?: 1,
                     title = title,
                     content = content,
+                    styleData = styleJson,
                     createdAt = System.currentTimeMillis(),
                     updatedAt = System.currentTimeMillis()
                 )
@@ -493,17 +509,49 @@ class NoteEditActivity : AppCompatActivity() {
         applyUnderline()
     }
 
+//    private fun applyTextStyle(style: Int) {
+//        val start = contentEditText.selectionStart
+//        val end = contentEditText.selectionEnd
+//        val editable = contentEditText.text
+//
+//        if (start < 0 || end <= start) return
+//
+//        val spannable = SpannableString(editable)
+//        val spans = spannable.getSpans(start, end, StyleSpan::class.java)
+//
+//        if (spans.isEmpty()) {
+//            // 没有应用过样式，添加新样式
+//            spannable.setSpan(StyleSpan(style), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+//        } else {
+//            // 已经应用过样式，检查是否需要移除
+//            for (span in spans) {
+//                if (span.style == style) {
+//                    spannable.removeSpan(span)
+//                }
+//            }
+//        }
+//
+//        contentEditText.setText(spannable)
+//        contentEditText.setSelection(end)
+//    }
+
     private fun applyTextStyle(style: Int) {
         val start = contentEditText.selectionStart
         val end = contentEditText.selectionEnd
-        val editable = contentEditText.text
 
         if (start < 0 || end <= start) return
+        val editable = contentEditText.text
 
-        val spannable = SpannableString(editable)
+        val spannable = if (editable is SpannableString) {
+            editable
+        } else {
+            SpannableString(editable)
+        }
+
         val spans = spannable.getSpans(start, end, StyleSpan::class.java)
+        val hasStyle = spans.any { it.style == style }
 
-        if (spans.isEmpty()) {
+        if (!hasStyle) {
             // 没有应用过样式，添加新样式
             spannable.setSpan(StyleSpan(style), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         } else {
@@ -517,6 +565,18 @@ class NoteEditActivity : AppCompatActivity() {
 
         contentEditText.setText(spannable)
         contentEditText.setSelection(end)
+
+        // 更新按钮状态
+        when (style) {
+            Typeface.BOLD -> {
+                isBold = !hasStyle
+                boldButton.setColorFilter(if (isBold) getColor(R.color.purple_500) else getColor(R.color.gray_700))
+            }
+            Typeface.ITALIC -> {
+                isItalic = !hasStyle
+                italicButton.setColorFilter(if (isItalic) getColor(R.color.purple_500) else getColor(R.color.gray_700))
+            }
+        }
     }
 
     private fun applyUnderline() {
