@@ -306,7 +306,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-                Snackbar.make(notesRecyclerView, "笔记已删除", Snackbar.LENGTH_LONG)
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                val noteToDelete = noteAdapter.getNoteAt(position)
+                viewModel.deleteNote(noteToDelete.noteId)
+
+                Snackbar.make(coordinatorLayout, "笔记已删除", Snackbar.LENGTH_LONG)
+                    .setAnchorView(addNoteFab)
                     .setAction("撤销") {
                         viewModel.saveNote(noteToDelete)
                     }
