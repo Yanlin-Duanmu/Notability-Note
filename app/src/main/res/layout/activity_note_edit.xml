@@ -67,7 +67,7 @@
                             android:layout_height="24dp"
                             android:layout_marginLeft="8dp"
                             android:src="@drawable/ic_baseline_edit_24"
-                            android:tint="@color/purple_500" />
+                            app:tint="@color/purple_500" />
                     </LinearLayout>
                 </HorizontalScrollView>
             </LinearLayout>
@@ -116,7 +116,7 @@
                         android:layout_height="40dp"
                         android:background="@android:color/transparent"
                         android:src="@drawable/ic_baseline_format_bold_24"
-                        android:tint="@color/gray_700" />
+                        app:tint="@color/gray_700" />
 
                     <ImageButton
                         android:id="@+id/italicButton"
@@ -124,7 +124,7 @@
                         android:layout_height="40dp"
                         android:background="@android:color/transparent"
                         android:src="@drawable/ic_baseline_format_italic_24"
-                        android:tint="@color/gray_700" />
+                        app:tint="@color/gray_700" />
 
                     <ImageButton
                         android:id="@+id/underlineButton"
@@ -132,7 +132,7 @@
                         android:layout_height="40dp"
                         android:background="@android:color/transparent"
                         android:src="@drawable/ic_baseline_format_underlined_24"
-                        android:tint="@color/gray_700" />
+                        app:tint="@color/gray_700" />
 
                     <View
                         android:layout_width="1dp"
@@ -146,7 +146,7 @@
                         android:layout_height="40dp"
                         android:background="@android:color/transparent"
                         android:src="@drawable/ic_baseline_format_list_bulleted_24"
-                        android:tint="@color/gray_700" />
+                        app:tint="@color/gray_700" />
 
                     <ImageButton
                         android:id="@+id/numberListButton"
@@ -154,7 +154,7 @@
                         android:layout_height="40dp"
                         android:background="@android:color/transparent"
                         android:src="@drawable/ic_baseline_format_list_numbered_24"
-                        android:tint="@color/gray_700" />
+                        app:tint="@color/gray_700" />
                 </LinearLayout>
             </LinearLayout>
 

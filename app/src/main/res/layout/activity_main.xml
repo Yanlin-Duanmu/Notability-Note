@@ -2,6 +2,7 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/coordinatorLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/background_light"
@@ -143,23 +144,6 @@
         </FrameLayout>
     </LinearLayout>
 
-    <!-- 底部导航栏上方的新建笔记按钮 -->
-    <Button
-        android:id="@+id/addNoteButton"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginBottom="80dp"
-        android:text="新建笔记"
-        android:textSize="16sp"
-        android:textColor="@color/white"
-        android:background="@color/purple_500"
-        android:elevation="8dp"
-        android:gravity="center"
-        android:fontFamily="sans-serif-medium"
-        android:contentDescription="新建笔记"
-        android:layout_gravity="center|bottom" />
-
     <!-- 底部导航栏 -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigationView"
@@ -171,5 +155,17 @@
         app:itemTextColor="@color/bottom_navigation_item_color"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_navigation_menu" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/addNoteFab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="100dp"
+        android:contentDescription="新建笔记"
+        android:src="@drawable/ic_add"
+        app:backgroundTint="@color/purple_500"
+        app:tint="@android:color/black" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

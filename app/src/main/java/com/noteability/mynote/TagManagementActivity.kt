@@ -7,17 +7,13 @@ import android.text.TextWatcher
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -35,7 +31,6 @@ class TagManagementActivity : AppCompatActivity() {
 
     private lateinit var tagsRecyclerView: RecyclerView
     private lateinit var searchEditText: EditText
-    private lateinit var menuButton: ImageView
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var tagAdapter: TagAdapter
     private lateinit var addTagButton: FloatingActionButton
@@ -75,7 +70,6 @@ class TagManagementActivity : AppCompatActivity() {
         // 初始化界面组件
         tagsRecyclerView = findViewById(R.id.tagsRecyclerView)
         searchEditText = findViewById(R.id.searchEditText)
-        menuButton = findViewById(R.id.menuButton) // 顶部工具栏的菜单按钮
         bottomNavigationView = findViewById(R.id.bottomNavigationView)
         addTagButton = findViewById(R.id.addTagButton)
         loadingIndicator = findViewById(R.id.loadingIndicator)
@@ -193,20 +187,6 @@ class TagManagementActivity : AppCompatActivity() {
     }
 
     private fun setupButtonListeners() {
-        menuButton.setOnClickListener {
-            showToast("显示菜单选项")
-        }
-        
-        // 如果需要，可以为搜索栏中的菜单按钮添加单独的点击事件
-        try {
-            val searchMenuButton = findViewById<ImageView>(R.id.searchMenuButton)
-            searchMenuButton.setOnClickListener {
-                showToast("显示搜索菜单选项")
-            }
-        } catch (e: Exception) {
-            // 如果找不到该ID，静默处理
-        }
-
         addTagButton.setOnClickListener {
             // 这里可以实现新增标签的对话框
             showAddTagDialog()
