@@ -2,7 +2,9 @@ package com.noteability.mynote
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -12,19 +14,17 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
-import androidx.activity.viewModels
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.snackbar.Snackbar
-import com.noteability.mynote.data.repository.impl.NoteRepositoryImpl
 import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.ui.adapter.NoteAdapter
 import com.noteability.mynote.ui.viewmodel.NotesViewModel
@@ -36,8 +36,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var notesRecyclerView: RecyclerView
     private lateinit var searchEditText: EditText
     private lateinit var tagsContainer: LinearLayout
-    private lateinit var addNoteButton: androidx.appcompat.widget.AppCompatButton
-    // private lateinit var filterButton: ImageView // filterButton 已被移除
+    private lateinit var addNoteFab: FloatingActionButton
     private lateinit var noteAdapter: NoteAdapter
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var loadingIndicator: CircularProgressIndicator
@@ -45,7 +44,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var errorStateView: TextView
     private var allTagView: TextView? = null
     private val tagViews = mutableMapOf<Long, TextView>()
-    
+    private lateinit var coordinatorLayout: CoordinatorLayout
+
     // ViewModel实例
     private lateinit var viewModel: NotesViewModel
     private lateinit var tagsViewModel: TagsViewModel
@@ -53,18 +53,18 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        
+
         // 检查用户登录状态
         val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
         val loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 0L)
-        
+
         // 如果用户未登录，跳转到登录页面
         if (loggedInUserId <= 0) {
             startActivity(Intent(this, com.noteability.mynote.ui.activity.LoginActivity::class.java))
             finish()
             return
         }
-        
+
         // 初始化ViewModels
         initViewModels(loggedInUserId)
 
@@ -72,16 +72,16 @@ class MainActivity : AppCompatActivity() {
         notesRecyclerView = findViewById(R.id.notesRecyclerView)
         searchEditText = findViewById(R.id.searchEditText)
         tagsContainer = findViewById(R.id.tagsContainer)
-        addNoteButton = findViewById(R.id.addNoteButton)
-        // filterButton = findViewById(R.id.filterButton) // filterButton 已被移除
+        addNoteFab = findViewById(R.id.addNoteFab)
         bottomNavigationView = findViewById(R.id.bottomNavigationView)
         loadingIndicator = findViewById(R.id.loadingIndicator)
         emptyStateView = findViewById(R.id.emptyStateView)
         errorStateView = findViewById(R.id.errorStateView)
+        coordinatorLayout = findViewById(R.id.coordinatorLayout)
 
         // 初始化RecyclerView
         setupRecyclerView()
-        // setupSwipeToDelete()
+        setupSwipeToDelete()
 
         // 加载标签
         loadTags()
@@ -112,19 +112,19 @@ class MainActivity : AppCompatActivity() {
         // 从ServiceLocator获取仓库
         val noteRepository = ServiceLocator.provideNoteRepository()
         val tagRepository = ServiceLocator.provideTagRepository()
-        
+
         // 初始化ViewModels
         viewModel = NotesViewModel(noteRepository)
         tagsViewModel = TagsViewModel(tagRepository)
-        
+
         // 设置当前登录用户ID
         viewModel.setLoggedInUserId(loggedInUserId)
         tagsViewModel.setLoggedInUserId(loggedInUserId)
     }
-    
+
     private fun setupRecyclerView() {
         val tagNameMap = mutableMapOf<Long, String>()
-        
+
         // 先创建适配器，初始为空的标签映射
         noteAdapter = NoteAdapter(emptyList(), onNoteClick = { note ->
             // 处理笔记点击事件，跳转到笔记编辑页面
@@ -132,7 +132,7 @@ class MainActivity : AppCompatActivity() {
             intent.putExtra("noteId", note.noteId)
             startActivity(intent)
         }, tagNameMap = tagNameMap)
-        
+
         // 然后再设置标签数据收集
         lifecycleScope.launch {
             tagsViewModel.tags.collect { tagsList ->
@@ -166,7 +166,7 @@ class MainActivity : AppCompatActivity() {
                         // 清空搜索框
                         searchEditText.text.clear()
                         // 加载所有笔记
-                        currentSelectedTagId = 0L
+                        this@MainActivity.currentSelectedTagId = 0L
                         viewModel.loadNotes()
                         updateTagSelectionState()
                     }
@@ -174,14 +174,14 @@ class MainActivity : AppCompatActivity() {
                 tagsContainer.addView(allTagView)
 
                 // 动态添加其他标签按钮
-                for (tag in tags) {
+                tags.forEach { tag ->
                     val tagView = (LayoutInflater.from(this@MainActivity)
                         .inflate(R.layout.item_tag, tagsContainer, false) as TextView).apply{
                         text = tag.name
                         setOnClickListener {
                             // 清空搜索框
                             searchEditText.text.clear()
-                            
+
                             // 如果点击的标签就是当前选中的标签，则取消选中并显示所有笔记
                             if (currentSelectedTagId == tag.tagId) {
                                 currentSelectedTagId = 0L
@@ -195,7 +195,9 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     tagsContainer.addView(tagView)
+                    tagViews[tag.tagId] = tagView
                 }
+                updateTagSelectionState() // 初始化状态
             }
         }
     }
@@ -230,7 +232,7 @@ class MainActivity : AppCompatActivity() {
     private var currentSelectedTagId: Long = 0L
 
     private fun setupButtonListeners() {
-        addNoteButton.setOnClickListener {
+        addNoteFab.setOnClickListener {
             // 跳转到新建笔记页面
             val intent = Intent(this, NoteEditActivity::class.java)
             // 如果当前处于标签筛选模式，传递标签ID给编辑页面
@@ -239,8 +241,6 @@ class MainActivity : AppCompatActivity() {
             }
             startActivity(intent)
         }
-
-        // filterButton的点击监听器已被移除
 
         errorStateView.setOnClickListener {
             // 重试加载
