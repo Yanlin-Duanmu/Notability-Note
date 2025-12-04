@@ -10,8 +10,10 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.TextView
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -26,6 +28,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
+    private lateinit var toggle: ActionBarDrawerToggle
     private lateinit var noteAdapter: NoteAdapter
     private var allTagView: TextView? = null
     private val tagViews = mutableMapOf<Long, TextView>()
@@ -57,6 +60,8 @@ class MainActivity : AppCompatActivity() {
 
         // 初始化ViewModels
         initViewModels(loggedInUserId)
+
+        setupToolbarAndDrawer()
 
         // 初始化RecyclerView
         setupRecyclerView()
@@ -100,6 +105,28 @@ class MainActivity : AppCompatActivity() {
         viewModel.setLoggedInUserId(loggedInUserId)
         tagsViewModel.setLoggedInUserId(loggedInUserId)
     }
+
+    private fun setupToolbarAndDrawer() {
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+
+        toggle = ActionBarDrawerToggle(
+            this,
+            binding.drawerLayout,    // DrawerLayout 实例
+            binding.toolbar,         // Toolbar 实例
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
+        )
+
+        binding.drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
+
+        setupNavigationDrawerListener()
+    }
+
+
+
+
 
     private fun setupRecyclerView() {
         val tagNameMap = mutableMapOf<Long, String>()
