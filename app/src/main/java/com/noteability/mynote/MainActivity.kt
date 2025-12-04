@@ -77,9 +77,6 @@ class MainActivity : AppCompatActivity() {
         // 设置按钮点击事件
         setupButtonListeners()
 
-        // 设置底部导航栏监听器
-        setupBottomNavigationListener()
-
         // 观察ViewModel数据
         observeViewModel()
 
