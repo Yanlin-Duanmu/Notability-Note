@@ -6,35 +6,42 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/background_light"
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/purple_500"
-        android:elevation="4dp"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="我的笔记"
-            android:textSize="20sp"
-            android:fontFamily="sans-serif-medium" />
-        <ImageView
-            android:id="@+id/menuButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_gravity="end"
-            android:src="@drawable/ic_menu"
-            android:padding="8dp" />
-    </androidx.appcompat.widget.Toolbar>
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/purple_500"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="我的笔记"
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-medium" />
+            <ImageView
+                android:id="@+id/menuButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="end"
+                android:src="@drawable/ic_menu"
+                android:padding="8dp" />
+        </androidx.appcompat.widget.Toolbar>
+
+    </com.google.android.material.appbar.AppBarLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:layout_marginTop="?attr/actionBarSize">
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <!-- 搜索区域 -->
         <LinearLayout
@@ -101,14 +108,16 @@
             android:layout_weight="1">
 
             <!-- 笔记列表 -->
+
+            <!-- 加载指示器 -->
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/notesRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="16dp"
-                android:background="#F5F5F5" />
+                android:background="#F5F5F5"
+                android:padding="16dp" />
 
-            <!-- 加载指示器 -->
             <com.google.android.material.progressindicator.CircularProgressIndicator
                 android:id="@+id/loadingIndicator"
                 android:layout_width="wrap_content"

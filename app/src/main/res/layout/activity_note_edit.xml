@@ -14,9 +14,9 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
+            android:layout_height="wrap_content"
             android:background="@color/purple_500"
-            android:titleTextColor="@android:color/white"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             app:titleTextAppearance="@style/TextAppearance.AppCompat.Widget.ActionBar.Title" />
 
     </com.google.android.material.appbar.AppBarLayout>
