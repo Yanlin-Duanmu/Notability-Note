@@ -111,6 +111,15 @@
                     android:inputType="text" />
             </LinearLayout>
 
+            <!-- Filter button -->
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="12dp"
+                android:background="@drawable/bg_search_rounded"
+                android:padding="12dp"
+                android:src="@drawable/ic_filter_list"
+                app:tint="@color/text_dark"/>
         </LinearLayout>
 
         <!-- 标签分类区域 -->
