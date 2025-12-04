@@ -329,6 +329,7 @@ class MainActivity : AppCompatActivity() {
                     .show()
             }
 
+            //当用户滑动列表项时，列表项下方的视图绘制
             override fun onChildDraw(
                 c: Canvas,
                 recyclerView: RecyclerView,
@@ -338,11 +339,11 @@ class MainActivity : AppCompatActivity() {
                 actionState: Int,
                 isCurrentlyActive: Boolean
             ) {
-                val itemView = viewHolder.itemView
-                val icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_delete)
-                val background = ColorDrawable(Color.RED)
+                val itemView = viewHolder.itemView //获取列表项的根视图
+                val icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_delete) //加载一个删除图标（ic_delete）。
+                val background = ColorDrawable(Color.RED) //创建一个红色的背景。
 
-                // Set the background color
+                // 计算红色背景的位置（在列表项滑开后露出的区域）并将其绘制在 Canvas (c) 上。
                 background.setBounds(
                     itemView.right + dX.toInt(),
                     itemView.top,
@@ -351,22 +352,22 @@ class MainActivity : AppCompatActivity() {
                 )
                 background.draw(c)
 
-                // Set the icon
+                // 计算删除图标的位置并将其绘制在红色背景之上。
                 val iconMargin = (itemView.height - icon!!.intrinsicHeight) / 2
-                val iconTop = itemView.top + (itemView.height - icon.intrinsicHeight) / 2
+                val iconTop = itemView.top + (itemView.height - icon.intrinsicHeight) / 2 //左上角是坐标原点 (0,0)。
                 val iconBottom = iconTop + icon.intrinsicHeight
                 val iconLeft = itemView.right - iconMargin - icon.intrinsicWidth
                 val iconRight = itemView.right - iconMargin
 
-                icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)
+                icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)//
                 icon.draw(c)
 
                 super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
             }
         }
 
-        val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
-        itemTouchHelper.attachToRecyclerView(notesRecyclerView)
+        val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)//创建一个 ItemTouchHelper 的实例，并将我们上面定义的 itemTouchHelperCallback 传递给它。
+        itemTouchHelper.attachToRecyclerView(notesRecyclerView)//将 ItemTouchHelper 附加到 notesRecyclerView 上，这样它就可以开始监听和处理该 RecyclerView 上的滑动和拖动手势了。
     }
     private fun updateUIState(isEmptyList: Boolean, isSearching: Boolean) {
         if (isEmptyList && !viewModel.isLoading.value) {
