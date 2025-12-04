@@ -210,6 +210,6 @@
         app:menu="@menu/drawer_navigation_menu"
         app:itemTextColor="@color/nav_item_color_selector"
         app:itemIconTint="@color/nav_item_color_selector"
-        app:itemBackground="@drawable/nav_item_background_selector"/>
+        app:itemBackground="@drawable/nav_item_background_ripple"/>
 
 </androidx.drawerlayout.widget.DrawerLayout>
