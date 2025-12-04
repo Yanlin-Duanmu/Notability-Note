@@ -40,12 +40,12 @@
             android:lineSpacingExtra="4dp"
             android:layout_marginBottom="12dp"/>
 
+        <!-- Bottom bar -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="12dp"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <!-- 标签区域 -->
             <LinearLayout
