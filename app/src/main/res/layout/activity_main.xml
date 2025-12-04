@@ -28,18 +28,6 @@
                 app:contentInsetEnd="0dp"
                 app:contentInsetStart="0dp">
 
-                <!-- Menu icon, left -->
-                <ImageView
-                    android:id="@+id/menuButton"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:padding="12dp"
-                    android:src="@drawable/ic_menu"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:tint="@color/text_dark" />
-
                 <!--  Title, middle -->
                 <TextView
                     android:layout_width="wrap_content"
