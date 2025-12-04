@@ -9,20 +9,15 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.LinearLayout
 import android.widget.TextView
-import com.noteability.mynote.databinding.ActivityMainBinding
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomnavigation.BottomNavigationView
-
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.snackbar.Snackbar
+import com.noteability.mynote.databinding.ActivityMainBinding
 import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.ui.adapter.NoteAdapter
 import com.noteability.mynote.ui.viewmodel.NotesViewModel
@@ -50,7 +45,12 @@ class MainActivity : AppCompatActivity() {
 
         // 如果用户未登录，跳转到登录页面
         if (loggedInUserId <= 0) {
-            startActivity(Intent(this, com.noteability.mynote.ui.activity.LoginActivity::class.java))
+            startActivity(
+                Intent(
+                    this,
+                    com.noteability.mynote.ui.activity.LoginActivity::class.java
+                )
+            )
             finish()
             return
         }
@@ -143,7 +143,7 @@ class MainActivity : AppCompatActivity() {
                     text = "全部"
                     setOnClickListener {
                         // 清空搜索框
-                        searchEditText.text.clear()
+                        binding.searchEditText.text.clear()
                         // 加载所有笔记
                         this@MainActivity.currentSelectedTagId = 0L
                         viewModel.loadNotes()
@@ -155,11 +155,15 @@ class MainActivity : AppCompatActivity() {
                 // 动态添加其他标签按钮
                 tags.forEach { tag ->
                     val tagView = (LayoutInflater.from(this@MainActivity)
-                        .inflate(R.layout.item_tag, binding.tagsContainer, false) as TextView).apply{
+                        .inflate(
+                            R.layout.item_tag,
+                            binding.tagsContainer,
+                            false
+                        ) as TextView).apply {
                         text = tag.name
                         setOnClickListener {
                             // 清空搜索框
-                            searchEditText.text.clear()
+                            binding.searchEditText.text.clear()
 
                             // 如果点击的标签就是当前选中的标签，则取消选中并显示所有笔记
                             if (currentSelectedTagId == tag.tagId) {
@@ -189,7 +193,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         // 设置选中标签的样式
-        val selectedView = if (currentSelectedTagId == 0L) allTagView else tagViews[currentSelectedTagId]
+        val selectedView =
+            if (currentSelectedTagId == 0L) allTagView else tagViews[currentSelectedTagId]
         selectedView?.setBackgroundResource(R.drawable.tag_selected_background)
         selectedView?.setTextColor(Color.WHITE)
     }
@@ -242,17 +247,20 @@ class MainActivity : AppCompatActivity() {
                     // 无论是否处于筛选模式，都返回true
                     true
                 }
+
                 R.id.nav_tags -> {
                     // 跳转到标签管理页面
                     val intent = Intent(this, TagManagementActivity::class.java)
                     startActivity(intent)
                     true
                 }
+
                 R.id.nav_settings -> {
                     // 跳转到设置页面
                     showToast("跳转到设置页面")
                     true
                 }
+
                 else -> false
             }
         }
@@ -280,10 +288,12 @@ class MainActivity : AppCompatActivity() {
             // 观察错误状态
             viewModel.error.collect { errorMessage ->
                 binding.errorStateView.text = errorMessage ?: getString(R.string.loading_failed)
-                binding.errorStateView.visibility = if (errorMessage != null) View.VISIBLE else View.GONE
+                binding.errorStateView.visibility =
+                    if (errorMessage != null) View.VISIBLE else View.GONE
             }
         }
     }
+
     private fun setupSwipeToDelete() {
         val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(
             0, ItemTouchHelper.LEFT
@@ -341,13 +351,22 @@ class MainActivity : AppCompatActivity() {
                 icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)
                 icon.draw(c)
 
-                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+                super.onChildDraw(
+                    c,
+                    recyclerView,
+                    viewHolder,
+                    dX,
+                    dY,
+                    actionState,
+                    isCurrentlyActive
+                )
             }
         }
 
         val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
         itemTouchHelper.attachToRecyclerView(binding.notesRecyclerView)
     }
+
     private fun updateUIState(isEmptyList: Boolean, isSearching: Boolean) {
         if (isEmptyList && !viewModel.isLoading.value) {
             binding.emptyStateView.visibility = View.VISIBLE
