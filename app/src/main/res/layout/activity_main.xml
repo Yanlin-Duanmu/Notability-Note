@@ -174,9 +174,9 @@
                 android:id="@+id/loadingIndicator"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
                 android:visibility="gone"
-                app:indicatorColor="@color/purple_500" />
+                android:layout_gravity="center"
+                app:indicatorColor="@color/brand_primary" />
 
             <!-- 空状态视图 -->
             <TextView
