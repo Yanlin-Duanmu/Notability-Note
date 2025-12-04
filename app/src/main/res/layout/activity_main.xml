@@ -225,6 +225,6 @@
         android:src="@drawable/ic_add"
         app:backgroundTint="@color/brand_primary"
         app:tint="@color/white"
-        app:shapeAppearanceOverlay="@style/ShapeAppearance.App.LargeComponent" />
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.App.RoundedSquare" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
