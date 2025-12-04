@@ -227,7 +227,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateTagSelectionState() {
-        // Only set selected tag style
+        (tagViews.values + listOfNotNull(allTagView)).forEach { view ->
+            val defaultBgColor =
+                ContextCompat.getColor(view.context, R.color.filter_bar_tag_bg_default)
+            val defaultTextColor =
+                ContextCompat.getColor(view.context, R.color.filter_bar_tag_text_default)
+            view.backgroundTintList = ColorStateList.valueOf(defaultBgColor)
+            view.setTextColor(defaultTextColor)
+        }
+
         val selectedView =
             if (currentSelectedTagId == 0L) allTagView else tagViews[currentSelectedTagId]
 
