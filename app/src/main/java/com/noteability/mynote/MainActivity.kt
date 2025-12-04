@@ -183,58 +183,40 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadTags() {
-        // 观察标签数据变化
         lifecycleScope.launch {
             tagsViewModel.tags.collect { tags ->
-                // 清除现有的标签按钮
+                // CLear views
                 binding.tagsContainer.removeAllViews()
                 tagViews.clear()
 
+                // General function
+                fun addTagView(id: Long, name: String) {
+                    val tagView = layoutInflater.inflate(R.layout.item_tag, binding.tagsContainer, false) as TextView
 
-                // 动态添加 "全部" 标签
-                allTagView = (LayoutInflater.from(this@MainActivity)
-                    .inflate(R.layout.item_tag, binding.tagsContainer, false) as TextView).apply {
-                    text = "全部"
-                    setOnClickListener {
-                        // 清空搜索框
+                    tagView.text = name
+                    tagView.setOnClickListener {
                         binding.searchEditText.text.clear()
-                        // 加载所有笔记
-                        this@MainActivity.currentSelectedTagId = 0L
-                        viewModel.loadNotes()
+
+                        if (currentSelectedTagId == id && id != 0L) {
+                            currentSelectedTagId = 0L
+                            viewModel.loadNotes()
+                        } else {
+                            currentSelectedTagId = id
+                            if (id == 0L) viewModel.loadNotes() else viewModel.loadNotesByTag(id)
+                        }
                         updateTagSelectionState()
                     }
-                }
-                binding.tagsContainer.addView(allTagView)
 
-                // 动态添加其他标签按钮
-                tags.forEach { tag ->
-                    val tagView = (LayoutInflater.from(this@MainActivity)
-                        .inflate(
-                            R.layout.item_tag,
-                            binding.tagsContainer,
-                            false
-                        ) as TextView).apply {
-                        text = tag.name
-                        setOnClickListener {
-                            // 清空搜索框
-                            binding.searchEditText.text.clear()
-
-                            // 如果点击的标签就是当前选中的标签，则取消选中并显示所有笔记
-                            if (currentSelectedTagId == tag.tagId) {
-                                currentSelectedTagId = 0L
-                                viewModel.loadNotes()
-                            } else {
-                                // 否则，切换到新点击的标签
-                                currentSelectedTagId = tag.tagId
-                                viewModel.loadNotesByTag(tag.tagId)
-                            }
-                            updateTagSelectionState()
-                        }
-                    }
+                    // Add to binding
                     binding.tagsContainer.addView(tagView)
-                    tagViews[tag.tagId] = tagView
+                    if (id == 0L) allTagView = tagView else tagViews[id] = tagView
                 }
-                updateTagSelectionState() // 初始化状态
+
+                addTagView(0L, "全部")
+                tags.forEach { tag -> addTagView(tag.tagId, tag.name) }
+
+                // Refresh state
+                updateTagSelectionState()
             }
         }
     }
