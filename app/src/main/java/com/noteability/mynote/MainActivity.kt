@@ -287,40 +287,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupBottomNavigationListener() {
-        binding.bottomNavigationView.setOnItemSelectedListener {
-            when (it.itemId) {
-                R.id.nav_notes -> {
-                    // 检查是否当前处于特定标签筛选模式
-                    if (currentSelectedTagId > 0) {
-                        // 如果是，重置标签筛选，加载所有笔记
-                        currentSelectedTagId = 0L
-                        viewModel.loadNotes()
-                        showToast("显示所有笔记")
-                        updateTagSelectionState()
-                    }
-                    // 无论是否处于筛选模式，都返回true
-                    true
-                }
-
-                R.id.nav_tags -> {
-                    // 跳转到标签管理页面
-                    val intent = Intent(this, TagManagementActivity::class.java)
-                    startActivity(intent)
-                    true
-                }
-
-                R.id.nav_settings -> {
-                    // 跳转到设置页面
-                    showToast("跳转到设置页面")
-                    true
-                }
-
-                else -> false
-            }
-        }
-    }
-
     private fun observeViewModel() {
         lifecycleScope.launch {
             // 观察笔记列表
