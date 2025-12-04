@@ -1,230 +1,237 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/coordinatorLayout"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_light"
     android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/bg_light_80"
-        app:elevation="0dp">
-
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@android:color/transparent">
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingEnd="16dp">
-
-                <!-- Menu icon, left -->
-                <ImageView
-                    android:id="@+id/menuButton"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:padding="12dp"
-                    android:src="@drawable/ic_menu"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:tint="@color/text_dark" />
-
-                <!--  Title, middle -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="我的笔记"
-                    android:textColor="@color/text_dark"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-                <!-- Grid icon, right -->
-                <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_grid_view"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:tint="@color/text_dark" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-        </androidx.appcompat.widget.Toolbar>
-
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <LinearLayout
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/coordinatorLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:background="@color/bg_light">
 
-        <!-- Search area -->
-        <LinearLayout
+        <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="12dp"
-            android:background="@android:color/transparent">
+            android:background="@color/bg_light_80"
+            app:elevation="0dp">
 
-            <!-- Search box container -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_search_rounded"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="12dp">
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@android:color/transparent">
 
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_search"
-                    app:tint="@color/text_gray"/>
-
-                <EditText
-                    android:id="@+id/searchEditText"
+                <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@null"
-                    android:hint="搜索笔记内容或标签"
-                    android:textColor="@color/text_dark"
-                    android:textColorHint="@color/text_gray"
-                    android:textSize="15sp"
-                    android:layout_marginStart="8dp"
-                    android:inputType="text" />
+                    android:paddingEnd="16dp">
+
+                    <!-- Menu icon, left -->
+                    <ImageView
+                        android:id="@+id/menuButton"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:padding="12dp"
+                        android:src="@drawable/ic_menu"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="@color/text_dark" />
+
+                    <!--  Title, middle -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="我的笔记"
+                        android:textColor="@color/text_dark"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <!-- Grid icon, right -->
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_grid_view"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="@color/text_dark" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </androidx.appcompat.widget.Toolbar>
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+            <!-- Search area -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="12dp"
+                android:background="@android:color/transparent">
+
+                <!-- Search box container -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_search_rounded"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_search"
+                        app:tint="@color/text_gray"/>
+
+                    <EditText
+                        android:id="@+id/searchEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@null"
+                        android:hint="搜索笔记内容或标签"
+                        android:textColor="@color/text_dark"
+                        android:textColorHint="@color/text_gray"
+                        android:textSize="15sp"
+                        android:layout_marginStart="8dp"
+                        android:inputType="text" />
+                </LinearLayout>
+
+                <!-- Filter button -->
+                <ImageView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_search_rounded"
+                    android:padding="12dp"
+                    android:src="@drawable/ic_filter_list"
+                    app:tint="@color/text_dark"/>
             </LinearLayout>
 
-            <!-- Filter button -->
-            <ImageView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="12dp"
-                android:background="@drawable/bg_search_rounded"
-                android:padding="12dp"
-                android:src="@drawable/ic_filter_list"
-                app:tint="@color/text_dark"/>
+            <!-- Tag area -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="12dp"
+                android:clipToPadding="false">
+
+                <LinearLayout
+                    android:id="@+id/tagsContainer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <!-- 标签会通过代码动态添加 -->
+                    <TextView
+                        android:id="@+id/tagAll"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:paddingHorizontal="16dp"
+                        android:text="全部"
+                        android:textSize="14sp"
+                        android:textColor="@color/brand_primary"
+                        android:background="@drawable/bg_search_rounded"
+                        android:backgroundTint="#E0F2FE"
+                        android:gravity="center"
+                        android:layout_marginEnd="8dp"/>
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <!-- 内容容器，包含笔记列表、加载指示器、空状态和错误状态 -->
+            <FrameLayout
+                android:id="@+id/contentContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <!-- 笔记列表 -->
+
+                <!-- 加载指示器 -->
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/notesRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="16dp"
+                    android:clipToPadding="false" />
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/loadingIndicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    android:layout_gravity="center"
+                    app:indicatorColor="@color/brand_primary" />
+
+                <!-- 空状态视图 -->
+                <TextView
+                    android:id="@+id/emptyStateView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="暂无笔记"
+                    android:textSize="16sp"
+                    android:textColor="@color/text_gray"
+                    android:visibility="gone"
+                    android:layout_gravity="center" />
+
+                <!-- 错误状态视图 -->
+                <TextView
+                    android:id="@+id/errorStateView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="加载失败，点击重试"
+                    android:textSize="16sp"
+                    android:textColor="@color/text_gray"
+                    android:visibility="gone"
+                    android:layout_gravity="center" />
+            </FrameLayout>
         </LinearLayout>
 
-        <!-- Tag area -->
-        <HorizontalScrollView
+        <!-- 底部导航栏 -->
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNavigationView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:scrollbars="none"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="12dp"
-            android:clipToPadding="false">
+            android:layout_gravity="bottom"
+            android:background="@android:color/white"
+            app:itemIconTint="@color/bottom_navigation_item_color"
+            app:itemTextColor="@color/bottom_navigation_item_color"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/bottom_navigation_menu" />
 
-            <LinearLayout
-                android:id="@+id/tagsContainer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <!-- 标签会通过代码动态添加 -->
-                <TextView
-                    android:id="@+id/tagAll"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
-                    android:paddingHorizontal="16dp"
-                    android:text="全部"
-                    android:textSize="14sp"
-                    android:textColor="@color/brand_primary"
-                    android:background="@drawable/bg_search_rounded"
-                    android:backgroundTint="#E0F2FE"
-                    android:gravity="center"
-                    android:layout_marginEnd="8dp"/>
-            </LinearLayout>
-        </HorizontalScrollView>
+        <!-- FAB button -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/addNoteFab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="24dp"
+            android:contentDescription="新建笔记"
+            android:src="@drawable/ic_add"
+            app:backgroundTint="@color/brand_primary"
+            app:tint="@color/white"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.App.RoundedSquare" />
 
-        <!-- 内容容器，包含笔记列表、加载指示器、空状态和错误状态 -->
-        <FrameLayout
-            android:id="@+id/contentContainer"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <!-- 笔记列表 -->
-
-            <!-- 加载指示器 -->
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/notesRecyclerView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="16dp"
-                android:clipToPadding="false" />
-
-            <com.google.android.material.progressindicator.CircularProgressIndicator
-                android:id="@+id/loadingIndicator"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:visibility="gone"
-                android:layout_gravity="center"
-                app:indicatorColor="@color/brand_primary" />
-
-            <!-- 空状态视图 -->
-            <TextView
-                android:id="@+id/emptyStateView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="暂无笔记"
-                android:textSize="16sp"
-                android:textColor="@color/text_gray"
-                android:visibility="gone"
-                android:layout_gravity="center" />
-
-            <!-- 错误状态视图 -->
-            <TextView
-                android:id="@+id/errorStateView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="加载失败，点击重试"
-                android:textSize="16sp"
-                android:textColor="@color/text_gray"
-                android:visibility="gone"
-                android:layout_gravity="center" />
-        </FrameLayout>
-    </LinearLayout>
-
-    <!-- 底部导航栏 -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigationView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="@android:color/white"
-        app:itemIconTint="@color/bottom_navigation_item_color"
-        app:itemTextColor="@color/bottom_navigation_item_color"
-        app:labelVisibilityMode="labeled"
-        app:menu="@menu/bottom_navigation_menu" />
-
-    <!-- FAB button -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/addNoteFab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="24dp"
-        android:contentDescription="新建笔记"
-        android:src="@drawable/ic_add"
-        app:backgroundTint="@color/brand_primary"
-        app:tint="@color/white"
-        app:shapeAppearanceOverlay="@style/ShapeAppearance.App.RoundedSquare" />
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.drawerlayout.widget.DrawerLayout>
