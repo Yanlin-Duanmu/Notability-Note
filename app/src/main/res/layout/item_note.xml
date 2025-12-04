@@ -27,7 +27,7 @@
             android:textStyle="bold"
             android:layout_marginBottom="8dp"/>
 
-        <!-- 笔记内容预览 -->
+        <!-- Content preview -->
         <TextView
             android:id="@+id/noteContentPreview"
             android:layout_width="match_parent"
