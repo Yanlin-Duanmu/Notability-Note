@@ -139,11 +139,13 @@ class MainActivity : AppCompatActivity() {
                     }
                     // true
                 }
+
                 R.id.nav_tags -> {
                     val intent = Intent(this, TagManagementActivity::class.java)
                     startActivity(intent)
                     // true
                 }
+
                 R.id.nav_settings -> {
                     showToast("跳转到设置页面")
                     // true
