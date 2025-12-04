@@ -20,8 +20,8 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@color/purple_500"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
+            android:background="@android:color/transparent">
+            
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
