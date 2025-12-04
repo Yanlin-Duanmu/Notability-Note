@@ -10,6 +10,7 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -90,6 +91,8 @@ class MainActivity : AppCompatActivity() {
             // 加载该标签下的笔记
             viewModel.loadNotesByTag(selectedTagId)
         }
+
+        setupOnBackPressed()
     }
 
     private fun initViewModels(loggedInUserId: Long) {
@@ -152,8 +155,6 @@ class MainActivity : AppCompatActivity() {
             true
         }
     }
-
-
 
     private fun setupRecyclerView() {
         val tagNameMap = mutableMapOf<Long, String>()
@@ -439,6 +440,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun showToast(message: String) {
         android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
+    }
+
+    private fun setupOnBackPressed() {
+        val onBackPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                    binding.drawerLayout.closeDrawer(GravityCompat.START)
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
     }
 
     override fun onResume() {
