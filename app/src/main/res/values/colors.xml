@@ -41,5 +41,6 @@
     <color name="bg_light_80">#CCf6f7f8</color>
     <color name="text_dark">#101c22</color>
     <color name="text_gray">#64748b</color>
+    <color name="text_date">#94a3b8</color>
     <color name="search_bg">#e2e8f0</color>
 </resources>
