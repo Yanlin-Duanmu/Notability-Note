@@ -183,11 +183,11 @@
                 android:id="@+id/emptyStateView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="暂无笔记，点击右下角按钮添加"
-                android:textColor="@android:color/darker_gray"
+                android:text="暂无笔记"
                 android:textSize="16sp"
-                android:visibility="gone" />
+                android:textColor="@color/text_gray"
+                android:visibility="gone"
+                android:layout_gravity="center" />
 
             <!-- 错误状态视图 -->
             <TextView
