@@ -10,7 +10,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="red">#FFFF0000</color>
     <color name="error_color">#FFFF3B30</color>
-    
+
     <!-- 标签颜色 -->
     <color name="tag_color_1">#FF6200EE</color> <!-- 紫色 -->
     <color name="tag_color_2">#FF03DAC5</color> <!-- 青色 -->
@@ -20,7 +20,7 @@
     <color name="tag_color_6">#FFFF3B30</color> <!-- 红色 -->
     <color name="tag_color_7">#FFAF52DE</color> <!-- 粉色 -->
     <color name="tag_color_8">#FF5856D6</color> <!-- 靛蓝色 -->
-    
+
     <!-- 界面颜色 -->
     <color name="gray_100">#FFF5F5F5</color>
     <color name="gray_200">#FFEEEEEE</color>
@@ -30,7 +30,7 @@
     <color name="background_color">#FFFAFAFA</color>
     <color name="surface_color">#FFFFFFFF</color>
     <color name="text_primary">#FF000000</color>
-    
+
     <!-- 主题颜色 -->
     <color name="primary">@color/purple_500</color>
     <color name="secondary">@color/teal_200</color>
