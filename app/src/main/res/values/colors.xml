@@ -21,6 +21,7 @@
     <color name="tag_color_7">#FFAF52DE</color> <!-- 粉色 -->
     <color name="tag_color_8">#FF5856D6</color> <!-- 靛蓝色 -->
 
+
     <!-- 界面颜色 -->
     <color name="gray_100">#FFF5F5F5</color>
     <color name="gray_200">#FFEEEEEE</color>
@@ -43,4 +44,7 @@
     <color name="text_gray">#64748b</color>
     <color name="text_date">#94a3b8</color>
     <color name="search_bg">#e2e8f0</color>
+
+    <color name="tag_bg_blue">#dbeafe</color>
+    <color name="tag_text_blue">#1e40af</color>
 </resources>
