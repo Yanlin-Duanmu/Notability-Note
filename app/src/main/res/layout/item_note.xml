@@ -47,24 +47,36 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <!-- 标签区域 -->
+            <!-- Tag area -->
             <LinearLayout
-                android:id="@+id/tagsContainer"
-                android:layout_width="wrap_content"
+                android:id="@+id/noteTagsContainer"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_weight="1">
+                android:layout_weight="1"
+                android:orientation="horizontal">
+
                 <!-- 标签会通过代码动态添加 -->
+                <!-- Sample style -->
+                <TextView
+                    android:text="AI"
+                    android:textSize="12sp"
+                    android:textColor="@color/tag_text_blue"
+                    android:backgroundTint="@color/tag_bg_blue"
+                    android:background="@drawable/bg_search_rounded"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
             </LinearLayout>
 
-            <!-- 更新时间 -->
+            <!-- Update time -->
             <TextView
-                android:id="@+id/noteUpdateTime"
+                android:id="@+id/noteDate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:textColor="#888888"
-                android:layout_marginStart="8dp" />
+                android:text="昨天 21:30"
+                android:textColor="@color/text_date"
+                android:textSize="12sp"/>
         </LinearLayout>
     </LinearLayout>
 
