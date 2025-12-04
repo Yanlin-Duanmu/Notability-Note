@@ -1,45 +1,36 @@
 package com.noteability.mynote
 
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.text.Editable
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.TextWatcher
-import android.text.style.StyleSpan
-import android.text.style.UnderlineSpan
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
-import android.content.Context
-import android.graphics.Typeface
-import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.entity.Tag
 import com.noteability.mynote.data.repository.impl.NoteRepositoryImpl
 import com.noteability.mynote.data.repository.impl.TagRepositoryImpl
+import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.ui.viewmodel.NoteDetailViewModel
 import com.noteability.mynote.ui.viewmodel.TagsViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.noteability.mynote.utils.MarkdownUtils
+import io.noties.markwon.Markwon
+import kotlinx.coroutines.launch
 
 class NoteEditActivity : AppCompatActivity() {
 
@@ -56,23 +47,28 @@ class NoteEditActivity : AppCompatActivity() {
     private lateinit var loadingIndicator: ProgressBar
     private lateinit var errorTextView: TextView
 
+    // 新增：预览相关组件
+    private lateinit var previewButton: ImageButton
+    private lateinit var previewTextView: TextView
+    private lateinit var markwon: Markwon
+
     private var noteId: Long? = null
     private var currentTag: Tag? = null
     private var isBold = false
     private var isItalic = false
     private var isUnderline = false
-    
+    private var isPreviewMode = false
+
     // 真实标签数据列表
     private val realTags = mutableListOf<Tag>()
-    
+
     // TagRepository实例
     private lateinit var tagRepository: TagRepositoryImpl
-    
+
     // 创建NoteDetailViewModelFactory
     private class NoteDetailViewModelFactory(private val applicationContext: Context) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(NoteDetailViewModel::class.java)) {
-                // 创建带Context的NoteRepositoryImpl实例
                 val repository = NoteRepositoryImpl(applicationContext)
                 val viewModel = NoteDetailViewModel(repository)
                 return viewModel as? T ?: throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
@@ -80,12 +76,11 @@ class NoteEditActivity : AppCompatActivity() {
             throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }
-    
+
     // 创建TagsViewModelFactory
     private class TagsViewModelFactory(private val applicationContext: Context) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(TagsViewModel::class.java)) {
-                // 创建带Context的TagRepositoryImpl实例
                 val repository = TagRepositoryImpl(applicationContext)
                 val viewModel = TagsViewModel(repository)
                 return viewModel as? T ?: throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
@@ -93,27 +88,28 @@ class NoteEditActivity : AppCompatActivity() {
             throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }
-    
+
     // 使用viewModels委托和自定义Factory来获取NoteDetailViewModel实例
     private val noteDetailViewModel: NoteDetailViewModel by viewModels {
         NoteDetailViewModelFactory(applicationContext)
     }
-    
+
     // 使用viewModels委托和自定义Factory来获取TagsViewModel实例
     private val tagsViewModel: TagsViewModel by viewModels {
         TagsViewModelFactory(applicationContext)
     }
-    
-    // 当前登录用户ID（可变，将从SharedPreferences获取）
-    private var loggedInUserId: Long = 1L // 默认值，将在onCreate中更新
+
+    // 当前登录用户ID
+    private var loggedInUserId: Long = 1L
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_note_edit)
-        
+
         // 从SharedPreferences获取当前登录用户ID
         val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 1L) // 使用1L作为默认值
+        loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 1L)
 
         // 初始化界面组件
         toolbar = findViewById(R.id.toolbar)
@@ -128,33 +124,32 @@ class NoteEditActivity : AppCompatActivity() {
         numberListButton = findViewById(R.id.numberListButton)
         loadingIndicator = findViewById(R.id.loadingIndicator)
         errorTextView = findViewById(R.id.errorTextView)
-//        val saveButton = findViewById<Button>(R.id.button3)
 
-//        saveButton.setOnClickListener {
-//            saveNote()
-//        }
-        
+        // 初始化 Markdown 和预览组件
+        markwon = MarkdownUtils.createMarkwon()
+        previewButton = findViewById(R.id.previewButton)
+        previewTextView = findViewById(R.id.previewTextView)
+
         // 设置ServiceLocator上下文
         ServiceLocator.setContext(applicationContext)
-        
+
         // 初始化TagRepository
         tagRepository = TagRepositoryImpl(applicationContext)
-        
+
         // 初始化ViewModels并设置用户ID
         initViewModels()
-        
+
         // 设置工具栏
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "编辑笔记"
-        
+
         // 加载标签数据
         loadTags()
-        
-        // 使用OnBackPressedDispatcher注册返回按钮处理器（现代方式）
+
+        // 使用OnBackPressedDispatcher注册返回按钮处理器
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                // 处理返回按钮点击事件
                 handleBackPress()
             }
         })
@@ -166,30 +161,34 @@ class NoteEditActivity : AppCompatActivity() {
         changeTagButton.setOnClickListener {
             showTagSelectionDialog()
         }
-        
+
+        // 设置预览按钮点击
+        previewButton.setOnClickListener {
+            togglePreviewMode()
+        }
+
         // 监听标签数据变化
         observeTags()
 
-        // 设置富文本编辑按钮点击事件
+        // 设置格式化按钮点击事件
         setupFormattingButtons()
 
         // 设置文本变化监听器
         setupTextWatchers()
-        
+
         // 观察ViewModel中的数据变化
         observeViewModel()
-        
+
         // 如果是编辑现有笔记，则加载笔记内容
         if (noteId != null && noteId != -1L) {
             noteDetailViewModel.loadNote(noteId!!)
         } else {
-            // 新建笔记，先设置默认标签名称，标签数据加载完成后会更新
+            // 新建笔记，先设置默认标签名称
             tagTextView.text = "未选择标签"
-            
+
             // 检查是否有预选中的标签ID
             val preSelectedTagId = intent.getLongExtra("preSelectedTagId", 0L)
             if (preSelectedTagId > 0) {
-                // 预选中的标签ID会在loadRealTags中处理
                 handlePreSelectedTag(preSelectedTagId)
             }
         }
@@ -203,58 +202,44 @@ class NoteEditActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             android.R.id.home -> {
-                // 处理返回按钮点击事件
                 handleBackPress()
                 return true
             }
             R.id.action_save -> {
-                // 保存笔记，不立即finish，让保存操作完成后再关闭
                 saveNote()
                 return true
             }
             R.id.action_share -> {
-                // 分享笔记
                 shareNote()
                 return true
             }
             R.id.action_delete -> {
-                // 删除笔记
                 showDeleteConfirmationDialog()
                 return true
             }
         }
         return super.onOptionsItemSelected(item)
     }
-
-    // 移除传统的onBackPressed()重写，使用OnBackPressedDispatcher
-
     private fun observeViewModel() {
         // 观察笔记数据变化
         lifecycleScope.launch {
             noteDetailViewModel.note.collect { note ->
                 note?.let {
                     titleEditText.setText(it.title)
-
-                    val styleData = StyleManager.jsonToStyles(it.styleData)
-                    val spannable = StyleManager.applyStylesToText(it.content, styleData)
-                    contentEditText.setText(spannable)
-
-//                    contentEditText.setText(it.content)
+                    //直接显示 Markdown 文本，不再使用 StyleManager
+                    contentEditText.setText(it.content)
 
                     // 设置标签
                     if (realTags.isNotEmpty()) {
-                        // 如果标签列表已经加载完成，直接查找对应的标签
                         currentTag = realTags.find { tag -> tag.tagId == it.tagId }
                         if (currentTag == null && realTags.isNotEmpty()) {
                             currentTag = realTags[0]
                         }
                         tagTextView.text = currentTag?.name
                     } else {
-                        // 如果标签列表还未加载完成，先设置标签ID，等待标签加载完成后再更新显示
                         val noteTagId = it.tagId
                         tagTextView.text = "加载中..."
 
-                        // 当标签加载完成后，会在loadRealTags方法中自动更新显示
                         lifecycleScope.launch {
                             tagRepository.getAllTags().collect { tags ->
                                 if (tags.isNotEmpty() && currentTag == null) {
@@ -299,7 +284,6 @@ class NoteEditActivity : AppCompatActivity() {
                 if (isSaved) {
                     showToast("笔记已保存")
                     noteDetailViewModel.resetSaveState()
-                    // 保存成功后再关闭Activity
                     finish()
                 }
             }
@@ -309,20 +293,13 @@ class NoteEditActivity : AppCompatActivity() {
     private fun saveNote() {
         val title = titleEditText.text.toString().trim()
         val content = contentEditText.text.toString().trim()
-        val spannable = if (contentEditText.text is Spannable) {
-            contentEditText.text as Spannable
-        } else {
-            SpannableString(contentEditText.text)
-        }
-
-        val styleData = StyleManager.extractStylesFromSpannable(spannable)
-        val styleJson = StyleManager.stylesToJson(styleData)
 
         // 添加标题验证
         if (title.isEmpty()) {
             Toast.makeText(this, "标题为空，请添加一个标题！", Toast.LENGTH_SHORT).show()
             return
         }
+
         if (title.isNotEmpty() || content.isNotEmpty()) {
             val note = if (noteId != null && noteId != -1L) {
                 // 更新现有笔记
@@ -332,7 +309,6 @@ class NoteEditActivity : AppCompatActivity() {
                     tagId = currentTag?.tagId ?: 1,
                     title = title,
                     content = content,
-                    styleData = styleJson,
                     updatedAt = System.currentTimeMillis()
                 )
             } else {
@@ -343,7 +319,6 @@ class NoteEditActivity : AppCompatActivity() {
                     tagId = currentTag?.tagId ?: 1,
                     title = title,
                     content = content,
-                    styleData = styleJson,
                     createdAt = System.currentTimeMillis(),
                     updatedAt = System.currentTimeMillis()
                 )
@@ -376,7 +351,6 @@ class NoteEditActivity : AppCompatActivity() {
             .setMessage("确定要删除这篇笔记吗？")
             .setPositiveButton("删除") { dialog, which ->
                 if (noteId != null && noteId != -1L) {
-                    // 使用ViewModel删除笔记
                     noteDetailViewModel.deleteNote(noteId!!)
                     showToast("笔记已删除")
                 }
@@ -387,46 +361,38 @@ class NoteEditActivity : AppCompatActivity() {
             }
             .show()
     }
-    
+
     override fun onDestroy() {
         super.onDestroy()
-        // 重置ViewModel状态
         noteDetailViewModel.resetSaveState()
     }
 
     private fun initViewModels() {
-        // 设置当前登录用户ID到ViewModels
         noteDetailViewModel.setLoggedInUserId(loggedInUserId)
         tagsViewModel.setLoggedInUserId(loggedInUserId)
     }
-    
+
     private fun loadTags() {
-        // 触发标签加载
         tagsViewModel.loadTags()
     }
-    
+
     private fun observeTags() {
         lifecycleScope.launch {
             try {
-                // 观察标签数据变化
                 tagsViewModel.tags.collect { tags ->
                     realTags.clear()
                     realTags.addAll(tags)
-                    
-                    // 如果没有选择标签且标签列表不为空，默认选择第一个标签
+
                     if (currentTag == null && realTags.isNotEmpty()) {
                         val preSelectedTagId = intent.getLongExtra("preSelectedTagId", 0L)
                         if (preSelectedTagId > 0) {
-                            // 优先使用预选中的标签
                             currentTag = realTags.find { it.tagId == preSelectedTagId }
                         }
-                        
-                        // 如果没有找到预选中的标签或没有预选中的标签，使用第一个标签
+
                         if (currentTag == null) {
                             currentTag = realTags[0]
                         }
-                        
-                        // 更新标签显示
+
                         tagTextView.text = currentTag?.name
                     }
                 }
@@ -435,9 +401,8 @@ class NoteEditActivity : AppCompatActivity() {
             }
         }
     }
-    
+
     private fun handlePreSelectedTag(preSelectedTagId: Long) {
-        // 如果标签列表已经加载完成，立即处理预选中的标签
         if (realTags.isNotEmpty()) {
             currentTag = realTags.find { it.tagId == preSelectedTagId }
             if (currentTag == null && realTags.isNotEmpty()) {
@@ -445,188 +410,93 @@ class NoteEditActivity : AppCompatActivity() {
             }
             tagTextView.text = currentTag?.name
         }
-        // 否则等待标签加载完成后处理
     }
-    
+
     private fun showTagSelectionDialog() {
         if (realTags.isEmpty()) {
             showToast("没有可用的标签")
             return
         }
-        
+
         val tagNames = realTags.map { it.name }.toTypedArray()
 
         AlertDialog.Builder(this)
             .setTitle("选择标签")
             .setItems(tagNames) { dialog, which ->
-                // 更新当前选中的标签
                 currentTag = realTags[which]
                 tagTextView.text = currentTag?.name
             }
             .setNegativeButton("取消") { dialog, _ ->
-                // 取消按钮会自动关闭对话框
+                dialog.dismiss()
             }
             .show()
     }
 
     private fun setupFormattingButtons() {
         boldButton.setOnClickListener {
-            toggleBold()
+            MarkdownUtils.insertMarkdownFormat(contentEditText, "bold")
+            isBold = !isBold
+            boldButton.setColorFilter(if (isBold) getColor(R.color.purple_500) else getColor(R.color.gray_700))
         }
 
         italicButton.setOnClickListener {
-            toggleItalic()
+            MarkdownUtils.insertMarkdownFormat(contentEditText, "italic")
+            isItalic = !isItalic
+            italicButton.setColorFilter(if (isItalic) getColor(R.color.purple_500) else getColor(R.color.gray_700))
         }
 
         underlineButton.setOnClickListener {
-            toggleUnderline()
+            MarkdownUtils.insertMarkdownFormat(contentEditText, "underline")
+            isUnderline = !isUnderline
+            underlineButton.setColorFilter(if (isUnderline) getColor(R.color.purple_500) else getColor(R.color.gray_700))
         }
 
         bulletListButton.setOnClickListener {
-            insertBulletList()
+            MarkdownUtils.insertMarkdownFormat(contentEditText, "bullet")
         }
 
         numberListButton.setOnClickListener {
-            insertNumberedList()
+            MarkdownUtils.insertMarkdownFormat(contentEditText, "numbered")
         }
     }
 
-    private fun toggleBold() {
-        isBold = !isBold
-        boldButton.setColorFilter(if (isBold) getColor(R.color.purple_500) else getColor(R.color.gray_700))
-        applyTextStyle(android.graphics.Typeface.BOLD)
-    }
 
-    private fun toggleItalic() {
-        isItalic = !isItalic
-        italicButton.setColorFilter(if (isItalic) getColor(R.color.purple_500) else getColor(R.color.gray_700))
-        applyTextStyle(android.graphics.Typeface.ITALIC)
-    }
 
-    private fun toggleUnderline() {
-        isUnderline = !isUnderline
-        underlineButton.setColorFilter(if (isUnderline) getColor(R.color.purple_500) else getColor(R.color.gray_700))
-        applyUnderline()
-    }
+    private fun togglePreviewMode() {
+        isPreviewMode = !isPreviewMode
 
-//    private fun applyTextStyle(style: Int) {
-//        val start = contentEditText.selectionStart
-//        val end = contentEditText.selectionEnd
-//        val editable = contentEditText.text
-//
-//        if (start < 0 || end <= start) return
-//
-//        val spannable = SpannableString(editable)
-//        val spans = spannable.getSpans(start, end, StyleSpan::class.java)
-//
-//        if (spans.isEmpty()) {
-//            // 没有应用过样式，添加新样式
-//            spannable.setSpan(StyleSpan(style), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-//        } else {
-//            // 已经应用过样式，检查是否需要移除
-//            for (span in spans) {
-//                if (span.style == style) {
-//                    spannable.removeSpan(span)
-//                }
-//            }
-//        }
-//
-//        contentEditText.setText(spannable)
-//        contentEditText.setSelection(end)
-//    }
+        if (isPreviewMode) {
+            // 切换到预览模式
+            contentEditText.visibility = View.GONE
+            previewTextView.visibility = View.VISIBLE
 
-    private fun applyTextStyle(style: Int) {
-        val start = contentEditText.selectionStart
-        val end = contentEditText.selectionEnd
+            // 渲染 Markdown
+            val markdownText = contentEditText.text.toString()
+            MarkdownUtils.renderMarkdown(previewTextView, markdownText, markwon)
 
-        if (start < 0 || end <= start) return
-        val editable = contentEditText.text
+            // 更新按钮颜色
+            previewButton.setColorFilter(getColor(R.color.purple_500))
 
-        val spannable = if (editable is SpannableString) {
-            editable
+            // 隐藏键盘
+            contentEditText.clearFocus()
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(contentEditText.windowToken, 0)
         } else {
-            SpannableString(editable)
+            // 切换回编辑模式
+            contentEditText.visibility = View.VISIBLE
+            previewTextView.visibility = View.GONE
+
+            // 恢复按钮颜色
+            previewButton.setColorFilter(getColor(R.color.gray_700))
+
+            // 显示键盘
+            contentEditText.requestFocus()
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.showSoftInput(contentEditText, InputMethodManager.SHOW_IMPLICIT)
         }
-
-        val spans = spannable.getSpans(start, end, StyleSpan::class.java)
-        val hasStyle = spans.any { it.style == style }
-
-        if (!hasStyle) {
-            // 没有应用过样式，添加新样式
-            spannable.setSpan(StyleSpan(style), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-        } else {
-            // 已经应用过样式，检查是否需要移除
-            for (span in spans) {
-                if (span.style == style) {
-                    spannable.removeSpan(span)
-                }
-            }
-        }
-
-        contentEditText.setText(spannable)
-        contentEditText.setSelection(end)
-
-        // 更新按钮状态
-        when (style) {
-            Typeface.BOLD -> {
-                isBold = !hasStyle
-                boldButton.setColorFilter(if (isBold) getColor(R.color.purple_500) else getColor(R.color.gray_700))
-            }
-            Typeface.ITALIC -> {
-                isItalic = !hasStyle
-                italicButton.setColorFilter(if (isItalic) getColor(R.color.purple_500) else getColor(R.color.gray_700))
-            }
-        }
-    }
-
-    private fun applyUnderline() {
-        val start = contentEditText.selectionStart
-        val end = contentEditText.selectionEnd
-        val editable = contentEditText.text
-
-        if (start < 0 || end <= start) return
-
-        val spannable = SpannableString(editable)
-        val spans = spannable.getSpans(start, end, UnderlineSpan::class.java)
-
-        if (spans.isEmpty()) {
-            // 没有应用过下划线，添加下划线
-            spannable.setSpan(UnderlineSpan(), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-        } else {
-            // 已经应用过下划线，移除下划线
-            for (span in spans) {
-                spannable.removeSpan(span)
-            }
-        }
-
-        contentEditText.setText(spannable)
-        contentEditText.setSelection(end)
-    }
-
-    private fun insertBulletList() {
-        val cursorPosition = contentEditText.selectionStart
-        val text = contentEditText.text
-        val textBeforeCursor = text.substring(0, cursorPosition)
-        val textAfterCursor = text.substring(cursorPosition)
-
-        // 插入项目符号
-        contentEditText.setText("$textBeforeCursor• $textAfterCursor")
-        contentEditText.setSelection(cursorPosition + 2)
-    }
-
-    private fun insertNumberedList() {
-        val cursorPosition = contentEditText.selectionStart
-        val text = contentEditText.text
-        val textBeforeCursor = text.substring(0, cursorPosition)
-        val textAfterCursor = text.substring(cursorPosition)
-
-        // 简单实现，插入 "1. " 作为编号
-        contentEditText.setText("${textBeforeCursor}1. $textAfterCursor")
-        contentEditText.setSelection(cursorPosition + 3)
     }
 
     private fun setupTextWatchers() {
-        // 可以在这里添加文本变化监听器，用于自动保存或其他功能
     }
 
     private fun handleBackPress() {
@@ -652,6 +522,6 @@ class NoteEditActivity : AppCompatActivity() {
     }
 
     private fun showToast(message: String) {
-        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }

@@ -157,6 +157,19 @@
                         android:background="@android:color/transparent"
                         android:src="@drawable/ic_baseline_format_list_numbered_24"
                         app:tint="@color/gray_700" />
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="24dp"
+                        android:layout_marginHorizontal="8dp"
+                        android:background="@color/gray_300" />
+<!--                    添加预览按钮-->
+                    <ImageButton
+                        android:id="@+id/previewButton"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@android:color/transparent"
+                        android:src="@drawable/ic_baseline_format_list_numbered_24"
+                    app:tint="@color/gray_700" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -174,6 +187,19 @@
                 android:minHeight="400dp"
                 android:paddingBottom="16dp"
                 android:textSize="16sp" />
+            <TextView
+                android:id="@+id/previewTextView"
+                android:layout_width="match_parent"
+                android:layout_height="296dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="100dp"
+                android:background="@null"
+            android:gravity="top"
+            android:hint="预览区域"
+            android:visibility="gone"
+            android:paddingBottom="16dp"
+            android:textSize="16sp" />
 
 <!--            <Button-->
 <!--                android:id="@+id/button3"-->
