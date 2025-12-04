@@ -50,8 +50,8 @@
     <color name="filter_bar_tag_bg_selected">#E0F2FE</color>
     <color name="filter_bar_tag_text_selected">@color/brand_primary</color>
 
-    <color name="drawer_item_bg_selected">@color/filter_bar_tag_bg_selected</color>
-    <color name="drawer_item_text_selected">@color/brand_primary</color>
+    <color name="nav_item_bg_selected">@color/filter_bar_tag_bg_selected</color>
+    <color name="nav_item_text_selected">@color/brand_primary</color>
 
     <color name="tag_bg_blue">#dbeafe</color>
     <color name="tag_text_blue">#1e40af</color>
