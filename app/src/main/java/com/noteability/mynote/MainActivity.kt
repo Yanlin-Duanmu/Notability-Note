@@ -1,13 +1,13 @@
 package com.noteability.mynote
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.LayoutInflater
 import android.view.View
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
@@ -191,7 +191,11 @@ class MainActivity : AppCompatActivity() {
 
                 // General function
                 fun addTagView(id: Long, name: String) {
-                    val tagView = layoutInflater.inflate(R.layout.item_tag, binding.tagsContainer, false) as TextView
+                    val tagView = layoutInflater.inflate(
+                        R.layout.item_tag,
+                        binding.tagsContainer,
+                        false
+                    ) as TextView
 
                     tagView.text = name
                     tagView.setOnClickListener {
@@ -222,22 +226,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateTagSelectionState() {
-        // 重置所有标签的样式
-        (tagViews.values + listOfNotNull(allTagView)).forEach { view ->
-            view.setBackgroundResource(R.drawable.tag_unselected_background)
-            view.setTextColor(ContextCompat.getColor(this, R.color.tag_unselected_text_color))
-        }
-
-        // 设置选中标签的样式
+        // Only set selected tag style
         val selectedView =
             if (currentSelectedTagId == 0L) allTagView else tagViews[currentSelectedTagId]
-        selectedView?.setBackgroundResource(R.drawable.tag_selected_background)
-        selectedView?.setTextColor(Color.WHITE)
+
+        selectedView?.let { view ->
+            val selectedBgColor =
+                ContextCompat.getColor(view.context, R.color.filter_bar_tag_bg_selected)
+            val selectedTextColor =
+                ContextCompat.getColor(view.context, R.color.filter_bar_tag_text_selected)
+            view.backgroundTintList = ColorStateList.valueOf(selectedBgColor)
+            view.setTextColor(selectedTextColor)
+        }
     }
 
     private fun setupSearchListener() {
         binding.searchEditText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun beforeTextChanged(
+                s: CharSequence?,
+                start: Int,
+                count: Int,
+                after: Int
+            ) {
+            }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s.toString()
@@ -375,7 +386,8 @@ class MainActivity : AppCompatActivity() {
             binding.notesRecyclerView.visibility = View.GONE
             // 根据是否在搜索中，显示不同的提示文本
             if (isSearching) {
-                binding.emptyStateView.text = "没有找到相关内容" // R.string.no_search_results_found
+                binding.emptyStateView.text =
+                    "没有找到相关内容" // R.string.no_search_results_found
             } else {
                 binding.emptyStateView.text = "还没有笔记，快来添加吧" // R.string.no_notes_yet
             }
