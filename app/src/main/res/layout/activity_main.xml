@@ -122,14 +122,15 @@
                 app:tint="@color/text_dark"/>
         </LinearLayout>
 
-        <!-- 标签分类区域 -->
+        <!-- Tag area -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/white"
+            android:scrollbars="none"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:paddingBottom="12dp">
+            android:paddingBottom="12dp"
+            android:clipToPadding="false">
 
             <LinearLayout
                 android:id="@+id/tagsContainer"
