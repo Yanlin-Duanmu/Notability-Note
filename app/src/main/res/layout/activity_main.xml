@@ -72,7 +72,7 @@
                     android:layout_width="0dp"
                     android:layout_height="48dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_search_rounded"
+                    android:background="@drawable/bg_rounded"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:paddingHorizontal="12dp">
@@ -101,7 +101,7 @@
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:layout_marginStart="12dp"
-                    android:background="@drawable/bg_search_rounded"
+                    android:background="@drawable/bg_rounded"
                     android:padding="12dp"
                     android:src="@drawable/ic_filter_list"
                     app:tint="@color/text_dark" />
@@ -128,7 +128,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="32dp"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_search_rounded"
+                        android:background="@drawable/bg_rounded"
                         android:backgroundTint="#E0F2FE"
                         android:gravity="center"
                         android:paddingHorizontal="16dp"
