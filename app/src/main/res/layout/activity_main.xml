@@ -142,18 +142,14 @@
                     android:id="@+id/tagAll"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
-                    android:layout_marginEnd="8dp"
-                    android:background="#E8DEF8"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:fontFamily="sans-serif-medium"
-                    android:gravity="center"
-                    android:onClick="@null"
                     android:paddingHorizontal="16dp"
-                    android:paddingVertical="6dp"
                     android:text="全部"
-                    android:textColor="@color/purple_500"
-                    android:textSize="14sp" />
+                    android:textSize="14sp"
+                    android:textColor="@color/brand_primary"
+                    android:background="@drawable/bg_search_rounded"
+                    android:backgroundTint="#E0F2FE"
+                    android:gravity="center"
+                    android:layout_marginEnd="8dp"/>
             </LinearLayout>
         </HorizontalScrollView>
 
