@@ -118,6 +118,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.activity.compose)
     implementation("com.google.code.gson:gson:2.10.1")
+    // Markwon 核心库
+    implementation("io.noties.markwon:core:4.6.2")
+    implementation("io.noties.markwon:editor:4.6.2")
+    implementation("io.noties.markwon:html:4.6.2")
 }
 
 
