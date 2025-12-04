@@ -42,12 +42,9 @@
                 <ImageView
                     android:layout_width="40dp"
                     android:layout_height="40dp"
+                    android:layout_gravity="end|center_vertical"
                     android:padding="8dp"
-                    android:src="@drawable/ic_grid_view"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:tint="@color/text_dark" />
+                    android:src="@drawable/ic_grid_view" />
 
 
             </androidx.appcompat.widget.Toolbar>
