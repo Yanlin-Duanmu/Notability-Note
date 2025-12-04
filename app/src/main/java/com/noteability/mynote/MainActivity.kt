@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.Editable
@@ -237,6 +238,7 @@ class MainActivity : AppCompatActivity() {
                 ContextCompat.getColor(view.context, R.color.filter_bar_tag_text_selected)
             view.backgroundTintList = ColorStateList.valueOf(selectedBgColor)
             view.setTextColor(selectedTextColor)
+            view.setTypeface(view.typeface, Typeface.BOLD)
         }
     }
 
