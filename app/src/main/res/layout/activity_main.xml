@@ -26,7 +26,7 @@
                 android:layout_height="match_parent"
                 android:paddingEnd="16dp">
 
-                <!-- menu icon, left -->
+                <!-- Menu icon, left -->
                 <ImageView
                     android:id="@+id/menuButton"
                     android:layout_width="48dp"
@@ -38,7 +38,7 @@
                     app:layout_constraintTop_toTopOf="parent"
                     app:tint="@color/text_dark" />
 
-                <!--  title, middle -->
+                <!--  Title, middle -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -51,7 +51,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
-                <!-- grid icon, right -->
+                <!-- Grid icon, right -->
                 <ImageView
                     android:layout_width="40dp"
                     android:layout_height="40dp"
@@ -73,30 +73,15 @@
         android:orientation="vertical"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <!-- 搜索区域 -->
+        <!-- Search area -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/white"
             android:orientation="horizontal"
-            android:padding="16dp">
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp"
+            android:background="@android:color/transparent">
 
-            <androidx.appcompat.widget.AppCompatImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center_vertical"
-                android:layout_marginEnd="8dp"
-                android:src="@android:drawable/ic_search_category_default" />
-
-            <EditText
-                android:id="@+id/searchEditText"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@android:color/transparent"
-                android:hint="搜索笔记内容"
-                android:inputType="text"
-                android:textSize="16sp" />
         </LinearLayout>
 
         <!-- 标签分类区域 -->
