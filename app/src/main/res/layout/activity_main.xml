@@ -129,11 +129,11 @@
                         android:layout_height="32dp"
                         android:layout_marginEnd="8dp"
                         android:background="@drawable/bg_rounded"
-                        android:backgroundTint="#E0F2FE"
+                        android:backgroundTint="@color/filter_bar_tag_bg_selected"
                         android:gravity="center"
                         android:paddingHorizontal="16dp"
                         android:text="全部"
-                        android:textColor="@color/brand_primary"
+                        android:textColor="@color/filter_bar_tag_text_selected"
                         android:textSize="14sp" />
                 </LinearLayout>
             </HorizontalScrollView>
