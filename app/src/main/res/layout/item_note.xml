@@ -62,7 +62,7 @@
                     android:textSize="12sp"
                     android:textColor="@color/tag_text_blue"
                     android:backgroundTint="@color/tag_bg_blue"
-                    android:background="@drawable/bg_search_rounded"
+                    android:background="@drawable/bg_rounded"
                     android:paddingHorizontal="10dp"
                     android:paddingVertical="4dp"
                     android:layout_width="wrap_content"
