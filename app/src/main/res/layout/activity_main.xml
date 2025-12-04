@@ -92,6 +92,11 @@
                 android:orientation="horizontal"
                 android:paddingHorizontal="12dp">
 
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_search"
+                    app:tint="@color/text_gray"/>
 
             </LinearLayout>
 
