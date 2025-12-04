@@ -124,7 +124,34 @@ class MainActivity : AppCompatActivity() {
         setupNavigationDrawerListener()
     }
 
+    private fun setupNavigationDrawerListener() {
+        binding.navigationView.setNavigationItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.nav_notes -> {
+                    if (currentSelectedTagId > 0) {
+                        currentSelectedTagId = 0L
+                        viewModel.loadNotes()
+                        showToast("显示所有笔记")
+                        updateTagSelectionState()
+                    }
+                    // true
+                }
+                R.id.nav_tags -> {
+                    val intent = Intent(this, TagManagementActivity::class.java)
+                    startActivity(intent)
+                    // true
+                }
+                R.id.nav_settings -> {
+                    showToast("跳转到设置页面")
+                    // true
+                }
+            }
 
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+
+            true
+        }
+    }
 
 
 
