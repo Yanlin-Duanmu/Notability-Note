@@ -98,6 +98,17 @@
                     android:src="@drawable/ic_search"
                     app:tint="@color/text_gray"/>
 
+                <EditText
+                    android:id="@+id/searchEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@null"
+                    android:hint="搜索笔记内容或标签"
+                    android:textColor="@color/text_dark"
+                    android:textColorHint="@color/text_gray"
+                    android:textSize="15sp"
+                    android:layout_marginStart="8dp"
+                    android:inputType="text" />
             </LinearLayout>
 
         </LinearLayout>
