@@ -82,6 +82,19 @@
             android:paddingVertical="12dp"
             android:background="@android:color/transparent">
 
+            <!-- Search box container -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_search_rounded"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp">
+
+
+            </LinearLayout>
+
         </LinearLayout>
 
         <!-- 标签分类区域 -->
