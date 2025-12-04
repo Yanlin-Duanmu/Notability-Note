@@ -45,6 +45,11 @@
     <color name="text_date">#94a3b8</color>
     <color name="search_bg">#e2e8f0</color>
 
+    <color name="filter_bar_tag_bg_default">#E2E8F0</color>
+    <color name="filter_bar_tag_text_default">#475569</color>
+    <color name="filter_bar_tag_bg_selected">#E0F2FE</color>
+    <color name="filter_bar_tag_text_selected">@color/brand_primary</color>
+
     <color name="tag_bg_blue">#dbeafe</color>
     <color name="tag_text_blue">#1e40af</color>
 </resources>
