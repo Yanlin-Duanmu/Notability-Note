@@ -20,6 +20,13 @@
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">false</item>
     </style>
+
+    <!-- FAB button -->
+    <style name="ShapeAppearance.App.RoundedSquare" parent="ShapeAppearance.MaterialComponents.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">25%</item>
+    </style>
+
 </resources>
 <!--<?xml version="1.0" encoding="utf-8"?>-->
 <!--<resources>-->
