@@ -67,6 +67,9 @@ class SettingsActivity : AppCompatActivity() {
         binding.drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
+        // 设置侧边栏选中项为设置
+        binding.navigationView.setCheckedItem(R.id.nav_settings)
+        
         setupNavigationDrawerListener()
     }
 
@@ -80,9 +83,6 @@ class SettingsActivity : AppCompatActivity() {
                 R.id.nav_tags -> {
                     startActivity(Intent(this, TagManagementActivity::class.java))
                     finish()
-                }
-                R.id.nav_settings -> {
-                    // 当前已经在设置页面，什么都不做
                 }
             }
             binding.drawerLayout.closeDrawer(Gravity.START)

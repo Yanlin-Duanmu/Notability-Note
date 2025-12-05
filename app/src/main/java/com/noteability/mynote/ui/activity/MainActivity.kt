@@ -123,6 +123,9 @@ class MainActivity : AppCompatActivity() {
         binding.drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
+        // 设置侧边栏选中项为笔记
+        binding.navigationView.setCheckedItem(R.id.nav_notes)
+        
         setupNavigationDrawerListener()
     }
 
