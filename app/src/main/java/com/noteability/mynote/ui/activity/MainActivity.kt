@@ -1,29 +1,28 @@
-package com.noteability.mynote
+package com.noteability.mynote.ui.activity
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.LayoutInflater
 import android.view.View
-import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomnavigation.BottomNavigationView
-
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.snackbar.Snackbar
+import com.noteability.mynote.R
+import com.noteability.mynote.databinding.ActivityMainBinding
 import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.ui.adapter.NoteAdapter
 import com.noteability.mynote.ui.viewmodel.NotesViewModel
@@ -31,19 +30,11 @@ import com.noteability.mynote.ui.viewmodel.TagsViewModel
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
-
-    private lateinit var notesRecyclerView: RecyclerView
-    private lateinit var searchEditText: EditText
-    private lateinit var tagsContainer: LinearLayout
-    private lateinit var addNoteFab: FloatingActionButton
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var toggle: ActionBarDrawerToggle
     private lateinit var noteAdapter: NoteAdapter
-    private lateinit var bottomNavigationView: BottomNavigationView
-    private lateinit var loadingIndicator: CircularProgressIndicator
-    private lateinit var emptyStateView: TextView
-    private lateinit var errorStateView: TextView
     private var allTagView: TextView? = null
     private val tagViews = mutableMapOf<Long, TextView>()
-    private lateinit var coordinatorLayout: CoordinatorLayout
 
     // ViewModel实例
     private lateinit var viewModel: NotesViewModel
@@ -51,7 +42,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         // 检查用户登录状态
         val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
@@ -59,7 +51,12 @@ class MainActivity : AppCompatActivity() {
 
         // 如果用户未登录，跳转到登录页面
         if (loggedInUserId <= 0) {
-            startActivity(Intent(this, com.noteability.mynote.ui.activity.LoginActivity::class.java))
+            startActivity(
+                Intent(
+                    this,
+                    com.noteability.mynote.ui.activity.LoginActivity::class.java
+                )
+            )
             finish()
             return
         }
@@ -67,16 +64,7 @@ class MainActivity : AppCompatActivity() {
         // 初始化ViewModels
         initViewModels(loggedInUserId)
 
-        // 初始化界面组件
-        notesRecyclerView = findViewById(R.id.notesRecyclerView)
-        searchEditText = findViewById(R.id.searchEditText)
-        tagsContainer = findViewById(R.id.tagsContainer)
-        addNoteFab = findViewById(R.id.addNoteFab)
-        bottomNavigationView = findViewById(R.id.bottomNavigationView)
-        loadingIndicator = findViewById(R.id.loadingIndicator)
-        emptyStateView = findViewById(R.id.emptyStateView)
-        errorStateView = findViewById(R.id.errorStateView)
-        coordinatorLayout = findViewById(R.id.coordinatorLayout)
+        setupToolbarAndDrawer()
 
         // 初始化RecyclerView
         setupRecyclerView()
@@ -91,9 +79,6 @@ class MainActivity : AppCompatActivity() {
         // 设置按钮点击事件
         setupButtonListeners()
 
-        // 设置底部导航栏监听器
-        setupBottomNavigationListener()
-
         // 观察ViewModel数据
         observeViewModel()
 
@@ -105,6 +90,8 @@ class MainActivity : AppCompatActivity() {
             // 加载该标签下的笔记
             viewModel.loadNotesByTag(selectedTagId)
         }
+
+        setupOnBackPressed()
     }
 
     private fun initViewModels(loggedInUserId: Long) {
@@ -119,6 +106,60 @@ class MainActivity : AppCompatActivity() {
         // 设置当前登录用户ID
         viewModel.setLoggedInUserId(loggedInUserId)
         tagsViewModel.setLoggedInUserId(loggedInUserId)
+    }
+
+    private fun setupToolbarAndDrawer() {
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+
+        toggle = ActionBarDrawerToggle(
+            this,
+            binding.drawerLayout,    // DrawerLayout 实例
+            binding.toolbar,         // Toolbar 实例
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
+        )
+
+        binding.drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
+
+        // 设置侧边栏选中项为笔记
+        binding.navigationView.setCheckedItem(R.id.nav_notes)
+
+        setupNavigationDrawerListener()
+    }
+
+    private fun setupNavigationDrawerListener() {
+        binding.navigationView.setNavigationItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.nav_notes -> {
+                    currentSelectedTagId = 0L
+                    updateTagSelectionState()
+                    showToast("显示所有笔记")
+
+                    val query = binding.searchEditText.text.toString()
+                    if (query.isNotEmpty()) {
+                        viewModel.searchNotes(query, 0L)
+                    } else {
+                        viewModel.loadNotes()
+                    }
+                }
+
+                R.id.nav_tags -> {
+                    val intent = Intent(this, TagManagementActivity::class.java)
+                    startActivity(intent)
+                }
+
+                R.id.nav_settings -> {
+                    val intent = Intent(this, SettingsActivity::class.java)
+                    startActivity(intent)
+                }
+            }
+
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+
+            true
+        }
     }
 
     private fun setupRecyclerView() {
@@ -144,83 +185,96 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        notesRecyclerView.layoutManager = LinearLayoutManager(this)
-        notesRecyclerView.adapter = noteAdapter
+        binding.notesRecyclerView.layoutManager = LinearLayoutManager(this)
+        binding.notesRecyclerView.adapter = noteAdapter
     }
 
     private fun loadTags() {
-        // 观察标签数据变化
         lifecycleScope.launch {
             tagsViewModel.tags.collect { tags ->
-                // 清除现有的标签按钮
-                tagsContainer.removeAllViews()
+                // CLear views
+                binding.tagsContainer.removeAllViews()
                 tagViews.clear()
 
+                // General function
+                fun addTagView(id: Long, name: String) {
+                    val tagView = layoutInflater.inflate(
+                        R.layout.item_tag,
+                        binding.tagsContainer,
+                        false
+                    ) as TextView
 
-                // 动态添加 "全部" 标签
-                allTagView = (LayoutInflater.from(this@MainActivity)
-                    .inflate(R.layout.item_tag, tagsContainer, false) as TextView).apply {
-                    text = "全部"
-                    setOnClickListener {
-                        // 清空搜索框
-                        searchEditText.text.clear()
-                        // 加载所有笔记
-                        this@MainActivity.currentSelectedTagId = 0L
-                        viewModel.loadNotes()
+                    tagView.text = name
+                    tagView.setOnClickListener {
+
+                        val newTagId = if (currentSelectedTagId == id && id != 0L) 0L else id
+                        currentSelectedTagId = newTagId
                         updateTagSelectionState()
-                    }
-                }
-                tagsContainer.addView(allTagView)
 
-                // 动态添加其他标签按钮
-                tags.forEach { tag ->
-                    val tagView = (LayoutInflater.from(this@MainActivity)
-                        .inflate(R.layout.item_tag, tagsContainer, false) as TextView).apply{
-                        text = tag.name
-                        setOnClickListener {
-                            // 清空搜索框
-                            searchEditText.text.clear()
-
-                            // 如果点击的标签就是当前选中的标签，则取消选中并显示所有笔记
-                            if (currentSelectedTagId == tag.tagId) {
-                                currentSelectedTagId = 0L
+                        val query = binding.searchEditText.text.toString()
+                        if (query.isNotEmpty()) {
+                            viewModel.searchNotes(query, currentSelectedTagId)
+                        } else {
+                            if (currentSelectedTagId == 0L) {
                                 viewModel.loadNotes()
                             } else {
-                                // 否则，切换到新点击的标签
-                                currentSelectedTagId = tag.tagId
-                                viewModel.loadNotesByTag(tag.tagId)
+                                viewModel.loadNotesByTag(currentSelectedTagId)
                             }
-                            updateTagSelectionState()
                         }
                     }
-                    tagsContainer.addView(tagView)
-                    tagViews[tag.tagId] = tagView
+
+                    // Add to binding
+                    binding.tagsContainer.addView(tagView)
+                    if (id == 0L) allTagView = tagView else tagViews[id] = tagView
                 }
-                updateTagSelectionState() // 初始化状态
+
+                addTagView(0L, "全部")
+                tags.forEach { tag -> addTagView(tag.tagId, tag.name) }
+
+                // Refresh state
+                updateTagSelectionState()
             }
         }
     }
 
     private fun updateTagSelectionState() {
-        // 重置所有标签的样式
         (tagViews.values + listOfNotNull(allTagView)).forEach { view ->
-            view.setBackgroundResource(R.drawable.tag_unselected_background)
-            view.setTextColor(ContextCompat.getColor(this, R.color.tag_unselected_text_color))
+            val defaultBgColor =
+                ContextCompat.getColor(view.context, R.color.filter_bar_tag_bg_default)
+            val defaultTextColor =
+                ContextCompat.getColor(view.context, R.color.filter_bar_tag_text_default)
+            view.backgroundTintList = ColorStateList.valueOf(defaultBgColor)
+            view.setTextColor(defaultTextColor)
+            view.setTypeface(null, Typeface.NORMAL)
         }
 
-        // 设置选中标签的样式
-        val selectedView = if (currentSelectedTagId == 0L) allTagView else tagViews[currentSelectedTagId]
-        selectedView?.setBackgroundResource(R.drawable.tag_selected_background)
-        selectedView?.setTextColor(Color.WHITE)
+        val selectedView =
+            if (currentSelectedTagId == 0L) allTagView else tagViews[currentSelectedTagId]
+
+        selectedView?.let { view ->
+            val selectedBgColor =
+                ContextCompat.getColor(view.context, R.color.filter_bar_tag_bg_selected)
+            val selectedTextColor =
+                ContextCompat.getColor(view.context, R.color.filter_bar_tag_text_selected)
+            view.backgroundTintList = ColorStateList.valueOf(selectedBgColor)
+            view.setTextColor(selectedTextColor)
+            view.setTypeface(view.typeface, Typeface.BOLD)
+        }
     }
 
     private fun setupSearchListener() {
-        searchEditText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+        binding.searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(
+                s: CharSequence?,
+                start: Int,
+                count: Int,
+                after: Int
+            ) {
+            }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s.toString()
-                viewModel.searchNotes(query)
+                viewModel.searchNotes(query, currentSelectedTagId)
             }
 
             override fun afterTextChanged(s: Editable?) {}
@@ -231,7 +285,7 @@ class MainActivity : AppCompatActivity() {
     private var currentSelectedTagId: Long = 0L
 
     private fun setupButtonListeners() {
-        addNoteFab.setOnClickListener {
+        binding.addNoteFab.setOnClickListener {
             // 跳转到新建笔记页面
             val intent = Intent(this, NoteEditActivity::class.java)
             // 如果当前处于标签筛选模式，传递标签ID给编辑页面
@@ -241,39 +295,15 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        errorStateView.setOnClickListener {
+        binding.errorStateView.setOnClickListener {
             // 重试加载
-            viewModel.loadNotes()
-        }
-    }
-
-    private fun setupBottomNavigationListener() {
-        bottomNavigationView.setOnItemSelectedListener {
-            when (it.itemId) {
-                R.id.nav_notes -> {
-                    // 检查是否当前处于特定标签筛选模式
-                    if (currentSelectedTagId > 0) {
-                        // 如果是，重置标签筛选，加载所有笔记
-                        currentSelectedTagId = 0L
-                        viewModel.loadNotes()
-                        showToast("显示所有笔记")
-                        updateTagSelectionState()
-                    }
-                    // 无论是否处于筛选模式，都返回true
-                    true
-                }
-                R.id.nav_tags -> {
-                    // 跳转到标签管理页面
-                    val intent = Intent(this, TagManagementActivity::class.java)
-                    startActivity(intent)
-                    true
-                }
-                R.id.nav_settings -> {
-                    // 跳转到设置页面
-                    showToast("跳转到设置页面")
-                    true
-                }
-                else -> false
+            val query = binding.searchEditText.text.toString()
+            if (query.isNotEmpty()) {
+                viewModel.searchNotes(query, currentSelectedTagId)
+            } else if (currentSelectedTagId > 0) {
+                viewModel.loadNotesByTag(currentSelectedTagId)
+            } else {
+                viewModel.loadNotes()
             }
         }
     }
@@ -284,7 +314,7 @@ class MainActivity : AppCompatActivity() {
             viewModel.notes.collect { notes ->
                 noteAdapter.updateNotes(notes)
                 // 检查搜索框内容，以决定“空状态”的提示文本
-                val isSearching = searchEditText.text.isNotEmpty()
+                val isSearching = binding.searchEditText.text.isNotEmpty()
                 updateUIState(notes.isEmpty(), isSearching)
             }
         }
@@ -292,18 +322,20 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             // 观察加载状态
             viewModel.isLoading.collect { isLoading ->
-                loadingIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
+                binding.loadingIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
             }
         }
 
         lifecycleScope.launch {
             // 观察错误状态
             viewModel.error.collect { errorMessage ->
-                errorStateView.text = errorMessage ?: getString(R.string.loading_failed)
-                errorStateView.visibility = if (errorMessage != null) View.VISIBLE else View.GONE
+                binding.errorStateView.text = errorMessage ?: getString(R.string.loading_failed)
+                binding.errorStateView.visibility =
+                    if (errorMessage != null) View.VISIBLE else View.GONE
             }
         }
     }
+
     private fun setupSwipeToDelete() {
         val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(
             0, ItemTouchHelper.LEFT
@@ -321,15 +353,14 @@ class MainActivity : AppCompatActivity() {
                 val noteToDelete = noteAdapter.getNoteAt(position)
                 viewModel.deleteNote(noteToDelete.noteId)
 
-                Snackbar.make(coordinatorLayout, "笔记已删除", Snackbar.LENGTH_LONG)
-                    .setAnchorView(addNoteFab)
+                Snackbar.make(binding.coordinatorLayout, "笔记已删除", Snackbar.LENGTH_LONG)
+                    .setAnchorView(binding.addNoteFab)
                     .setAction("撤销") {
                         viewModel.saveNote(noteToDelete)
                     }
                     .show()
             }
 
-            //当用户滑动列表项时，列表项下方的视图绘制
             override fun onChildDraw(
                 c: Canvas,
                 recyclerView: RecyclerView,
@@ -339,11 +370,11 @@ class MainActivity : AppCompatActivity() {
                 actionState: Int,
                 isCurrentlyActive: Boolean
             ) {
-                val itemView = viewHolder.itemView //获取列表项的根视图
-                val icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_delete) //加载一个删除图标（ic_delete）。
-                val background = ColorDrawable(Color.RED) //创建一个红色的背景。
+                val itemView = viewHolder.itemView
+                val icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_delete)
+                val background = ColorDrawable(Color.RED)
 
-                // 计算红色背景的位置（在列表项滑开后露出的区域）并将其绘制在 Canvas (c) 上。
+                // Set the background color
                 background.setBounds(
                     itemView.right + dX.toInt(),
                     itemView.top,
@@ -352,36 +383,46 @@ class MainActivity : AppCompatActivity() {
                 )
                 background.draw(c)
 
-                // 计算删除图标的位置并将其绘制在红色背景之上。
+                // Set the icon
                 val iconMargin = (itemView.height - icon!!.intrinsicHeight) / 2
-                val iconTop = itemView.top + (itemView.height - icon.intrinsicHeight) / 2 //左上角是坐标原点 (0,0)。
+                val iconTop = itemView.top + (itemView.height - icon.intrinsicHeight) / 2
                 val iconBottom = iconTop + icon.intrinsicHeight
                 val iconLeft = itemView.right - iconMargin - icon.intrinsicWidth
                 val iconRight = itemView.right - iconMargin
 
-                icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)//
+                icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)
                 icon.draw(c)
 
-                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+                super.onChildDraw(
+                    c,
+                    recyclerView,
+                    viewHolder,
+                    dX,
+                    dY,
+                    actionState,
+                    isCurrentlyActive
+                )
             }
         }
 
-        val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)//创建一个 ItemTouchHelper 的实例，并将我们上面定义的 itemTouchHelperCallback 传递给它。
-        itemTouchHelper.attachToRecyclerView(notesRecyclerView)//将 ItemTouchHelper 附加到 notesRecyclerView 上，这样它就可以开始监听和处理该 RecyclerView 上的滑动和拖动手势了。
+        val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
+        itemTouchHelper.attachToRecyclerView(binding.notesRecyclerView)
     }
+
     private fun updateUIState(isEmptyList: Boolean, isSearching: Boolean) {
         if (isEmptyList && !viewModel.isLoading.value) {
-            emptyStateView.visibility = View.VISIBLE
-            notesRecyclerView.visibility = View.GONE
+            binding.emptyStateView.visibility = View.VISIBLE
+            binding.notesRecyclerView.visibility = View.GONE
             // 根据是否在搜索中，显示不同的提示文本
             if (isSearching) {
-                emptyStateView.text = "没有找到相关内容" // R.string.no_search_results_found
+                binding.emptyStateView.text =
+                    "没有找到相关内容" // R.string.no_search_results_found
             } else {
-                emptyStateView.text = "还没有笔记，快来添加吧" // R.string.no_notes_yet
+                binding.emptyStateView.text = "还没有笔记，快来添加吧" // R.string.no_notes_yet
             }
         } else {
-            emptyStateView.visibility = View.GONE
-            notesRecyclerView.visibility = View.VISIBLE
+            binding.emptyStateView.visibility = View.GONE
+            binding.notesRecyclerView.visibility = View.VISIBLE
         }
     }
 
@@ -389,12 +430,27 @@ class MainActivity : AppCompatActivity() {
         android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
     }
 
+    private fun setupOnBackPressed() {
+        val onBackPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                    binding.drawerLayout.closeDrawer(GravityCompat.START)
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
+    }
+
     override fun onResume() {
         super.onResume()
         // 从其他Activity返回时，根据当前选中的标签或搜索框状态重新加载笔记
-        val searchQuery = searchEditText.text.toString()
+        val searchQuery = binding.searchEditText.text.toString()
         if (searchQuery.isNotEmpty()) {
-            viewModel.searchNotes(searchQuery)
+            viewModel.searchNotes(searchQuery, currentSelectedTagId)
         } else if (currentSelectedTagId > 0) {
             viewModel.loadNotesByTag(currentSelectedTagId)
         } else {
