@@ -89,12 +89,12 @@ class RegisterActivity : AppCompatActivity() {
                         // 更新ServiceLocator中的当前用户ID，确保数据隔离正确工作
                         ServiceLocator.updateLoggedInUserId(userId)
                         
-                        // 为新用户创建默认"未分类"标签
+                        // 为新用户创建默认"未归档"标签
                         lifecycleScope.launch {
                             val tagRepository = ServiceLocator.provideTagRepository()
-                            val defaultTagName = "未分类"
+                            val defaultTagName = "未归档"
                             
-                            // 检查是否已存在"未分类"标签
+                            // 检查是否已存在"未归档"标签
                             if (tagRepository is com.noteability.mynote.data.repository.impl.TagRepositoryImpl) {
                                 val existingTag = tagRepository.getTagByName(userId, defaultTagName)
                                 if (existingTag == null) {
@@ -105,7 +105,7 @@ class RegisterActivity : AppCompatActivity() {
                                         noteCount = 0
                                     )
                                     tagRepository.saveTag(defaultTag)
-                                    Log.d(TAG, "Default tag '未分类' created for user: $userId")
+                                    Log.d(TAG, "Default tag '未归档' created for user: $userId")
                                 }
                             }
                             
