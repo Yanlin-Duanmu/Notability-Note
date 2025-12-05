@@ -34,4 +34,37 @@ class UserRepository(private val userDao: UserDao) {
         val hashed = SecurityUtils.sha256(passwordPlain)
         return if (user.passwordHash == hashed) user else null
     }
+
+    /**
+     * 更新用户名
+     * @param userId 用户ID
+     * @param newUsername 新用户名
+     * @return 是否更新成功
+     */
+    suspend fun updateUsername(userId: Long, newUsername: String): Boolean {
+        return userDao.updateUsername(userId, newUsername) > 0
+    }
+
+    /**
+     * 更新密码
+     * @param userId 用户ID
+     * @param newPasswordPlain 新密码（明文）
+     * @return 是否更新成功
+     */
+    suspend fun updatePassword(userId: Long, newPasswordPlain: String): Boolean {
+        val newPasswordHash = SecurityUtils.sha256(newPasswordPlain)
+        return userDao.updatePassword(userId, newPasswordHash) > 0
+    }
+
+    /**
+     * 验证旧密码是否正确
+     * @param userId 用户ID
+     * @param oldPasswordPlain 旧密码（明文）
+     * @return 是否验证成功
+     */
+    suspend fun verifyPassword(userId: Long, oldPasswordPlain: String): Boolean {
+        val user = userDao.getUserById(userId) ?: return false
+        val oldPasswordHash = SecurityUtils.sha256(oldPasswordPlain)
+        return user.passwordHash == oldPasswordHash
+    }
 }

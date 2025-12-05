@@ -4,35 +4,43 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.progressindicator.CircularProgressIndicator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.navigation.NavigationView
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import android.content.Context
 import android.app.AlertDialog
 import com.noteability.mynote.R
 import com.noteability.mynote.data.entity.Tag
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.activity.OnBackPressedCallback
 import com.noteability.mynote.data.repository.impl.TagRepositoryImpl
 import com.noteability.mynote.ui.viewmodel.TagsViewModel
 
 class TagManagementActivity : AppCompatActivity() {
 
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navigationView: NavigationView
+    private lateinit var toolbar: Toolbar
     private lateinit var tagsRecyclerView: RecyclerView
     private lateinit var searchEditText: EditText
-    private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var tagAdapter: TagAdapter
     private lateinit var addTagButton: FloatingActionButton
     private lateinit var loadingIndicator: CircularProgressIndicator
@@ -69,13 +77,18 @@ class TagManagementActivity : AppCompatActivity() {
         setContentView(R.layout.activity_tag_management)
 
         // 初始化界面组件
+        drawerLayout = findViewById(R.id.drawerLayout)
+        navigationView = findViewById(R.id.navigationView)
+        toolbar = findViewById(R.id.toolbar)
         tagsRecyclerView = findViewById(R.id.tagsRecyclerView)
         searchEditText = findViewById(R.id.searchEditText)
-        bottomNavigationView = findViewById(R.id.bottomNavigationView)
         addTagButton = findViewById(R.id.addTagButton)
         loadingIndicator = findViewById(R.id.loadingIndicator)
         errorTextView = findViewById(R.id.errorTextView)
         emptyStateTextView = findViewById(R.id.emptyStateTextView)
+
+        // 设置Toolbar和侧边栏
+        setupToolbarAndDrawer()
 
         // 初始化RecyclerView
         setupRecyclerView()
@@ -85,9 +98,6 @@ class TagManagementActivity : AppCompatActivity() {
 
         // 设置按钮点击事件
         setupButtonListeners()
-
-        // 设置底部导航栏
-        setupBottomNavigation()
         
         // 获取当前登录用户ID并设置到ViewModel
         val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
@@ -95,6 +105,9 @@ class TagManagementActivity : AppCompatActivity() {
         if (loggedInUserId > 0) {
             tagsViewModel.setLoggedInUserId(loggedInUserId)
         }
+        
+        // 设置返回按钮处理（替代已弃用的onBackPressed方法）
+        setupBackPressedHandler()
         
         // 观察ViewModel中的数据变化
         observeViewModel()
@@ -136,7 +149,7 @@ class TagManagementActivity : AppCompatActivity() {
                     }
                     
                     // 在主线程更新UI
-                    launch(Dispatchers.Main) {
+                    withContext(Dispatchers.Main) {
                         // 更新适配器数据
                         tagAdapter.updateTags(updatedTags)
                         
@@ -229,31 +242,47 @@ class TagManagementActivity : AppCompatActivity() {
         builder.show()
     }
 
-    private fun setupBottomNavigation() {
-        // 设置当前选中的导航项为标签
-        bottomNavigationView.selectedItemId = R.id.nav_tags
+    private fun setupToolbarAndDrawer() {
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_menu)
+
+        // 设置侧边栏选中项为标签
+        navigationView.setCheckedItem(R.id.nav_tags)
         
-        bottomNavigationView.setOnNavigationItemSelectedListener {
+        // 设置侧边栏点击事件
+        setupNavigationDrawerListener()
+    }
+
+    private fun setupNavigationDrawerListener() {
+        navigationView.setNavigationItemSelectedListener {
             when (it.itemId) {
                 R.id.nav_notes -> {
-                    // 跳转到笔记页面
-                    startActivity(Intent(this, MainActivity::class.java))
-                    finish()
-                    true
+                    startActivityWithTransition(MainActivity::class.java)
+                    drawerLayout.closeDrawer(Gravity.LEFT)
+                    return@setNavigationItemSelectedListener true
                 }
                 R.id.nav_tags -> {
-                    // 已经在标签页面，无需操作
-                    true
+                    drawerLayout.closeDrawer(Gravity.LEFT)
+                    return@setNavigationItemSelectedListener true
                 }
                 R.id.nav_settings -> {
-                    // 跳转到设置页面
-                    showToast("跳转到设置页面")
-                    true
+                    startActivityWithTransition(SettingsActivity::class.java)
+                    drawerLayout.closeDrawer(Gravity.LEFT)
+                    return@setNavigationItemSelectedListener true
                 }
                 else -> false
             }
         }
     }
+
+    private fun startActivityWithTransition(activityClass: Class<*>) {
+        val intent = Intent(this, activityClass)
+        startActivity(intent)
+        // overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+    }
+
 
     private fun filterTagsBySearch(query: String) {
         // 使用ViewModel进行搜索
@@ -304,5 +333,30 @@ class TagManagementActivity : AppCompatActivity() {
         }
 
         override fun getItemCount(): Int = tags.size
+    }
+
+    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
+        when (item.itemId) {
+            android.R.id.home -> {
+                // 打开侧边栏
+                drawerLayout.openDrawer(Gravity.LEFT)
+                return true
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun setupBackPressedHandler() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (drawerLayout.isDrawerOpen(Gravity.LEFT)) {
+                    drawerLayout.closeDrawer(Gravity.LEFT)
+                } else {
+                    // 执行默认的返回操作
+                    finish()
+                    // overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
+                }
+            }
+        })
     }
 }

@@ -16,4 +16,13 @@ interface UserDao {
 
     @Query("SELECT * FROM users WHERE userId = :id LIMIT 1")
     suspend fun getUserById(id: Long): User?
+
+    @Query("UPDATE users SET username = :newUsername WHERE userId = :id")
+    suspend fun updateUsername(id: Long, newUsername: String): Int
+
+    @Query("UPDATE users SET passwordHash = :newPasswordHash WHERE userId = :id")
+    suspend fun updatePassword(id: Long, newPasswordHash: String): Int
+
+    @Query("UPDATE users SET username = :newUsername, passwordHash = :newPasswordHash WHERE userId = :id")
+    suspend fun updateUser(id: Long, newUsername: String, newPasswordHash: String): Int
 }

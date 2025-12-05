@@ -123,6 +123,9 @@ class MainActivity : AppCompatActivity() {
         binding.drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
+        // 设置侧边栏选中项为笔记
+        binding.navigationView.setCheckedItem(R.id.nav_notes)
+        
         setupNavigationDrawerListener()
     }
 
@@ -146,7 +149,8 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 R.id.nav_settings -> {
-                    showToast("跳转到设置页面")
+                    val intent = Intent(this, SettingsActivity::class.java)
+                    startActivity(intent)
                     // true
                 }
             }

@@ -1,38 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/background_light"
+    android:background="@color/bg_light"
     android:fitsSystemWindows="true">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/coordinatorLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/purple_500"
-        android:elevation="4dp"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-        app:layout_constraintTop_toTopOf="parent">
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="标签管理"
-            android:textSize="20sp"
-            android:fontFamily="sans-serif-medium" />
-    </androidx.appcompat.widget.Toolbar>
+        android:layout_height="match_parent"
+        android:background="@color/bg_light">
 
-    <!-- 顶部搜索栏 -->
-    <LinearLayout
-        android:id="@+id/searchBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp"
-        android:background="@color/surface_color"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
-        android:elevation="4dp">
+        <com.google.android.material.appbar.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/bg_light_80"
+            app:elevation="0dp">
+
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@android:color/transparent"
+                app:contentInsetEnd="0dp"
+                app:contentInsetStart="0dp">
+
+                <!--  Title, middle -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="标签管理"
+                    android:textColor="@color/text_dark"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+            </androidx.appcompat.widget.Toolbar>
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+                <!-- 顶部搜索栏 -->
+                <LinearLayout
+                    android:id="@+id/searchBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp"
+                    android:background="@color/surface_color"
+                    android:elevation="4dp">
 
         <ImageView
             android:id="@+id/searchIcon"
@@ -58,81 +83,80 @@
 
     </LinearLayout>
 
-    <!-- 标签列表 -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/tagsRecyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:padding="16dp"
-        android:clipToPadding="false"
-        android:paddingBottom="80dp"
-        app:layout_constraintTop_toBottomOf="@id/searchBar"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavigationView" />
+                <!-- 标签列表 -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/tagsRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="16dp"
+                    android:clipToPadding="false"
+                    android:paddingBottom="80dp" />
 
-    <!-- 空状态提示 -->
-    <TextView
-        android:id="@+id/emptyStateTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="暂无标签，点击右下角按钮添加"
-        android:textColor="@color/gray_500"
-        android:textSize="16sp"
-        android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+                <!-- 内容容器，包含加载指示器、空状态和错误状态 -->
+                <FrameLayout
+                    android:id="@+id/contentContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
 
-    <!-- 加载指示器 -->
-    <com.google.android.material.progressindicator.CircularProgressIndicator
-        android:id="@+id/loadingIndicator"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-        
-    <!-- 错误提示 -->
-    <TextView
-        android:id="@+id/errorTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="加载失败，点击重试"
-        android:textColor="@color/error_color"
-        android:textSize="16sp"
-        android:visibility="gone"
-        android:padding="16dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+                    <!-- 空状态提示 -->
+                    <TextView
+                        android:id="@+id/emptyStateTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="暂无标签，点击右下角按钮添加"
+                        android:textColor="@color/gray_500"
+                        android:textSize="16sp"
+                        android:visibility="gone" />
 
-    <!-- 底部导航栏 -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigationView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+                    <!-- 加载指示器 -->
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/loadingIndicator"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:visibility="gone"
+                        app:indicatorColor="@color/brand_primary" />
+                        
+                    <!-- 错误提示 -->
+                    <TextView
+                        android:id="@+id/errorTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="加载失败，点击重试"
+                        android:textColor="@color/error_color"
+                        android:textSize="16sp"
+                        android:visibility="gone"
+                        android:padding="16dp" />
+                </FrameLayout>
+
+        </LinearLayout>
+
+        <!-- 底部导航栏已移除，功能由侧拉栏替代 -->
+
+        <!-- 新增标签按钮 -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/addTagButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="24dp"
+            android:contentDescription="新增标签"
+            android:src="@drawable/ic_add"
+            app:backgroundTint="@color/brand_primary"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.App.RoundedSquare"
+            app:tint="@color/white" />
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+    <!-- 侧边栏 -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigationView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
         android:background="@color/surface_color"
-        android:elevation="8dp"
-        app:itemIconTint="@color/bottom_navigation_item_color"
-        app:itemTextColor="@color/bottom_navigation_item_color"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:menu="@menu/bottom_navigation_menu" />
-
-    <!-- 新增标签按钮 -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/addTagButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:src="@drawable/ic_add"
-        android:tint="@color/white"
-        app:backgroundTint="@color/purple_500"
-        app:fabSize="normal"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavigationView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:rippleColor="@color/purple_300"
-        android:contentDescription="新增标签" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        app:itemBackground="@drawable/nav_item_background_ripple"
+        app:itemIconTint="@color/nav_item_color_selector"
+        app:itemTextColor="@color/nav_item_color_selector"
+        app:menu="@menu/drawer_navigation_menu" />
+</androidx.drawerlayout.widget.DrawerLayout>

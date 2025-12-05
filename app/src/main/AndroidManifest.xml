@@ -67,6 +67,12 @@
             android:exported="false"
             android:label="注册"
             android:theme="@style/Theme.MyNote" />
+            
+        <activity
+            android:name=".ui.activity.SettingsActivity"
+            android:exported="false"
+            android:label="设置"
+            android:theme="@style/Theme.MyNote" />
     </application>
 
 </manifest>
