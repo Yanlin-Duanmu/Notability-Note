@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <EditText
+        android:id="@+id/newUsernameEditText"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@drawable/bg_rounded"
+        android:hint="请输入新用户名"
+        android:inputType="text"
+        android:paddingHorizontal="12dp"
+        android:textColor="@color/text_dark"
+        android:textColorHint="@color/text_gray"
+        android:textSize="16sp" />
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/loadingIndicator"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"
+        android:indeterminate="true" />
+
+</LinearLayout>

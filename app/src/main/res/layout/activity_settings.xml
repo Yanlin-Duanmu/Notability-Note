@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context=".ui.activity.SettingsActivity">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/coordinatorLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/bg_light">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/bg_light_80"
+        app:elevation="0dp">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@android:color/transparent"
+            app:contentInsetEnd="0dp"
+            app:contentInsetStart="0dp">
+
+            <!--  Title, middle -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="设置"
+                android:textColor="@color/text_dark"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+        </androidx.appcompat.widget.Toolbar>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <!-- 欢迎文本区域 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="24dp"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/welcomeText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hi, 用户名"
+                android:textColor="@color/text_dark"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- 设置选项列表 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp">
+
+            <!-- 修改用户名选项 -->
+            <LinearLayout
+                android:id="@+id/usernameOption"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:background="@drawable/bg_rounded"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:layout_marginBottom="12dp"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="修改用户名"
+                android:textColor="@color/text_dark"
+                android:textSize="16sp"
+                android:textStyle="normal" />
+
+                <ImageView
+                android:id="@+id/chevronRightUsername"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_baseline_edit_24"
+                app:tint="@color/text_gray" />
+
+            </LinearLayout>
+
+            <!-- 修改密码选项 -->
+            <LinearLayout
+                android:id="@+id/passwordOption"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:background="@drawable/bg_rounded"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:layout_marginBottom="12dp"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="修改密码"
+                android:textColor="@color/text_dark"
+                android:textSize="16sp"
+                android:textStyle="normal" />
+
+                <ImageView
+                android:id="@+id/chevronRightPassword"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_baseline_edit_24"
+                app:tint="@color/text_gray" />
+
+            </LinearLayout>
+
+            <!-- 分隔线 -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/text_gray"
+                android:alpha="0.1"
+                android:layout_marginVertical="16dp" />
+
+            <!-- 退出登录选项 -->
+            <LinearLayout
+                android:id="@+id/logoutOption"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:background="@drawable/bg_rounded"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="退出登录"
+                android:textColor="@color/text_dark"
+                android:textSize="16sp"
+                android:textStyle="normal" />
+
+                <ImageView
+                android:id="@+id/chevronRightLogout"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_baseline_delete_24"
+                app:tint="@color/text_gray" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- 加载指示器 -->
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/loadingIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            app:indicatorColor="@color/brand_primary"
+            android:layout_marginTop="24dp" />
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <!-- Navigation Drawer -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigationView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:fitsSystemWindows="true"
+        app:menu="@menu/drawer_navigation_menu"
+        app:itemTextColor="@color/nav_item_color_selector"
+        app:itemIconTint="@color/nav_item_color_selector"
+        app:itemBackground="@drawable/nav_item_background_ripple" />
+
+</androidx.drawerlayout.widget.DrawerLayout>

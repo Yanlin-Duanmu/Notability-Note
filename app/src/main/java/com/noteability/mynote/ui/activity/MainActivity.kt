@@ -146,7 +146,8 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 R.id.nav_settings -> {
-                    showToast("跳转到设置页面")
+                    val intent = Intent(this, SettingsActivity::class.java)
+                    startActivity(intent)
                     // true
                 }
             }
