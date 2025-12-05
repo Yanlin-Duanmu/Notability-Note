@@ -133,11 +133,15 @@ class MainActivity : AppCompatActivity() {
         binding.navigationView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.nav_notes -> {
-                    if (currentSelectedTagId > 0) {
-                        currentSelectedTagId = 0L
+                    currentSelectedTagId = 0L
+                    updateTagSelectionState()
+                    showToast("显示所有笔记")
+
+                    val query = binding.searchEditText.text.toString()
+                    if (query.isNotEmpty()) {
+                        viewModel.searchNotes(query, 0L)
+                    } else {
                         viewModel.loadNotes()
-                        showToast("显示所有笔记")
-                        updateTagSelectionState()
                     }
                     // true
                 }
@@ -205,16 +209,20 @@ class MainActivity : AppCompatActivity() {
 
                     tagView.text = name
                     tagView.setOnClickListener {
-                        binding.searchEditText.text.clear()
-
-                        if (currentSelectedTagId == id && id != 0L) {
-                            currentSelectedTagId = 0L
-                            viewModel.loadNotes()
-                        } else {
-                            currentSelectedTagId = id
-                            if (id == 0L) viewModel.loadNotes() else viewModel.loadNotesByTag(id)
-                        }
+                        val newTagId = if (currentSelectedTagId == id && id != 0L) 0L else id
+                        currentSelectedTagId = newTagId
                         updateTagSelectionState()
+
+                        val query = binding.searchEditText.text.toString()
+                        if (query.isNotEmpty()) {
+                            viewModel.searchNotes(query, currentSelectedTagId)
+                        } else {
+                            if (currentSelectedTagId == 0L) {
+                                viewModel.loadNotes()
+                            } else {
+                                viewModel.loadNotesByTag(currentSelectedTagId)
+                            }
+                        }
                     }
 
                     // Add to binding
@@ -267,7 +275,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s.toString()
-                viewModel.searchNotes(query)
+                viewModel.searchNotes(query, currentSelectedTagId)
             }
 
             override fun afterTextChanged(s: Editable?) {}
@@ -290,7 +298,14 @@ class MainActivity : AppCompatActivity() {
 
         binding.errorStateView.setOnClickListener {
             // 重试加载
-            viewModel.loadNotes()
+            val query = binding.searchEditText.text.toString()
+            if (query.isNotEmpty()) {
+                viewModel.searchNotes(query, currentSelectedTagId)
+            } else if (currentSelectedTagId > 0) {
+                viewModel.loadNotesByTag(currentSelectedTagId)
+            } else {
+                viewModel.loadNotes()
+            }
         }
     }
 
@@ -436,7 +451,7 @@ class MainActivity : AppCompatActivity() {
         // 从其他Activity返回时，根据当前选中的标签或搜索框状态重新加载笔记
         val searchQuery = binding.searchEditText.text.toString()
         if (searchQuery.isNotEmpty()) {
-            viewModel.searchNotes(searchQuery)
+            viewModel.searchNotes(searchQuery, currentSelectedTagId)
         } else if (currentSelectedTagId > 0) {
             viewModel.loadNotesByTag(currentSelectedTagId)
         } else {
