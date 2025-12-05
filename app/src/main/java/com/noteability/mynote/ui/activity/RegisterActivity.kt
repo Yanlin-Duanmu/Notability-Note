@@ -7,7 +7,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import com.noteability.mynote.MainActivity
+import com.noteability.mynote.R
 import com.noteability.mynote.databinding.ActivityRegisterBinding
 import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.ui.viewmodel.AuthViewModel

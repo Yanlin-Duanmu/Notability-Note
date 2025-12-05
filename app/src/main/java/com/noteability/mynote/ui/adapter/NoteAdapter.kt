@@ -75,7 +75,7 @@ class NoteAdapter(
         private val noteTitle: TextView = itemView.findViewById(R.id.noteTitle)
         private val noteContentPreview: TextView = itemView.findViewById(R.id.noteContentPreview)
         private val noteUpdateTime: TextView = itemView.findViewById(R.id.noteUpdateTime)
-        private val tagsContainer: ViewGroup = itemView.findViewById(R.id.tagsContainer)
+        private val tagsContainer: ViewGroup = itemView.findViewById(R.id.noteTagsContainer)
 
         fun bind(note: Note) {
             noteTitle.text = note.title
