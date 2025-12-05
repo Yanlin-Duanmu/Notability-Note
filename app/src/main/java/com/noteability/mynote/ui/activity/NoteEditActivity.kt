@@ -302,31 +302,55 @@ class NoteEditActivity : AppCompatActivity() {
         }
 
         if (title.isNotEmpty() || content.isNotEmpty()) {
-            val note = if (noteId != null && noteId != -1L) {
-                // 更新现有笔记
-                Note(
-                    noteId = noteId!!,
-                    userId = loggedInUserId,
-                    tagId = currentTag?.tagId ?: 1,
-                    title = title,
-                    content = content,
-                    updatedAt = System.currentTimeMillis()
-                )
-            } else {
-                // 创建新笔记
-                Note(
-                    noteId = 0,
-                    userId = loggedInUserId,
-                    tagId = currentTag?.tagId ?: 1,
-                    title = title,
-                    content = content,
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
-                )
-            }
+            lifecycleScope.launch {
+                var tagIdToUse = currentTag?.tagId
+                
+                // 如果没有选择标签，尝试获取或创建"未分类"标签
+                if (tagIdToUse == null) {
+                    // 尝试获取"未分类"标签
+                    var uncategorizedTag = tagRepository.getTagByName(loggedInUserId, "未分类")
+                    
+                    // 如果"未分类"标签不存在，创建一个新的
+                    if (uncategorizedTag == null) {
+                        val newTag = Tag(
+                            tagId = 0,
+                            userId = loggedInUserId,
+                            name = "未分类",
+                            noteCount = 0
+                        )
+                        tagRepository.saveTag(newTag)
+                        uncategorizedTag = tagRepository.getTagByName(loggedInUserId, "未分类")
+                    }
+                    
+                    tagIdToUse = uncategorizedTag?.tagId ?: 1
+                }
+                
+                val note = if (noteId != null && noteId != -1L) {
+                    // 更新现有笔记
+                    Note(
+                        noteId = noteId!!,
+                        userId = loggedInUserId,
+                        tagId = tagIdToUse,
+                        title = title,
+                        content = content,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                } else {
+                    // 创建新笔记
+                    Note(
+                        noteId = 0,
+                        userId = loggedInUserId,
+                        tagId = tagIdToUse,
+                        title = title,
+                        content = content,
+                        createdAt = System.currentTimeMillis(),
+                        updatedAt = System.currentTimeMillis()
+                    )
+                }
 
-            // 使用ViewModel保存笔记
-            noteDetailViewModel.saveNote(note)
+                // 使用ViewModel保存笔记
+                noteDetailViewModel.saveNote(note)
+            }
         }
     }
 
