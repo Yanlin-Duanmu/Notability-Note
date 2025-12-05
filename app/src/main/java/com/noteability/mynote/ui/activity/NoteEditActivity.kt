@@ -49,7 +49,7 @@ class NoteEditActivity : AppCompatActivity() {
     private lateinit var errorTextView: TextView
 
     // 新增：预览相关组件
-    private lateinit var previewButton: ImageButton
+    private lateinit var previewButton: TextView
     private lateinit var previewTextView: TextView
     private lateinit var markwon: Markwon
 
@@ -229,6 +229,7 @@ class NoteEditActivity : AppCompatActivity() {
                     titleEditText.setText(it.title)
                     //直接显示 Markdown 文本，不再使用 StyleManager
                     contentEditText.setText(it.content)
+                    togglePreviewMode()
 
                     // 设置标签
                     if (realTags.isNotEmpty()) {
@@ -471,24 +472,24 @@ class NoteEditActivity : AppCompatActivity() {
             contentEditText.visibility = View.GONE
             previewTextView.visibility = View.VISIBLE
 
-            // 渲染 Markdown
             val markdownText = contentEditText.text.toString()
             MarkdownUtils.renderMarkdown(previewTextView, markdownText, markwon)
 
-            // 更新按钮颜色
-            previewButton.setColorFilter(getColor(R.color.purple_500))
+            // 按钮文字改成“编辑”
+            previewButton.text = "编辑"
 
             // 隐藏键盘
             contentEditText.clearFocus()
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
             imm.hideSoftInputFromWindow(contentEditText.windowToken, 0)
+
         } else {
-            // 切换回编辑模式
+            // 切换到编辑模式
             contentEditText.visibility = View.VISIBLE
             previewTextView.visibility = View.GONE
 
-            // 恢复按钮颜色
-            previewButton.setColorFilter(getColor(R.color.gray_700))
+            // 按钮文字改成“预览”
+            previewButton.text = "预览"
 
             // 显示键盘
             contentEditText.requestFocus()
@@ -496,6 +497,7 @@ class NoteEditActivity : AppCompatActivity() {
             imm.showSoftInput(contentEditText, InputMethodManager.SHOW_IMPLICIT)
         }
     }
+
 
     private fun setupTextWatchers() {
     }
