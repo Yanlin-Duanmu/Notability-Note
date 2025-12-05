@@ -88,8 +88,31 @@ class RegisterActivity : AppCompatActivity() {
                         saveLoggedInUser(userId)
                         // 更新ServiceLocator中的当前用户ID，确保数据隔离正确工作
                         ServiceLocator.updateLoggedInUserId(userId)
-                        startActivity(Intent(this, MainActivity::class.java))
-                        finish()
+                        
+                        // 为新用户创建默认"未归档"标签
+                        lifecycleScope.launch {
+                            val tagRepository = ServiceLocator.provideTagRepository()
+                            val defaultTagName = "未归档"
+                            
+                            // 检查是否已存在"未归档"标签
+                            if (tagRepository is com.noteability.mynote.data.repository.impl.TagRepositoryImpl) {
+                                val existingTag = tagRepository.getTagByName(userId, defaultTagName)
+                                if (existingTag == null) {
+                                    // 创建默认标签
+                                    val defaultTag = com.noteability.mynote.data.entity.Tag(
+                                        userId = userId,
+                                        name = defaultTagName,
+                                        noteCount = 0
+                                    )
+                                    tagRepository.saveTag(defaultTag)
+                                    Log.d(TAG, "Default tag '未归档' created for user: $userId")
+                                }
+                            }
+                            
+                            // 启动主页面
+                            startActivity(Intent(this@RegisterActivity, MainActivity::class.java))
+                            finish()
+                        }
                     } else {
                         // 注册失败，显示错误信息
                         binding.tvError.text = "注册失败，请重试"

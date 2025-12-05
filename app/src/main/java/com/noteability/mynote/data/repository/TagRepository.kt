@@ -8,7 +8,10 @@ interface TagRepository {
     fun getAllTags(): Flow<List<Tag>>
     
     // 根据ID获取标签
-    fun getTagById(tagId: Long): Flow<Tag?>
+    fun getTagById(tagId: Long): Flow<Tag?>    
+    
+    // 根据名称获取标签
+    suspend fun getTagByName(userId: Long, tagName: String): Tag?
     
     // 搜索标签
     fun searchTags(query: String): Flow<List<Tag>>

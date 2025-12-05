@@ -39,6 +39,11 @@ class TagRepositoryImpl(private val context: Context) : TagRepository {
         emit(tagDao.getTagById(currentUserId, tagId))
     }
     
+    // 根据标签名获取标签
+    override suspend fun getTagByName(userId: Long, tagName: String): Tag? {
+        return tagDao.getTagByName(userId, tagName)
+    }
+    
     override fun searchTags(query: String): Flow<List<Tag>> = flow {
         try {
             if (query.isBlank()) {
