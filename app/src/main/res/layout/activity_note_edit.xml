@@ -163,45 +163,61 @@
                         android:layout_marginHorizontal="8dp"
                         android:background="@color/gray_300" />
 <!--                    添加预览按钮-->
-                    <ImageButton
+                    <TextView
                         android:id="@+id/previewButton"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@android:color/transparent"
-                        android:src="@drawable/ic_baseline_format_list_numbered_24"
-                    app:tint="@color/gray_700" />
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="预览"
+                        android:textSize="16sp"
+                        android:padding="8dp"
+                        android:textColor="@color/gray_700"
+                        android:background="@null" />
+
                 </LinearLayout>
             </LinearLayout>
 
-            <EditText
-                android:id="@+id/contentEditText"
+            <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="296dp"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="100dp"
-                android:background="@null"
-                android:gravity="top"
-                android:hint="开始编写笔记..."
-                android:inputType="textMultiLine|textCapSentences"
-                android:minHeight="400dp"
-                android:paddingBottom="16dp"
-                android:textSize="16sp" />
-            <TextView
-                android:id="@+id/previewTextView"
-                android:layout_width="match_parent"
-                android:layout_height="296dp"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="100dp"
-                android:background="@null"
-            android:gravity="top"
-            android:hint="预览区域"
-            android:visibility="gone"
-            android:paddingBottom="16dp"
-            android:textSize="16sp" />
+                android:layout_height="match_parent"
+                android:fillViewport="true">
 
-<!--            <Button-->
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- 编辑区域 -->
+                    <EditText
+                        android:id="@+id/contentEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="400dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginTop="16dp"
+                        android:background="@null"
+                        android:gravity="top"
+                        android:hint="开始编写笔记..."
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:textSize="16sp" />
+
+                    <!-- 预览区域 -->
+                    <TextView
+                        android:id="@+id/previewTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="400dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginTop="16dp"
+                        android:background="@null"
+                        android:gravity="top"
+                        android:visibility="gone"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+            </ScrollView>
+
+
+            <!--            <Button-->
 <!--                android:id="@+id/button3"-->
 <!--                android:layout_width="match_parent"-->
 <!--                android:layout_height="56dp"-->
