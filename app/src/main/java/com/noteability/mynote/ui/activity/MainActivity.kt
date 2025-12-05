@@ -1,4 +1,4 @@
-package com.noteability.mynote
+package com.noteability.mynote.ui.activity
 
 import android.content.Intent
 import android.content.res.ColorStateList
@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
+import com.noteability.mynote.R
 import com.noteability.mynote.databinding.ActivityMainBinding
 import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.ui.adapter.NoteAdapter

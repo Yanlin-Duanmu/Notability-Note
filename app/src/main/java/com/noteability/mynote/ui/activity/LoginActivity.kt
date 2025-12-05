@@ -5,7 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.noteability.mynote.MainActivity
+import com.noteability.mynote.R
 import com.noteability.mynote.databinding.ActivityLoginBinding
 import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.ui.viewmodel.AuthViewModel

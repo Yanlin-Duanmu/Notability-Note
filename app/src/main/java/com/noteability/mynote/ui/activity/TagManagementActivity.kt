@@ -1,4 +1,4 @@
-package com.noteability.mynote
+package com.noteability.mynote.ui.activity
 
 import android.content.Intent
 import android.os.Bundle
@@ -23,6 +23,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import android.content.Context
 import android.app.AlertDialog
+import com.noteability.mynote.R
 import com.noteability.mynote.data.entity.Tag
 import com.noteability.mynote.data.repository.impl.TagRepositoryImpl
 import com.noteability.mynote.ui.viewmodel.TagsViewModel

@@ -1,4 +1,4 @@
-package com.noteability.mynote
+package com.noteability.mynote.ui.activity
 
 import android.app.AlertDialog
 import android.content.Context
@@ -21,6 +21,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import com.noteability.mynote.R
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.entity.Tag
 import com.noteability.mynote.data.repository.impl.NoteRepositoryImpl

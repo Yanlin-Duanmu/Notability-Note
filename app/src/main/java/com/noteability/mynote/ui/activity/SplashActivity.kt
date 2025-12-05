@@ -5,8 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.noteability.mynote.MainActivity
-import com.noteability.mynote.ui.activity.LoginActivity
+import com.noteability.mynote.R
 import com.noteability.mynote.databinding.ActivitySplashBinding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
