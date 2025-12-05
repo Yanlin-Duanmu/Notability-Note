@@ -416,7 +416,8 @@ class NoteEditActivity : AppCompatActivity() {
                         }
 
                         if (currentTag == null) {
-                            currentTag = realTags[0]
+                            // 当没有预选中的标签时，优先选择"未归档"标签
+                            currentTag = realTags.find { it.name == "未归档" } ?: realTags[0]
                         }
 
                         tagTextView.text = currentTag?.name
@@ -432,7 +433,8 @@ class NoteEditActivity : AppCompatActivity() {
         if (realTags.isNotEmpty()) {
             currentTag = realTags.find { it.tagId == preSelectedTagId }
             if (currentTag == null && realTags.isNotEmpty()) {
-                currentTag = realTags[0]
+                // 当找不到预选中的标签时，优先选择"未归档"标签
+                currentTag = realTags.find { it.name == "未归档" } ?: realTags[0]
             }
             tagTextView.text = currentTag?.name
         }
