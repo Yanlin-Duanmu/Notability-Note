@@ -9,11 +9,12 @@ import com.noteability.mynote.data.dao.NoteDao
 import com.noteability.mynote.data.dao.TagDao
 import com.noteability.mynote.data.entity.User
 import com.noteability.mynote.data.entity.Note
+import com.noteability.mynote.data.entity.NoteFts
 import com.noteability.mynote.data.entity.Tag
 
 @Database(
-    entities = [User::class, Note::class, Tag::class],
-    version = 5,
+    entities = [User::class, Note::class, Tag::class, NoteFts::class],
+    version = 8, // 1. 将版本号再次提升，例如 7 -> 8
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -32,11 +33,11 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "mynote_database"
                 )
-                // 开发阶段保留破坏性迁移，便于数据库结构频繁修改
-                // 这会在数据库版本升级时删除所有表并重新创建
-                // 注意：进入生产环境前，必须实现具体的Migration类来保留用户数据
-                .fallbackToDestructiveMigration()
-                .build()
+                    // 2. 使用“破坏性迁移”来解决所有迁移问题
+                    // 这会在版本升级时删除所有数据并根据最新代码重建所有表
+                    // 对于修复棘手的FTS迁移问题，这是最可靠的方法
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }
