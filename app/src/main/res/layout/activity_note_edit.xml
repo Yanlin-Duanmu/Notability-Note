@@ -62,19 +62,21 @@
                             android:id="@+id/tagTextView"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="@drawable/tag_background"
+                            android:background="@drawable/bg_rounded"
+                            android:backgroundTint="@color/filter_bar_tag_bg_selected"
                             android:paddingHorizontal="12dp"
                             android:paddingVertical="6dp"
                             android:text="工作"
+                            android:textColor="@color/filter_bar_tag_text_selected"
                             android:textSize="14sp" />
 
                         <ImageView
                             android:id="@+id/changeTagButton"
                             android:layout_width="24dp"
-                            android:layout_height="24dp"
+                            android:layout_height="match_parent"
                             android:layout_marginLeft="8dp"
                             android:src="@drawable/ic_baseline_edit_24"
-                            app:tint="@color/purple_500" />
+                            app:tint="@color/bg_gray" />
                     </LinearLayout>
                 </HorizontalScrollView>
             </LinearLayout>
@@ -138,8 +140,8 @@
                         app:tint="@color/gray_700" />
 
                     <View
-                        android:layout_width="1dp"
-                        android:layout_height="24dp"
+                        android:layout_width="2dp"
+                        android:layout_height="match_parent"
                         android:layout_marginHorizontal="8dp"
                         android:background="@color/gray_300" />
 
@@ -159,8 +161,8 @@
                         android:src="@drawable/ic_baseline_format_list_numbered_24"
                         app:tint="@color/gray_700" />
                     <View
-                        android:layout_width="1dp"
-                        android:layout_height="24dp"
+                        android:layout_width="2dp"
+                        android:layout_height="match_parent"
                         android:layout_marginHorizontal="8dp"
                         android:background="@color/gray_300" />
 <!--                    添加预览按钮-->

@@ -464,19 +464,19 @@ class NoteEditActivity : AppCompatActivity() {
         boldButton.setOnClickListener {
             MarkdownUtils.insertMarkdownFormat(contentEditText, "bold")
             isBold = !isBold
-            boldButton.setColorFilter(if (isBold) getColor(R.color.purple_500) else getColor(R.color.gray_700))
+            boldButton.setColorFilter(if (isBold) getColor(R.color.brand_primary) else getColor(R.color.text_gray))
         }
 
         italicButton.setOnClickListener {
             MarkdownUtils.insertMarkdownFormat(contentEditText, "italic")
             isItalic = !isItalic
-            italicButton.setColorFilter(if (isItalic) getColor(R.color.purple_500) else getColor(R.color.gray_700))
+            italicButton.setColorFilter(if (isItalic) getColor(R.color.brand_primary) else getColor(R.color.text_gray))
         }
 
         underlineButton.setOnClickListener {
             MarkdownUtils.insertMarkdownFormat(contentEditText, "underline")
             isUnderline = !isUnderline
-            underlineButton.setColorFilter(if (isUnderline) getColor(R.color.purple_500) else getColor(R.color.gray_700))
+            underlineButton.setColorFilter(if (isUnderline) getColor(R.color.brand_primary) else getColor(R.color.text_gray))
         }
 
         bulletListButton.setOnClickListener {
