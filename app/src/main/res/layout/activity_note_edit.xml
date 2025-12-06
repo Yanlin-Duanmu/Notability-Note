@@ -140,8 +140,8 @@
                         app:tint="@color/gray_700" />
 
                     <View
-                        android:layout_width="1dp"
-                        android:layout_height="24dp"
+                        android:layout_width="2dp"
+                        android:layout_height="match_parent"
                         android:layout_marginHorizontal="8dp"
                         android:background="@color/gray_300" />
 
@@ -161,8 +161,8 @@
                         android:src="@drawable/ic_baseline_format_list_numbered_24"
                         app:tint="@color/gray_700" />
                     <View
-                        android:layout_width="1dp"
-                        android:layout_height="24dp"
+                        android:layout_width="2dp"
+                        android:layout_height="match_parent"
                         android:layout_marginHorizontal="8dp"
                         android:background="@color/gray_300" />
 <!--                    添加预览按钮-->
