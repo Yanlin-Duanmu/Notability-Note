@@ -7,10 +7,12 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -25,6 +27,7 @@ import com.noteability.mynote.R
 import com.noteability.mynote.databinding.ActivityMainBinding
 import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.ui.adapter.NoteAdapter
+import com.noteability.mynote.ui.adapter.SearchSuggestionAdapter
 import com.noteability.mynote.ui.viewmodel.NotesViewModel
 import com.noteability.mynote.ui.viewmodel.TagsViewModel
 import kotlinx.coroutines.launch
@@ -33,12 +36,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var toggle: ActionBarDrawerToggle
     private lateinit var noteAdapter: NoteAdapter
+    private lateinit var searchSuggestionAdapter: SearchSuggestionAdapter
     private var allTagView: TextView? = null
     private val tagViews = mutableMapOf<Long, TextView>()
 
     // ViewModel实例
     private lateinit var viewModel: NotesViewModel
     private lateinit var tagsViewModel: TagsViewModel
+
+    // 存储当前选中的标签ID，默认为0表示未筛选标签
+    private var currentSelectedTagId: Long = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,12 +58,7 @@ class MainActivity : AppCompatActivity() {
 
         // 如果用户未登录，跳转到登录页面
         if (loggedInUserId <= 0) {
-            startActivity(
-                Intent(
-                    this,
-                    com.noteability.mynote.ui.activity.LoginActivity::class.java
-                )
-            )
+            startActivity(Intent(this, LoginActivity::class.java))
             finish()
             return
         }
@@ -100,7 +102,7 @@ class MainActivity : AppCompatActivity() {
         val tagRepository = ServiceLocator.provideTagRepository()
 
         // 初始化ViewModels
-        viewModel = NotesViewModel(noteRepository)
+        viewModel = NotesViewModel(noteRepository, ServiceLocator.provideSearchHistoryManager(this))
         tagsViewModel = TagsViewModel(tagRepository)
 
         // 设置当前登录用户ID
@@ -157,7 +159,6 @@ class MainActivity : AppCompatActivity() {
             }
 
             binding.drawerLayout.closeDrawer(GravityCompat.START)
-
             true
         }
     }
@@ -173,6 +174,18 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }, tagNameMap = tagNameMap)
 
+        searchSuggestionAdapter = SearchSuggestionAdapter(
+            onSuggestionClick = { query ->
+                binding.searchEditText.setText(query)
+                binding.searchEditText.setSelection(query.length) // 光标移到末尾
+                binding.searchSuggestionsRecyclerview.visibility = View.GONE
+                // 不需要手动调用searchNotes，因为setText已经触发了onTextChanged监听
+            },
+            onSuggestionDelete = { query ->
+                viewModel.deleteSearchFromHistory(query)
+            }
+        )
+
         // 然后再设置标签数据收集
         lifecycleScope.launch {
             tagsViewModel.tags.collect { tagsList ->
@@ -187,12 +200,13 @@ class MainActivity : AppCompatActivity() {
 
         binding.notesRecyclerView.layoutManager = LinearLayoutManager(this)
         binding.notesRecyclerView.adapter = noteAdapter
+        binding.searchSuggestionsRecyclerview.adapter = searchSuggestionAdapter
     }
 
     private fun loadTags() {
         lifecycleScope.launch {
             tagsViewModel.tags.collect { tags ->
-                // CLear views
+                // Clear views
                 binding.tagsContainer.removeAllViews()
                 tagViews.clear()
 
@@ -206,7 +220,6 @@ class MainActivity : AppCompatActivity() {
 
                     tagView.text = name
                     tagView.setOnClickListener {
-
                         val newTagId = if (currentSelectedTagId == id && id != 0L) 0L else id
                         currentSelectedTagId = newTagId
                         updateTagSelectionState()
@@ -239,23 +252,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateTagSelectionState() {
         (tagViews.values + listOfNotNull(allTagView)).forEach { view ->
-            val defaultBgColor =
-                ContextCompat.getColor(view.context, R.color.filter_bar_tag_bg_default)
-            val defaultTextColor =
-                ContextCompat.getColor(view.context, R.color.filter_bar_tag_text_default)
+            val defaultBgColor = ContextCompat.getColor(view.context, R.color.filter_bar_tag_bg_default)
+            val defaultTextColor = ContextCompat.getColor(view.context, R.color.filter_bar_tag_text_default)
             view.backgroundTintList = ColorStateList.valueOf(defaultBgColor)
             view.setTextColor(defaultTextColor)
             view.setTypeface(null, Typeface.NORMAL)
         }
 
-        val selectedView =
-            if (currentSelectedTagId == 0L) allTagView else tagViews[currentSelectedTagId]
+        val selectedView = if (currentSelectedTagId == 0L) allTagView else tagViews[currentSelectedTagId]
 
         selectedView?.let { view ->
-            val selectedBgColor =
-                ContextCompat.getColor(view.context, R.color.filter_bar_tag_bg_selected)
-            val selectedTextColor =
-                ContextCompat.getColor(view.context, R.color.filter_bar_tag_text_selected)
+            val selectedBgColor = ContextCompat.getColor(view.context, R.color.filter_bar_tag_bg_selected)
+            val selectedTextColor = ContextCompat.getColor(view.context, R.color.filter_bar_tag_text_selected)
             view.backgroundTintList = ColorStateList.valueOf(selectedBgColor)
             view.setTextColor(selectedTextColor)
             view.setTypeface(view.typeface, Typeface.BOLD)
@@ -263,26 +271,42 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSearchListener() {
-        binding.searchEditText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(
-                s: CharSequence?,
-                start: Int,
-                count: Int,
-                after: Int
-            ) {
+        // 1. 观察ViewModel中的建议数据流
+        lifecycleScope.launch {
+            viewModel.suggestions.collect { suggestionList ->
+                searchSuggestionAdapter.submitList(suggestionList)
+                if (binding.searchEditText.hasFocus() && suggestionList.isNotEmpty()) {
+                    binding.searchSuggestionsRecyclerview.visibility = View.VISIBLE
+                } else {
+                    binding.searchSuggestionsRecyclerview.visibility = View.GONE
+                }
             }
+        }
 
+        // 2. 监听文本变化
+        binding.searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s.toString()
-                viewModel.searchNotes(query, currentSelectedTagId)
+                viewModel.searchNotes(query, currentSelectedTagId) // 实时搜索笔记
+                viewModel.loadSuggestions(query)                 // 实时加载建议
             }
-
             override fun afterTextChanged(s: Editable?) {}
         })
-    }
 
-    // 存储当前选中的标签ID，默认为0表示未筛选标签
-    private var currentSelectedTagId: Long = 0L
+        // 3. 监听焦点变化
+        binding.searchEditText.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                viewModel.loadSuggestions(binding.searchEditText.text.toString())
+            } else {
+                binding.searchSuggestionsRecyclerview.visibility = View.GONE
+                val query = binding.searchEditText.text.toString()
+                if (query.isNotBlank()) {
+                    viewModel.saveSearchToHistory(query)
+                }
+            }
+        }
+    }
 
     private fun setupButtonListeners() {
         binding.addNoteFab.setOnClickListener {
@@ -310,10 +334,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun observeViewModel() {
         lifecycleScope.launch {
-            // 观察笔记列表
-            viewModel.notes.collect { notes ->
+            viewModel.searchResults.collect { notes ->
                 noteAdapter.updateNotes(notes)
-                // 检查搜索框内容，以决定“空状态”的提示文本
                 val isSearching = binding.searchEditText.text.isNotEmpty()
                 updateUIState(notes.isEmpty(), isSearching)
             }
@@ -330,8 +352,7 @@ class MainActivity : AppCompatActivity() {
             // 观察错误状态
             viewModel.error.collect { errorMessage ->
                 binding.errorStateView.text = errorMessage ?: getString(R.string.loading_failed)
-                binding.errorStateView.visibility =
-                    if (errorMessage != null) View.VISIBLE else View.GONE
+                binding.errorStateView.visibility = if (errorMessage != null) View.VISIBLE else View.GONE
             }
         }
     }
@@ -393,15 +414,7 @@ class MainActivity : AppCompatActivity() {
                 icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)
                 icon.draw(c)
 
-                super.onChildDraw(
-                    c,
-                    recyclerView,
-                    viewHolder,
-                    dX,
-                    dY,
-                    actionState,
-                    isCurrentlyActive
-                )
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
             }
         }
 
@@ -415,8 +428,7 @@ class MainActivity : AppCompatActivity() {
             binding.notesRecyclerView.visibility = View.GONE
             // 根据是否在搜索中，显示不同的提示文本
             if (isSearching) {
-                binding.emptyStateView.text =
-                    "没有找到相关内容" // R.string.no_search_results_found
+                binding.emptyStateView.text = "没有找到相关内容" // R.string.no_search_results_found
             } else {
                 binding.emptyStateView.text = "还没有笔记，快来添加吧" // R.string.no_notes_yet
             }
@@ -427,7 +439,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showToast(message: String) {
-        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun setupOnBackPressed() {
@@ -443,18 +455,5 @@ class MainActivity : AppCompatActivity() {
             }
         }
         onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // 从其他Activity返回时，根据当前选中的标签或搜索框状态重新加载笔记
-        val searchQuery = binding.searchEditText.text.toString()
-        if (searchQuery.isNotEmpty()) {
-            viewModel.searchNotes(searchQuery, currentSelectedTagId)
-        } else if (currentSelectedTagId > 0) {
-            viewModel.loadNotesByTag(currentSelectedTagId)
-        } else {
-            viewModel.loadNotes()
-        }
     }
 }

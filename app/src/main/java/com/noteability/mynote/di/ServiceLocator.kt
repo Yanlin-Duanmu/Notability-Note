@@ -9,6 +9,7 @@ import com.noteability.mynote.data.repository.UserRepository
 // UserRepository是一个类而不是接口，不需要导入Impl实现
 import com.noteability.mynote.data.repository.impl.NoteRepositoryImpl
 import com.noteability.mynote.data.repository.impl.TagRepositoryImpl
+import com.noteability.mynote.ui.search.SearchHistoryManager
 import com.noteability.mynote.ui.viewmodel.NoteDetailViewModel
 import com.noteability.mynote.ui.viewmodel.NotesViewModel
 import com.noteability.mynote.ui.viewmodel.TagsViewModel
@@ -71,6 +72,11 @@ object ServiceLocator {
         }
         repository
     }
+
+    private val searchHistoryManager: SearchHistoryManager by lazy {
+        requireNotNull(context) { "Context must be set before using ServiceLocator" }
+        SearchHistoryManager(context!!)
+    }
     
     // Repository提供者方法
     fun provideUserRepository(): UserRepository {
@@ -83,6 +89,10 @@ object ServiceLocator {
     
     fun provideTagRepository(): TagRepository {
         return tagRepository
+    }
+
+    fun provideSearchHistoryManager(context: Context): SearchHistoryManager {
+        return SearchHistoryManager(context)
     }
     
     // 更新当前登录用户ID到所有需要的仓库

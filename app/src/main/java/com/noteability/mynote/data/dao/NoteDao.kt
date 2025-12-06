@@ -6,6 +6,7 @@ import androidx.room.Update
 import androidx.room.Delete
 import androidx.room.Query
 import com.noteability.mynote.data.entity.Note
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface NoteDao {
@@ -22,55 +23,36 @@ interface NoteDao {
 
     // 查询操作
     @Query("SELECT * FROM notes WHERE userId = :userId ORDER BY updatedAt DESC")
-    suspend fun getNotesByUserId(userId: Long): List<Note>
+    fun getNotesByUserId(userId: Long): Flow<List<Note>>
 
     @Query("SELECT * FROM notes WHERE userId = :userId AND tagId = :tagId ORDER BY updatedAt DESC")
-    suspend fun getNotesByTagId(userId: Long, tagId: Long): List<Note>
+    fun getNotesByTagId(userId: Long, tagId: Long): Flow<List<Note>>
 
     @Query("SELECT * FROM notes WHERE noteId = :id")
     suspend fun getNoteById(id: Long): Note?
 
-    // 搜索功能
-    @Query("SELECT * FROM notes WHERE userId = :userId AND title LIKE '%' || :query || '%' ORDER BY updatedAt DESC")
-    suspend fun searchNotes(userId: Long, query: String): List<Note>
+    // FTS 全文搜索功能
+    @Query("""
+        SELECT * FROM notes JOIN notes_fts ON notes.rowid = notes_fts.rowid 
+        WHERE notes_fts MATCH :query AND userId = :userId    """)
+    fun searchNotes(userId: Long, query: String): Flow<List<Note>>
 
-    @Query("SELECT * FROM notes WHERE userId = :userId AND (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%') ORDER BY updatedAt DESC")
-    suspend fun searchNotesByTitleOrContent(userId: Long, query: String): List<Note>
+    @Query("""
+        SELECT * FROM notes JOIN notes_fts ON notes.rowid = notes_fts.rowid 
+        WHERE notes_fts MATCH :query AND userId = :userId AND tagId = :tagId
+    """)
+    fun searchNotesByTag(userId: Long, tagId: Long, query: String): Flow<List<Note>>
 
-    @Query("SELECT * FROM notes WHERE userId = :userId AND tagId = :tagId AND (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%') ORDER BY updatedAt DESC")
-    suspend fun searchNotesByTagAndTitleOrContent(userId: Long, tagId: Long, query: String): List<Note>
-
-    // 为富文本模块提供的专用方法
-    @Insert
-    suspend fun insertArticle(note: Note): Long
-
-    @Query("UPDATE notes SET title = :newTitle, content = :newContent, updatedAt = :updatedTime WHERE noteId = :id")
-    suspend fun updateArticle(id: Long, newTitle: String, newContent: String, updatedTime: Long): Int
-
-    // 便捷方法 - 自动处理时间戳的插入和更新
-    @Query("INSERT INTO notes (title, content, userId, tagId, createdAt, updatedAt) VALUES (:title, :content, :userId, :tagId, :createdTime, :updatedTime)")
-    suspend fun insertArticleWithTimestamp(title: String, content: String, userId: Long, tagId: Long, createdTime: Long, updatedTime: Long): Long
-
-    @Query("UPDATE notes SET title = :newTitle, content = :newContent, updatedAt = :updatedTime WHERE noteId = :id")
-    suspend fun updateArticleWithTimestamp(id: Long, newTitle: String, newContent: String, updatedTime: Long): Int
-
-    @Query("UPDATE notes SET tagId = :newTagId WHERE noteId = :id")
-    suspend fun updateNoteTag(id: Long, newTagId: Long): Int
 
     // 统计相关
-    @Query("SELECT COUNT(*) FROM notes WHERE userId = :userId")
-    suspend fun getNoteCountByUser(userId: Long): Int
-
     @Query("SELECT COUNT(*) FROM notes WHERE userId = :userId AND tagId = :tagId")
     suspend fun getNoteCountByTag(userId: Long, tagId: Long): Int
 
     // 批量操作
-    @Query("DELETE FROM notes WHERE userId = :userId")
-    suspend fun deleteAllNotesByUser(userId: Long): Int
-
-    @Query("DELETE FROM notes WHERE userId = :userId AND tagId = :tagId")
-    suspend fun deleteNotesByTagId(userId: Long, tagId: Long): Int
-
     @Query("DELETE FROM notes WHERE noteId = :id")
     suspend fun deleteNoteById(id: Long): Int
+
+    // --- 以下是旧的、有问题的或重复的方法，已被移除 ---
+    // 1. searchNotesByTagAndTitleOrContent 和 searchNotesByTitleOrContent 已被FTS查询替代。
+    // 2. 之前报错的两个方法也已被正确的FTS版本和普通查询版本所覆盖和修正。
 }
