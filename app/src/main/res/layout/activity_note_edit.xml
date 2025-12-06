@@ -174,7 +174,13 @@
                         android:src="@drawable/ic_auto_awesome"
                         android:contentDescription="AI 摘要" />
 
-
+                    <ImageButton
+                        android:id="@+id/aiTagButton"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@android:color/transparent"
+                        android:src="@drawable/ic_brush"
+                        android:contentDescription="AI 打标" />
 
                     <View
                         android:layout_width="2dp"
