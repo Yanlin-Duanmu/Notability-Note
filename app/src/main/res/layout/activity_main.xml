@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context=".MainActivity">
+    tools:context="com.noteability.mynote.ui.activity.MainActivity">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:id="@+id/coordinatorLayout"
@@ -89,7 +89,7 @@
                         android:layout_height="match_parent"
                         android:layout_marginStart="8dp"
                         android:background="@null"
-                        android:hint="搜索笔记内容或标签"
+                        android:hint="搜索笔记内容或标题"
                         android:inputType="text"
                         android:textColor="@color/text_dark"
                         android:textColorHint="@color/text_gray"

@@ -79,14 +79,17 @@ class NotesViewModel(private val noteRepository: NoteRepository) : ViewModel() {
     }
     
     // 搜索笔记
-    fun searchNotes(query: String) {
+    fun searchNotes(query: String, tagId: Long) {
         currentSearchQuery = query
+        val searchTagId = if (tagId == 0L) null else tagId
+        currentTagId = searchTagId
+
         _isLoading.value = true
         _error.value = null
         
         viewModelScope.launch {
             try {
-                noteRepository.searchNotes(query, currentTagId).collect { searchResults ->
+                noteRepository.searchNotes(query, searchTagId).collect { searchResults ->
                     _notes.value = searchResults
                     _isLoading.value = false
                 }
