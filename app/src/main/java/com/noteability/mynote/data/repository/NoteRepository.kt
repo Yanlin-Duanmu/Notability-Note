@@ -9,10 +9,9 @@ interface NoteRepository {
     
     // 根据标签ID获取笔记
     fun getNotesByTagId(tagId: Long): Flow<List<Note>>
-    
     // 根据ID获取单条笔记
     fun getNoteById(noteId: Long): Flow<Note?>
-    
+
     // 搜索笔记
     fun searchNotes(query: String, tagId: Long? = null): Flow<List<Note>>
     
