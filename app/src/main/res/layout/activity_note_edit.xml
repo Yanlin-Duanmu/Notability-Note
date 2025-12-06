@@ -166,6 +166,15 @@
                         android:layout_marginHorizontal="8dp"
                         android:background="@color/gray_300" />
 
+                    <ImageButton
+                        android:id="@+id/aiSummaryButton"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@android:color/transparent"
+                        android:src="@drawable/ic_auto_awesome"
+                        android:contentDescription="AI 摘要" />
+
+
 
                     <View
                         android:layout_width="2dp"
