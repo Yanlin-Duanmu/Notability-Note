@@ -73,10 +73,10 @@
                         <ImageView
                             android:id="@+id/changeTagButton"
                             android:layout_width="24dp"
-                            android:layout_height="24dp"
+                            android:layout_height="match_parent"
                             android:layout_marginLeft="8dp"
                             android:src="@drawable/ic_baseline_edit_24"
-                            app:tint="@color/purple_500" />
+                            app:tint="@color/bg_gray" />
                     </LinearLayout>
                 </HorizontalScrollView>
             </LinearLayout>
