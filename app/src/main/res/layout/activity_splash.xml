@@ -7,35 +7,19 @@
     android:layout_height="match_parent"
     android:background="@color/brand_primary">
 
-    <!-- 应用图标 -->
-    <ImageView
-        android:id="@+id/app_icon"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:src="@drawable/simple_circle_icon"
-        android:contentDescription="应用图标"
-        android:scaleType="centerInside"
-        android:adjustViewBounds="true"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/app_name"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:layout_constraintVertical_bias="0.4"/>
-
     <!-- 应用名称 -->
     <TextView
         android:id="@+id/app_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/app_name"
-        android:textSize="28sp"
-        android:textColor="@color/white"
+        android:layout_marginTop="160dp"
         android:fontFamily="sans-serif-medium"
-        android:layout_marginTop="24dp"
-        app:layout_constraintTop_toBottomOf="@id/app_icon"
+        android:text="@string/app_name"
+        android:textColor="@color/white"
+        android:textSize="28sp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- 应用标语 -->
     <TextView
@@ -58,7 +42,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:indeterminateTint="@color/white"
-        android:layout_marginBottom="80dp"
+        android:layout_marginBottom="160dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
