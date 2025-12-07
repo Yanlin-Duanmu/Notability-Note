@@ -566,4 +566,12 @@ class NoteEditActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun validateInput(text: String): Boolean {
+        if (text.isBlank()) {
+            Toast.makeText(this, "请先输入笔记内容", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        return true
+    }
 }
