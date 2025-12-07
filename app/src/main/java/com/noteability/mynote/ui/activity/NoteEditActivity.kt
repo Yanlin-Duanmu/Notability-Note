@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.noteability.mynote.R
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.entity.Tag
@@ -597,11 +598,22 @@ class NoteEditActivity : AppCompatActivity() {
 
                     // Tag dialog
                     if (state.tagResult.isNotEmpty() && state.tagResult != lastTags) {
-                        lastTags = state.tagResult 
+                        lastTags = state.tagResult
                         showTagDialog(state.tagResult)
                     }
                 }
             }
         }
+    }
+
+    private fun showSummaryDialog(summary: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("AI 摘要生成完毕")
+            .setMessage(summary)
+            .setPositiveButton("复制到剪贴板") { _, _ ->
+                copyToClipboard(summary)
+            }
+            .setNegativeButton("关闭", null)
+            .show()
     }
 }
