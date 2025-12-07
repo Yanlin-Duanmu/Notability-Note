@@ -12,9 +12,11 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.noteability.mynote.R
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.entity.Tag
@@ -573,5 +575,33 @@ class NoteEditActivity : AppCompatActivity() {
             return false
         }
         return true
+    }
+
+    private fun observeAiState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                aiViewModel.uiState.collect { state ->
+                    // Handle loading
+                    binding.loadingIndicator.visibility = if (state.isLoading) View.VISIBLE else View.GONE
+
+                    // Handle error
+                    state.error?.let {
+                        Toast.makeText(this@NoteEditActivity, it, Toast.LENGTH_SHORT).show()
+                    }
+
+                    // Summary dialog
+                    if (state.Result.isNotEmpty() && state.summaryResult != lastSummary) {
+                        lastSummary = state.summaryResult
+                        showSummaryDialog(state.summaryResult)
+                    }
+
+                    // Tag dialog
+                    if (state.tagResult.isNotEmpty() && state.tagResult != lastTags) {
+                        lastTags = state.tagResult 
+                        showTagDialog(state.tagResult)
+                    }
+                }
+            }
+        }
     }
 }
