@@ -93,7 +93,8 @@
                         android:inputType="text"
                         android:textColor="@color/text_dark"
                         android:textColorHint="@color/text_gray"
-                        android:textSize="15sp" />
+                        android:textSize="15sp"
+                        android:importantForAutofill="no" />
                 </LinearLayout>
 
                 <!-- Filter button -->
@@ -106,13 +107,6 @@
                     android:src="@drawable/ic_filter_list"
                     app:tint="@color/text_dark" />
             </LinearLayout>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/search_suggestions_recyclerview"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:visibility="gone"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
             <!-- Tag area -->
             <HorizontalScrollView
@@ -145,16 +139,14 @@
                 </LinearLayout>
             </HorizontalScrollView>
 
-            <!-- 内容容器，包含笔记列表、加载指示器、空状态和错误状态 -->
+            <!-- ##### 以下是核心修改区域 ##### -->
+            <!-- 内容容器，包含笔记列表、加载指示器、空状态、错误状态以及现在的建议列表 -->
             <FrameLayout
                 android:id="@+id/contentContainer"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
                 <!-- 笔记列表 -->
-
-                <!-- 加载指示器 -->
-
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/notesRecyclerView"
                     android:layout_width="match_parent"
@@ -162,6 +154,7 @@
                     android:clipToPadding="false"
                     android:padding="16dp" />
 
+                <!-- 加载指示器 -->
                 <com.google.android.material.progressindicator.CircularProgressIndicator
                     android:id="@+id/loadingIndicator"
                     android:layout_width="wrap_content"
@@ -191,7 +184,22 @@
                     android:textColor="@color/text_gray"
                     android:textSize="16sp"
                     android:visibility="gone" />
+
+                <!-- 【移动到此处】搜索建议列表 (作为浮层) -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/search_suggestions_recyclerview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/bg_light"
+                    android:elevation="8dp"
+                    android:visibility="gone"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    tools:listitem="@layout/item_search_suggestion"
+                    tools:visibility="visible"/>
+
             </FrameLayout>
+            <!-- ##### 修改区域结束 ##### -->
+
         </LinearLayout>
 
         <!-- FAB button -->
