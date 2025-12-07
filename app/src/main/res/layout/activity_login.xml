@@ -12,7 +12,7 @@
         android:id="@+id/decor_top"
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        android:background="@color/purple_500"
+        android:background="@color/brand_primary"
         app:layout_constraintTop_toTopOf="parent" />
 
     <!-- 应用图标 -->
@@ -122,7 +122,7 @@
                 android:textColor="@color/white"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                app:backgroundTint="@color/purple_500"
+                app:backgroundTint="@color/brand_primary"
                 app:cornerRadius="8dp" />
 
             <!-- 注册链接 -->
@@ -132,7 +132,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:text="没有账号？立即注册"
-                android:textColor="@color/purple_500"
+                android:textColor="@color/brand_primary"
                 android:textSize="14sp" />
 
         </LinearLayout>
