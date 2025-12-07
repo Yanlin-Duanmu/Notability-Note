@@ -593,7 +593,7 @@ class NoteEditActivity : AppCompatActivity() {
                     }
 
                     // Summary dialog
-                    if (state.Result.isNotEmpty() && state.summaryResult != lastSummary) {
+                    if (state.summaryResult.isNotEmpty() && state.summaryResult != lastSummary) {
                         lastSummary = state.summaryResult
                         showSummaryDialog(state.summaryResult)
                     }
