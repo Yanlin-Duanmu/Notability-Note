@@ -20,6 +20,15 @@
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
             app:titleTextAppearance="@style/TextAppearance.AppCompat.Widget.ActionBar.Title" />
 
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/aiProgressBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:visibility="gone"
+            app:indicatorColor="@color/brand_primary"
+            app:trackColor="@android:color/white"/>
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -160,6 +169,28 @@
                         android:background="@android:color/transparent"
                         android:src="@drawable/ic_baseline_format_list_numbered_24"
                         app:tint="@color/gray_700" />
+                    <View
+                        android:layout_width="2dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginHorizontal="8dp"
+                        android:background="@color/gray_300" />
+
+                    <ImageButton
+                        android:id="@+id/aiSummaryButton"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@android:color/transparent"
+                        android:src="@drawable/ic_auto_awesome"
+                        android:contentDescription="AI 摘要" />
+
+                    <ImageButton
+                        android:id="@+id/aiTagButton"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@android:color/transparent"
+                        android:src="@drawable/ic_brush"
+                        android:contentDescription="AI 打标" />
+
                     <View
                         android:layout_width="2dp"
                         android:layout_height="match_parent"
