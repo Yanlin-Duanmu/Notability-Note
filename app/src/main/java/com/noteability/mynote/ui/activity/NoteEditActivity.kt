@@ -616,4 +616,16 @@ class NoteEditActivity : AppCompatActivity() {
             .setNegativeButton("关闭", null)
             .show()
     }
+
+    private fun showTagDialog(tags: List<String>) {
+        val tagString = tags.joinToString(", ")
+        MaterialAlertDialogBuilder(this)
+            .setTitle("AI 推荐标签")
+            .setMessage("为您找到以下标签：\n$tagString")
+            .setPositiveButton("复制到剪贴板") { _, _ ->
+                copyToClipboard(tagString)
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
 }
