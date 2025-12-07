@@ -555,5 +555,15 @@ class NoteEditActivity : AppCompatActivity() {
             }
         }
 
+        // AI Tagging
+        binding.aiTagButton.setOnClickListener {
+            val text = binding.contentEditText.text.toString()
+            val currentTags = binding.tagTextView.text.toString()
+            if (validateInput(text)) {
+                aiViewModel.onSourceTextChanged(text)
+                aiViewModel.onTagsInputChanged(currentTags)
+                aiViewModel.fetchTags()
+            }
+        }
     }
 }
