@@ -8,11 +8,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.ProgressBar
-import android.widget.TextView
+import com.noteability.mynote.databinding.ActivityNoteEditBinding
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
@@ -35,22 +31,8 @@ import kotlinx.coroutines.launch
 
 class NoteEditActivity : AppCompatActivity() {
 
-    private lateinit var toolbar: Toolbar
-    private lateinit var tagTextView: TextView
-    private lateinit var changeTagButton: ImageView
-    private lateinit var titleEditText: EditText
-    private lateinit var contentEditText: EditText
-    private lateinit var boldButton: ImageButton
-    private lateinit var italicButton: ImageButton
-    private lateinit var underlineButton: ImageButton
-    private lateinit var bulletListButton: ImageButton
-    private lateinit var numberListButton: ImageButton
-    private lateinit var loadingIndicator: ProgressBar
-    private lateinit var errorTextView: TextView
-
+    private lateinit var binding: ActivityNoteEditBinding
     // 新增：预览相关组件
-    private lateinit var previewButton: TextView
-    private lateinit var previewTextView: TextView
     private lateinit var markwon: Markwon
 
     private var noteId: Long? = null
@@ -106,30 +88,16 @@ class NoteEditActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_note_edit)
+        binding = ActivityNoteEditBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         // 从SharedPreferences获取当前登录用户ID
         val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 1L)
 
-        // 初始化界面组件
-        toolbar = findViewById(R.id.toolbar)
-        tagTextView = findViewById(R.id.tagTextView)
-        changeTagButton = findViewById(R.id.changeTagButton)
-        titleEditText = findViewById(R.id.titleEditText)
-        contentEditText = findViewById(R.id.contentEditText)
-        boldButton = findViewById(R.id.boldButton)
-        italicButton = findViewById(R.id.italicButton)
-        underlineButton = findViewById(R.id.underlineButton)
-        bulletListButton = findViewById(R.id.bulletListButton)
-        numberListButton = findViewById(R.id.numberListButton)
-        loadingIndicator = findViewById(R.id.loadingIndicator)
-        errorTextView = findViewById(R.id.errorTextView)
-
+        // binding 默认已经初始化，在后面使用 binding.* 访问视图
         // 初始化 Markdown 和预览组件
         markwon = MarkdownUtils.createMarkwon()
-        previewButton = findViewById(R.id.previewButton)
-        previewTextView = findViewById(R.id.previewTextView)
 
         // 设置ServiceLocator上下文
         ServiceLocator.setContext(applicationContext)
@@ -141,7 +109,7 @@ class NoteEditActivity : AppCompatActivity() {
         initViewModels()
 
         // 设置工具栏
-        setSupportActionBar(toolbar)
+        setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "编辑笔记"
 
@@ -159,14 +127,10 @@ class NoteEditActivity : AppCompatActivity() {
         noteId = intent.getLongExtra("noteId", -1)
 
         // 设置标签切换点击事件
-        changeTagButton.setOnClickListener {
-            showTagSelectionDialog()
-        }
+        binding.changeTagButton.setOnClickListener { showTagSelectionDialog() }
 
         // 设置预览按钮点击
-        previewButton.setOnClickListener {
-            togglePreviewMode()
-        }
+        binding.previewButton.setOnClickListener { togglePreviewMode() }
 
         // 监听标签数据变化
         observeTags()
@@ -185,7 +149,7 @@ class NoteEditActivity : AppCompatActivity() {
             noteDetailViewModel.loadNote(noteId!!)
         } else {
             // 新建笔记，先设置默认标签名称
-            tagTextView.text = "未选择标签"
+            binding.tagTextView.text = "未选择标签"
 
             // 检查是否有预选中的标签ID
             val preSelectedTagId = intent.getLongExtra("preSelectedTagId", 0L)
@@ -226,9 +190,9 @@ class NoteEditActivity : AppCompatActivity() {
         lifecycleScope.launch {
             noteDetailViewModel.note.collect { note ->
                 note?.let {
-                    titleEditText.setText(it.title)
+                    binding.titleEditText.setText(it.title)
                     //直接显示 Markdown 文本，不再使用 StyleManager
-                    contentEditText.setText(it.content)
+                    binding.contentEditText.setText(it.content)
                     togglePreviewMode()
 
                     // 设置标签
@@ -237,10 +201,10 @@ class NoteEditActivity : AppCompatActivity() {
                         if (currentTag == null && realTags.isNotEmpty()) {
                             currentTag = realTags[0]
                         }
-                        tagTextView.text = currentTag?.name
+                        binding.tagTextView.text = currentTag?.name
                     } else {
                         val noteTagId = it.tagId
-                        tagTextView.text = "加载中..."
+                        binding.tagTextView.text = "加载中..."
 
                         lifecycleScope.launch {
                             tagRepository.getAllTags().collect { tags ->
@@ -249,7 +213,7 @@ class NoteEditActivity : AppCompatActivity() {
                                     if (currentTag == null) {
                                         currentTag = tags[0]
                                     }
-                                    tagTextView.text = currentTag?.name
+                                    binding.tagTextView.text = currentTag?.name
                                 }
                             }
                         }
@@ -261,9 +225,9 @@ class NoteEditActivity : AppCompatActivity() {
         // 观察加载状态
         lifecycleScope.launch {
             noteDetailViewModel.isLoading.collect { isLoading ->
-                loadingIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
+                binding.loadingIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
                 if (isLoading) {
-                    errorTextView.visibility = View.GONE
+                    binding.errorTextView.visibility = View.GONE
                 }
             }
         }
@@ -272,10 +236,10 @@ class NoteEditActivity : AppCompatActivity() {
         lifecycleScope.launch {
             noteDetailViewModel.error.collect { error ->
                 if (error != null) {
-                    errorTextView.text = error
-                    errorTextView.visibility = View.VISIBLE
+                    binding.errorTextView.text = error
+                    binding.errorTextView.visibility = View.VISIBLE
                 } else {
-                    errorTextView.visibility = View.GONE
+                    binding.errorTextView.visibility = View.GONE
                 }
             }
         }
@@ -293,8 +257,8 @@ class NoteEditActivity : AppCompatActivity() {
     }
 
     private fun saveNote() {
-        val title = titleEditText.text.toString().trim()
-        val content = contentEditText.text.toString().trim()
+        val title = binding.titleEditText.text.toString().trim()
+        val content = binding.contentEditText.text.toString().trim()
 
         // 添加标题验证
         if (title.isEmpty()) {
@@ -356,8 +320,8 @@ class NoteEditActivity : AppCompatActivity() {
     }
 
     private fun shareNote() {
-        val title = titleEditText.text.toString().trim()
-        val content = contentEditText.text.toString().trim()
+        val title = binding.titleEditText.text.toString().trim()
+        val content = binding.contentEditText.text.toString().trim()
 
         if (title.isEmpty() && content.isEmpty()) {
             showToast("没有可分享的内容")
@@ -420,7 +384,7 @@ class NoteEditActivity : AppCompatActivity() {
                             currentTag = realTags.find { it.name == "未归档" } ?: realTags[0]
                         }
 
-                        tagTextView.text = currentTag?.name
+                        binding.tagTextView.text = currentTag?.name
                     }
                 }
             } catch (e: Exception) {
@@ -436,7 +400,7 @@ class NoteEditActivity : AppCompatActivity() {
                 // 当找不到预选中的标签时，优先选择"未归档"标签
                 currentTag = realTags.find { it.name == "未归档" } ?: realTags[0]
             }
-            tagTextView.text = currentTag?.name
+            binding.tagTextView.text = currentTag?.name
         }
     }
 
@@ -452,7 +416,7 @@ class NoteEditActivity : AppCompatActivity() {
             .setTitle("选择标签")
             .setItems(tagNames) { dialog, which ->
                 currentTag = realTags[which]
-                tagTextView.text = currentTag?.name
+                binding.tagTextView.text = currentTag?.name
             }
             .setNegativeButton("取消") { dialog, _ ->
                 dialog.dismiss()
@@ -461,30 +425,30 @@ class NoteEditActivity : AppCompatActivity() {
     }
 
     private fun setupFormattingButtons() {
-        boldButton.setOnClickListener {
-            MarkdownUtils.insertMarkdownFormat(contentEditText, "bold")
+        binding.boldButton.setOnClickListener {
+            MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "bold")
             isBold = !isBold
-            boldButton.setColorFilter(if (isBold) getColor(R.color.brand_primary) else getColor(R.color.text_gray))
+            binding.boldButton.setColorFilter(if (isBold) getColor(R.color.brand_primary) else getColor(R.color.text_gray))
         }
 
-        italicButton.setOnClickListener {
-            MarkdownUtils.insertMarkdownFormat(contentEditText, "italic")
+        binding.italicButton.setOnClickListener {
+            MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "italic")
             isItalic = !isItalic
-            italicButton.setColorFilter(if (isItalic) getColor(R.color.brand_primary) else getColor(R.color.text_gray))
+            binding.italicButton.setColorFilter(if (isItalic) getColor(R.color.brand_primary) else getColor(R.color.text_gray))
         }
 
-        underlineButton.setOnClickListener {
-            MarkdownUtils.insertMarkdownFormat(contentEditText, "underline")
+        binding.underlineButton.setOnClickListener {
+            MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "underline")
             isUnderline = !isUnderline
-            underlineButton.setColorFilter(if (isUnderline) getColor(R.color.brand_primary) else getColor(R.color.text_gray))
+            binding.underlineButton.setColorFilter(if (isUnderline) getColor(R.color.brand_primary) else getColor(R.color.text_gray))
         }
 
-        bulletListButton.setOnClickListener {
-            MarkdownUtils.insertMarkdownFormat(contentEditText, "bullet")
+        binding.bulletListButton.setOnClickListener {
+            MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "bullet")
         }
 
-        numberListButton.setOnClickListener {
-            MarkdownUtils.insertMarkdownFormat(contentEditText, "numbered")
+        binding.numberListButton.setOnClickListener {
+            MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "numbered")
         }
     }
 
@@ -495,32 +459,32 @@ class NoteEditActivity : AppCompatActivity() {
 
         if (isPreviewMode) {
             // 切换到预览模式
-            contentEditText.visibility = View.GONE
-            previewTextView.visibility = View.VISIBLE
+            binding.contentEditText.visibility = View.GONE
+            binding.previewTextView.visibility = View.VISIBLE
 
-            val markdownText = contentEditText.text.toString()
-            MarkdownUtils.renderMarkdown(previewTextView, markdownText, markwon)
+            val markdownText = binding.contentEditText.text.toString()
+            MarkdownUtils.renderMarkdown(binding.previewTextView, markdownText, markwon)
 
             // 按钮文字改成“编辑”
-            previewButton.text = "编辑"
+            binding.previewButton.text = "编辑"
 
             // 隐藏键盘
-            contentEditText.clearFocus()
+            binding.contentEditText.clearFocus()
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.hideSoftInputFromWindow(contentEditText.windowToken, 0)
+            imm.hideSoftInputFromWindow(binding.contentEditText.windowToken, 0)
 
         } else {
             // 切换到编辑模式
-            contentEditText.visibility = View.VISIBLE
-            previewTextView.visibility = View.GONE
+            binding.contentEditText.visibility = View.VISIBLE
+            binding.previewTextView.visibility = View.GONE
 
             // 按钮文字改成“预览”
-            previewButton.text = "预览"
+            binding.previewButton.text = "预览"
 
             // 显示键盘
-            contentEditText.requestFocus()
+            binding.contentEditText.requestFocus()
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.showSoftInput(contentEditText, InputMethodManager.SHOW_IMPLICIT)
+            imm.showSoftInput(binding.contentEditText, InputMethodManager.SHOW_IMPLICIT)
         }
     }
 
@@ -529,7 +493,7 @@ class NoteEditActivity : AppCompatActivity() {
     }
 
     private fun handleBackPress() {
-        val hasChanges = titleEditText.text.toString().isNotEmpty() || contentEditText.text.toString().isNotEmpty()
+        val hasChanges = binding.titleEditText.text.toString().isNotEmpty() || binding.contentEditText.text.toString().isNotEmpty()
         if (hasChanges) {
             AlertDialog.Builder(this)
                 .setTitle("保存笔记")
