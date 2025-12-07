@@ -585,7 +585,7 @@ class NoteEditActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 aiViewModel.uiState.collect { state ->
                     // Handle loading
-                    binding.loadingIndicator.visibility = if (state.isLoading) View.VISIBLE else View.GONE
+                    updateLoadingState(state.isLoading)
 
                     // Handle error
                     state.error?.let {
@@ -607,6 +607,8 @@ class NoteEditActivity : AppCompatActivity() {
             }
         }
     }
+
+    
 
     private fun showSummaryDialog(summary: String) {
         MaterialAlertDialogBuilder(this)
