@@ -165,6 +165,9 @@ class NoteEditActivity : AppCompatActivity() {
                 handlePreSelectedTag(preSelectedTagId)
             }
         }
+
+        setupListeners()
+        observeAiState()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
