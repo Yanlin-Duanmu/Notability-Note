@@ -1,6 +1,7 @@
 package com.noteability.mynote.data.repository.impl
 
 import android.content.Context
+import androidx.paging.PagingSource
 import com.noteability.mynote.data.AppDatabase
 import com.noteability.mynote.data.dao.NoteDao
 import com.noteability.mynote.data.entity.Note
@@ -78,5 +79,9 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
         if (note?.userId == currentUserId) {
             noteDao.deleteNoteById(noteId)
         }
+    }
+
+    override fun getNotesPagingSource(userId: Long, query: String, tagId: Long?): PagingSource<Int, Note> {
+        return noteDao.getNotesPagingSource(userId, query, tagId)
     }
 }
