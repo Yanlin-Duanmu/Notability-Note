@@ -150,19 +150,20 @@ class MainActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         val tagNameMap = mutableMapOf<Long, String>()
 
-        // 1. Adapter 初始化
         noteAdapter = NoteAdapter(onNoteClick = { note ->
             val intent = Intent(this, NoteEditActivity::class.java)
-            intent.putExtra("noteId", note.noteId)
+            intent.putExtra("noteId", note.noteId) // This is now on a new line
             startActivity(intent)
         }, tagNameMap = tagNameMap)
 
         // 搜索建议 Adapter
         searchSuggestionAdapter = SearchSuggestionAdapter(
             onSuggestionClick = { query ->
+                // 【优化】当点击一个建议时...
                 binding.searchEditText.setText(query)
                 binding.searchEditText.setSelection(query.length)
-                binding.searchSuggestionsRecyclerview.visibility = View.GONE
+                // 主动清除焦点，这会触发 onFocusChangeListener 的 else 分支，自动隐藏建议列表并保存历史
+                binding.searchEditText.clearFocus()
             },
             onSuggestionDelete = { query ->
                 viewModel.deleteSearchFromHistory(query)
@@ -177,9 +178,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val layoutManager = LinearLayoutManager(this)
-        binding.notesRecyclerView.layoutManager = layoutManager
+        binding.notesRecyclerView.layoutManager = LinearLayoutManager(this)
         binding.notesRecyclerView.adapter = noteAdapter
+        // 【确认】确保建议列表有 LayoutManager
+        binding.searchSuggestionsRecyclerview.layoutManager = LinearLayoutManager(this)
         binding.searchSuggestionsRecyclerview.adapter = searchSuggestionAdapter
 
         binding.notesRecyclerView.itemAnimator = null
@@ -189,29 +191,24 @@ class MainActivity : AppCompatActivity() {
     //监听 Paging 的加载状态，控制 Loading 和 空视图
     private fun setupLoadStateListener() {
         noteAdapter.addLoadStateListener { loadState ->
+            // 【简化】现在不再需要 hasFocus() 判断了
             val isListEmpty = loadState.refresh is LoadState.NotLoading && noteAdapter.itemCount == 0
             val isRefresh = loadState.refresh is LoadState.Loading
 
+            // 控制加载动画
             binding.loadingIndicator.visibility = if (isRefresh) View.VISIBLE else View.GONE
 
+            // 控制空状态视图
+            binding.emptyStateView.visibility = if (isListEmpty) View.VISIBLE else View.GONE
 
-            if (loadState.refresh is LoadState.NotLoading && noteAdapter.itemCount > 0) {
-                // 使用 post 确保在 UI 绘制完成后执行
-                binding.notesRecyclerView.post {
-                    (binding.notesRecyclerView.layoutManager as LinearLayoutManager)
-                        .scrollToPositionWithOffset(0, 0)
-                }
-            }
-
+            // 根据空状态更新文本
             if (isListEmpty) {
-                binding.emptyStateView.visibility = View.VISIBLE
-                binding.notesRecyclerView.visibility = View.GONE
                 val isSearching = binding.searchEditText.text.isNotEmpty()
                 binding.emptyStateView.text = if (isSearching) "没有找到相关内容" else "还没有笔记，快来添加吧"
-            } else {
-                binding.emptyStateView.visibility = View.GONE
-                binding.notesRecyclerView.visibility = View.VISIBLE
             }
+
+            // 【简化】我们不再需要手动控制 notesRecyclerView 的可见性，它默认一直可见
+            // 如果列表为空，它会被 emptyStateView 覆盖；如果加载中，会被 loadingIndicator 覆盖
         }
     }
 
@@ -266,32 +263,41 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSearchListener() {
+        // 1. 观察ViewModel中的建议数据流
         lifecycleScope.launch {
             viewModel.suggestions.collect { suggestionList ->
                 searchSuggestionAdapter.submitList(suggestionList)
-                if (binding.searchEditText.hasFocus() && suggestionList.isNotEmpty()) {
-                    binding.searchSuggestionsRecyclerview.visibility = View.VISIBLE
-                } else {
-                    binding.searchSuggestionsRecyclerview.visibility = View.GONE
+                // 【优化】只在有焦点时才根据建议列表是否为空来显示/隐藏
+                if (binding.searchEditText.hasFocus()) {
+                    binding.searchSuggestionsRecyclerview.visibility = if (suggestionList.isNotEmpty()) View.VISIBLE else View.GONE
                 }
             }
         }
+
+        // 2. 监听文本变化 (此部分逻辑正确，无需修改)
         binding.searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s.toString()
                 viewModel.searchNotes(query, currentSelectedTagId)
-                viewModel.loadSuggestions(query)
+                viewModel.loadSuggestions(query) // 实时加载建议
             }
             override fun afterTextChanged(s: Editable?) {}
         })
+
+        // 3. 监听焦点变化 (此部分逻辑大大简化且正确)
         binding.searchEditText.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
+                // 当获得焦点时，根据当前输入框内容加载并尝试显示建议
                 viewModel.loadSuggestions(binding.searchEditText.text.toString())
             } else {
+                // 当失去焦点时，总是隐藏建议列表
                 binding.searchSuggestionsRecyclerview.visibility = View.GONE
+                // 同时保存搜索历史
                 val query = binding.searchEditText.text.toString()
-                if (query.isNotBlank()) viewModel.saveSearchToHistory(query)
+                if (query.isNotBlank()) {
+                    viewModel.saveSearchToHistory(query)
+                }
             }
         }
     }
