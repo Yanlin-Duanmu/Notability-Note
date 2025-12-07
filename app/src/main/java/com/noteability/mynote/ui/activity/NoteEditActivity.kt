@@ -608,7 +608,19 @@ class NoteEditActivity : AppCompatActivity() {
         }
     }
 
-    
+    private fun updateLoadingState(isLoading: Boolean) {
+        binding.aiProgressBar.visibility = if (isLoading) View.VISIBLE else View.INVISIBLE
+        
+        with(binding.aiSummaryButton) {
+            isEnabled = !isLoading
+            alpha = if (isLoading) 0.5f else 1.0f
+        }
+
+        with(binding.aiTagButton) {
+            isEnabled = !isLoading
+            alpha = if (isLoading) 0.5f else 1.0f
+        }
+    }
 
     private fun showSummaryDialog(summary: String) {
         MaterialAlertDialogBuilder(this)
