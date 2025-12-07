@@ -27,9 +27,9 @@ import com.noteability.mynote.data.repository.impl.NoteRepositoryImpl
 import com.noteability.mynote.data.repository.impl.TagRepositoryImpl
 import com.noteability.mynote.databinding.ActivityNoteEditBinding
 import com.noteability.mynote.di.ServiceLocator
+import com.noteability.mynote.ui.aiDemo.AiDemoViewModel
 import com.noteability.mynote.ui.viewmodel.NoteDetailViewModel
 import com.noteability.mynote.ui.viewmodel.TagsViewModel
-import com.noteability.mynote.ui.aiDemo.AiDemoViewModel
 import com.noteability.mynote.utils.MarkdownUtils
 import io.noties.markwon.Markwon
 import kotlinx.coroutines.launch
@@ -609,8 +609,15 @@ class NoteEditActivity : AppCompatActivity() {
     }
 
     private fun updateLoadingState(isLoading: Boolean) {
-        binding.aiProgressBar.visibility = if (isLoading) View.VISIBLE else View.INVISIBLE
-        
+        binding.aiProgressBar.apply {
+            if (isLoading) {
+                isIndeterminate = true
+                show()
+            } else {
+                hide()
+            }
+        }
+
         with(binding.aiSummaryButton) {
             isEnabled = !isLoading
             alpha = if (isLoading) 0.5f else 1.0f
@@ -627,7 +634,7 @@ class NoteEditActivity : AppCompatActivity() {
             .setTitle("AI 摘要生成完毕")
             .setMessage(summary)
             .setPositiveButton("复制到剪贴板") { _, _ ->
-                copyToClipboard("AI Summary",summary)
+                copyToClipboard("AI Summary", summary)
             }
             .setNegativeButton("关闭", null)
             .show()
@@ -639,13 +646,13 @@ class NoteEditActivity : AppCompatActivity() {
             .setTitle("AI 推荐标签")
             .setMessage("为您找到以下标签：\n$tagString")
             .setPositiveButton("复制到剪贴板") { _, _ ->
-                copyToClipboard("AI Tag",tagString)
+                copyToClipboard("AI Tag", tagString)
             }
             .setNegativeButton("取消", null)
             .show()
     }
 
-    private fun copyToClipboard(label:String, text: String) {
+    private fun copyToClipboard(label: String, text: String) {
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText(label, text)
         clipboard.setPrimaryClip(clip)

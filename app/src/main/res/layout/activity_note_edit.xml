@@ -25,7 +25,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:indeterminate="true"
-            android:visibility="invisible" />
+            android:visibility="gone"
+            app:indicatorColor="@color/brand_primary"
+            app:trackColor="@android:color/white"/>
 
     </com.google.android.material.appbar.AppBarLayout>
 
