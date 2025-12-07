@@ -24,6 +24,7 @@ import com.noteability.mynote.databinding.ActivityNoteEditBinding
 import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.ui.viewmodel.NoteDetailViewModel
 import com.noteability.mynote.ui.viewmodel.TagsViewModel
+import com.noteability.mynote.ui.aiDemo.AiDemoViewModel
 import com.noteability.mynote.utils.MarkdownUtils
 import io.noties.markwon.Markwon
 import kotlinx.coroutines.launch
@@ -31,6 +32,10 @@ import kotlinx.coroutines.launch
 class NoteEditActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityNoteEditBinding
+    private val aiViewModel: AiDemoViewModel by viewModels()
+
+    private var lastSummary = ""
+    private var lastTags = listOf<String>()
 
     // 新增：预览相关组件
     private lateinit var markwon: Markwon
