@@ -8,12 +8,10 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import com.noteability.mynote.databinding.ActivityNoteEditBinding
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -22,6 +20,7 @@ import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.entity.Tag
 import com.noteability.mynote.data.repository.impl.NoteRepositoryImpl
 import com.noteability.mynote.data.repository.impl.TagRepositoryImpl
+import com.noteability.mynote.databinding.ActivityNoteEditBinding
 import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.ui.viewmodel.NoteDetailViewModel
 import com.noteability.mynote.ui.viewmodel.TagsViewModel
@@ -32,6 +31,7 @@ import kotlinx.coroutines.launch
 class NoteEditActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityNoteEditBinding
+
     // 新增：预览相关组件
     private lateinit var markwon: Markwon
 
@@ -49,24 +49,28 @@ class NoteEditActivity : AppCompatActivity() {
     private lateinit var tagRepository: TagRepositoryImpl
 
     // 创建NoteDetailViewModelFactory
-    private class NoteDetailViewModelFactory(private val applicationContext: Context) : ViewModelProvider.Factory {
+    private class NoteDetailViewModelFactory(private val applicationContext: Context) :
+        ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(NoteDetailViewModel::class.java)) {
                 val repository = NoteRepositoryImpl(applicationContext)
                 val viewModel = NoteDetailViewModel(repository)
-                return viewModel as? T ?: throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+                return viewModel as? T
+                    ?: throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
             }
             throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }
 
     // 创建TagsViewModelFactory
-    private class TagsViewModelFactory(private val applicationContext: Context) : ViewModelProvider.Factory {
+    private class TagsViewModelFactory(private val applicationContext: Context) :
+        ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(TagsViewModel::class.java)) {
                 val repository = TagRepositoryImpl(applicationContext)
                 val viewModel = TagsViewModel(repository)
-                return viewModel as? T ?: throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+                return viewModel as? T
+                    ?: throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
             }
             throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
@@ -95,7 +99,6 @@ class NoteEditActivity : AppCompatActivity() {
         val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 1L)
 
-        // binding 默认已经初始化，在后面使用 binding.* 访问视图
         // 初始化 Markdown 和预览组件
         markwon = MarkdownUtils.createMarkwon()
 
@@ -170,14 +173,17 @@ class NoteEditActivity : AppCompatActivity() {
                 handleBackPress()
                 return true
             }
+
             R.id.action_save -> {
                 saveNote()
                 return true
             }
+
             R.id.action_share -> {
                 shareNote()
                 return true
             }
+
             R.id.action_delete -> {
                 showDeleteConfirmationDialog()
                 return true
@@ -185,6 +191,7 @@ class NoteEditActivity : AppCompatActivity() {
         }
         return super.onOptionsItemSelected(item)
     }
+
     private fun observeViewModel() {
         // 观察笔记数据变化
         lifecycleScope.launch {
@@ -269,12 +276,12 @@ class NoteEditActivity : AppCompatActivity() {
         if (title.isNotEmpty() || content.isNotEmpty()) {
             lifecycleScope.launch {
                 var tagIdToUse = currentTag?.tagId
-                
+
                 // 如果没有选择标签，尝试获取或创建"未分类"标签
                 if (tagIdToUse == null) {
                     // 尝试获取"未分类"标签
                     var uncategorizedTag = tagRepository.getTagByName(loggedInUserId, "未分类")
-                    
+
                     // 如果"未分类"标签不存在，创建一个新的
                     if (uncategorizedTag == null) {
                         val newTag = Tag(
@@ -286,10 +293,10 @@ class NoteEditActivity : AppCompatActivity() {
                         tagRepository.saveTag(newTag)
                         uncategorizedTag = tagRepository.getTagByName(loggedInUserId, "未分类")
                     }
-                    
+
                     tagIdToUse = uncategorizedTag?.tagId ?: 1
                 }
-                
+
                 val note = if (noteId != null && noteId != -1L) {
                     // 更新现有笔记
                     Note(
@@ -428,19 +435,31 @@ class NoteEditActivity : AppCompatActivity() {
         binding.boldButton.setOnClickListener {
             MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "bold")
             isBold = !isBold
-            binding.boldButton.setColorFilter(if (isBold) getColor(R.color.brand_primary) else getColor(R.color.text_gray))
+            binding.boldButton.setColorFilter(
+                if (isBold) getColor(R.color.brand_primary) else getColor(
+                    R.color.text_gray
+                )
+            )
         }
 
         binding.italicButton.setOnClickListener {
             MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "italic")
             isItalic = !isItalic
-            binding.italicButton.setColorFilter(if (isItalic) getColor(R.color.brand_primary) else getColor(R.color.text_gray))
+            binding.italicButton.setColorFilter(
+                if (isItalic) getColor(R.color.brand_primary) else getColor(
+                    R.color.text_gray
+                )
+            )
         }
 
         binding.underlineButton.setOnClickListener {
             MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "underline")
             isUnderline = !isUnderline
-            binding.underlineButton.setColorFilter(if (isUnderline) getColor(R.color.brand_primary) else getColor(R.color.text_gray))
+            binding.underlineButton.setColorFilter(
+                if (isUnderline) getColor(R.color.brand_primary) else getColor(
+                    R.color.text_gray
+                )
+            )
         }
 
         binding.bulletListButton.setOnClickListener {
@@ -451,7 +470,6 @@ class NoteEditActivity : AppCompatActivity() {
             MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "numbered")
         }
     }
-
 
 
     private fun togglePreviewMode() {
@@ -493,7 +511,8 @@ class NoteEditActivity : AppCompatActivity() {
     }
 
     private fun handleBackPress() {
-        val hasChanges = binding.titleEditText.text.toString().isNotEmpty() || binding.contentEditText.text.toString().isNotEmpty()
+        val hasChanges = binding.titleEditText.text.toString()
+            .isNotEmpty() || binding.contentEditText.text.toString().isNotEmpty()
         if (hasChanges) {
             AlertDialog.Builder(this)
                 .setTitle("保存笔记")
