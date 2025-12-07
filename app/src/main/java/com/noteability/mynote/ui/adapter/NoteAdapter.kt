@@ -12,9 +12,7 @@ import com.noteability.mynote.data.entity.Note
 import java.text.SimpleDateFormat
 import java.util.*
 
-// [修改 1] 继承 PagingDataAdapter
-// 移除构造函数中的 'notes: List<Note>'，因为 Paging 3 自己管理数据
-// 传入 DIFF_CALLBACK 用于计算列表差异
+
 class NoteAdapter(
     private val onNoteClick: (Note) -> Unit,
     private var tagNameMap: Map<Long, String> = emptyMap()
@@ -27,8 +25,6 @@ class NoteAdapter(
      */
     fun updateTagNameMap(newTagNameMap: Map<Long, String>) {
         this.tagNameMap = newTagNameMap
-        // [注意] 标签更新时，为了保证列表显示的标签名最新，这里暂时使用全量刷新
-        // 如果想极致优化，可以使用 notifyItemRangeChanged，但通常标签数据量小，这样写没问题
         notifyDataSetChanged()
     }
 
@@ -39,8 +35,6 @@ class NoteAdapter(
     }
 
     override fun onBindViewHolder(holder: NoteViewHolder, position: Int) {
-        // [修改 2] 使用 getItem(position) 获取数据
-        // Paging 3 的数据可能为 null (如果是占位符模式)，所以需要判空
         val note = getItem(position)
         if (note != null) {
             holder.bind(note)
