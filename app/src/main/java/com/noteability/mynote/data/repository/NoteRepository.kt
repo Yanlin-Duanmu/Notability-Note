@@ -1,5 +1,6 @@
 package com.noteability.mynote.data.repository
 
+import androidx.paging.PagingSource
 import com.noteability.mynote.data.entity.Note
 import kotlinx.coroutines.flow.Flow
 
@@ -26,4 +27,7 @@ interface NoteRepository {
     
     // 删除笔记
     suspend fun deleteNote(noteId: Long)
+
+    // paging 3 获取分页数据源
+    fun getNotesPagingSource(userId: Long, query: String, tagId: Long?): PagingSource<Int, Note>
 }

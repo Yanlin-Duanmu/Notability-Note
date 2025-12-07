@@ -2,98 +2,103 @@ package com.noteability.mynote.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.repository.NoteRepository
 import com.noteability.mynote.ui.adapter.SearchSuggestion
+import com.noteability.mynote.ui.adapter.SearchSuggestionType
 import com.noteability.mynote.ui.search.SearchHistoryManager
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import com.noteability.mynote.ui.adapter.SearchSuggestionType
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.launch
 
-private const val WHILE_SUBSCRIBED_TIMEOUT = 5000L
+class NotesViewModel(
+    private val noteRepository: NoteRepository,
+    private val searchHistoryManager: SearchHistoryManager
+) : ViewModel() {
 
-class NotesViewModel(private val noteRepository: NoteRepository, private val searchHistoryManager: SearchHistoryManager) : ViewModel() {
-    
-    private val _notes = MutableStateFlow<List<Note>>(emptyList())
-    val notes: StateFlow<List<Note>> = _notes
+
+    // 保留搜索建议状态
     private val _suggestions = MutableStateFlow<List<SearchSuggestion>>(emptyList())
     val suggestions: StateFlow<List<SearchSuggestion>> = _suggestions
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
-    
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    private val _tagId = MutableStateFlow(0L)
+    // 筛选条件状态 (改为 Flow 以驱动 Paging)
+    private val _tagId = MutableStateFlow<Long?>(null) // [修改] 默认 null 代表全部
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
-    val searchResults: StateFlow<List<Note>> = combine(_searchQuery, _tagId) { query, tagId -> query to tagId }
-        .debounce(300)
-        .flatMapLatest { (query, tagId) ->
-            if (query.isBlank()) {
-                if (tagId == 0L) {
-                    noteRepository.getAllNotes()
-                } else {
-                    noteRepository.getNotesByTagId(tagId)
-                }
-            } else {
-                if (tagId == 0L) {
-                    noteRepository.searchNotes(query)
-                } else {
-                    noteRepository.searchNotes(query, tagId)
-                }
-            }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(WHILE_SUBSCRIBED_TIMEOUT),
-            initialValue = emptyList()
-        )
+    // 用户 ID 状态
+    private val _loggedInUserId = MutableStateFlow(1L)
 
-    private var loggedInUserId: Long = 1L // 默认ID，在实际登录后会被更新
-    
+    // 定义 PagingData 流
+    // 这是一个响应式流，当 用户ID、搜索词 或 标签ID 变化时，自动触发数据库分页查询
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val notesPagingFlow: Flow<PagingData<Note>> = combine(
+        _loggedInUserId,
+        _searchQuery,
+        _tagId
+    ) { userId, query, tagId ->
+        Triple(userId, query, tagId)
+    }.flatMapLatest { (userId, query, tagId) ->
+
+        Pager(
+            config = PagingConfig(
+                pageSize = 20,          // 每页加载 20 条
+                enablePlaceholders = false,
+                initialLoadSize = 20
+            ),
+            pagingSourceFactory = {
+                // 调用 Repository 的分页接口
+                noteRepository.getNotesPagingSource(userId, query, tagId)
+            }
+        ).flow
+    }.cachedIn(viewModelScope)
+
+
     // 设置当前登录用户ID
     fun setLoggedInUserId(userId: Long) {
-        loggedInUserId = userId
-        // 更新仓库中的用户ID
+        _loggedInUserId.value = userId
         if (noteRepository is com.noteability.mynote.data.repository.impl.NoteRepositoryImpl) {
             noteRepository.updateCurrentUserId(userId)
         }
-        // 重新加载笔记，确保只显示当前用户的笔记
-        loadNotes()
     }
 
-    init {
-        loadNotes()
-    }
-    
     // 加载所有笔记
     fun loadNotes() {
-        _tagId.value = 0L
+        _tagId.value = null // null 代表全部
         _searchQuery.value = ""
+        _error.value = null
     }
-    
+
     // 根据标签加载笔记
     fun loadNotesByTag(tagId: Long) {
         _tagId.value = tagId
         _searchQuery.value = ""
+        _error.value = null
     }
-    
+
     // 搜索笔记
     fun searchNotes(query: String, tagId: Long) {
         _searchQuery.value = query
-        _tagId.value = tagId
+        // 如果 tagId 是 0，转为 null 表示搜索全部标签
+        _tagId.value = if (tagId == 0L) null else tagId
     }
-    
+
+
     fun saveSearchToHistory(query: String) {
         searchHistoryManager.saveSearchQuery(query)
     }
@@ -102,18 +107,6 @@ class NotesViewModel(private val noteRepository: NoteRepository, private val sea
         return searchHistoryManager.getSearchHistory()
     }
 
-    // 保存笔记
-    fun saveNote(note: Note) {
-        viewModelScope.launch {
-            try {
-                noteRepository.saveNote(note)
-                // 保存成功后重新加载笔记
-                loadNotes()
-            } catch (e: Exception) {
-                _error.value = "保存笔记失败"
-            }
-        }
-    }
     fun loadSuggestions(query: String) {
         viewModelScope.launch {
             if (query.isBlank()) {
@@ -123,33 +116,50 @@ class NotesViewModel(private val noteRepository: NoteRepository, private val sea
                 }
                 _suggestions.value = history
             } else {
-                // 有输入，显示智能建议 (我们假设Repository有一个获取建议的方法)
-                // 如果您还没实现，我将提供一个模拟实现
-                val titleSuggestions = noteRepository.searchNotes(query)
-                    .first() // 获取Flow的第一个值
-                    .map { note -> SearchSuggestion(note.title, SearchSuggestionType.SUGGESTION) }
-                    .distinct() // 去重
-                    .take(5) // 最多取5条
-                _suggestions.value = titleSuggestions
+                try {
+                    val titleSuggestions = noteRepository.searchNotes(query, _tagId.value)
+                        .first() // 获取Flow的第一个值
+                        .map { note -> SearchSuggestion(note.title, SearchSuggestionType.SUGGESTION) }
+                        .distinct() // 去重
+                        .take(5) // 最多取5条
+                    _suggestions.value = titleSuggestions
+                } catch (e: Exception) {
+                    // 忽略建议加载错误，不影响主流程
+                    _suggestions.value = emptyList()
+                }
             }
         }
     }
 
-    // 3. 添加一个方法来处理删除历史
     fun deleteSearchFromHistory(query: String) {
-        searchHistoryManager.removeSearchQuery(query) // 假设SearchHistoryManager有此方法
+        searchHistoryManager.removeSearchQuery(query)
         loadSuggestions("") // 重新加载历史记录以刷新UI
     }
+
+    // -------------------------------------------------------------
+    // 增删改操作
+    // -------------------------------------------------------------
+
+    // 保存笔记
+    fun saveNote(note: Note) {
+        viewModelScope.launch {
+            try {
+                noteRepository.saveNote(note)
+            } catch (e: Exception) {
+                _error.value = "保存笔记失败"
+            }
+        }
+    }
+
     // 删除笔记
     fun deleteNote(noteId: Long) {
         viewModelScope.launch {
             try {
                 noteRepository.deleteNote(noteId)
-                // 删除成功后重新加载笔记
-                loadNotes()
             } catch (e: Exception) {
                 _error.value = "删除笔记失败"
             }
         }
     }
 }
+

@@ -4,27 +4,31 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.paging.PagingDataAdapter
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.noteability.mynote.R
 import com.noteability.mynote.data.entity.Note
 import java.text.SimpleDateFormat
 import java.util.*
 
+// [修改 1] 继承 PagingDataAdapter
+// 移除构造函数中的 'notes: List<Note>'，因为 Paging 3 自己管理数据
+// 传入 DIFF_CALLBACK 用于计算列表差异
 class NoteAdapter(
-    private var notes: List<Note>,
     private val onNoteClick: (Note) -> Unit,
-    // 标签映射，从外部传入
     private var tagNameMap: Map<Long, String> = emptyMap()
-) : RecyclerView.Adapter<NoteAdapter.NoteViewHolder>() {
+) : PagingDataAdapter<Note, NoteAdapter.NoteViewHolder>(DIFF_CALLBACK) {
 
     private val dateFormat = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
-    
+
     /**
      * 更新标签映射数据
      */
     fun updateTagNameMap(newTagNameMap: Map<Long, String>) {
         this.tagNameMap = newTagNameMap
-        // 通知数据集变化以更新所有视图
+        // [注意] 标签更新时，为了保证列表显示的标签名最新，这里暂时使用全量刷新
+        // 如果想极致优化，可以使用 notifyItemRangeChanged，但通常标签数据量小，这样写没问题
         notifyDataSetChanged()
     }
 
@@ -35,40 +39,26 @@ class NoteAdapter(
     }
 
     override fun onBindViewHolder(holder: NoteViewHolder, position: Int) {
-        val note = notes[position]
-        holder.bind(note)
-    }
-
-    override fun getItemCount(): Int = notes.size
-    
-    /**
-     * 更新数据集合并通知适配器
-     */
-    fun updateNotes(newNotes: List<Note>) {
-        this.notes = newNotes
-        notifyDataSetChanged()
-    }
-    
-    /**
-     * 删除单个笔记
-     */
-    fun removeNote(noteId: Long) {
-        val index = notes.indexOfFirst { it.noteId == noteId }
-        if (index != -1) {
-            notes = notes.toMutableList().apply { removeAt(index) }
-            notifyItemRemoved(index)
+        // [修改 2] 使用 getItem(position) 获取数据
+        // Paging 3 的数据可能为 null (如果是占位符模式)，所以需要判空
+        val note = getItem(position)
+        if (note != null) {
+            holder.bind(note)
         }
     }
-    
+
+
+    fun getNoteAtPosition(position: Int): Note? {
+        return getItem(position)
+    }
+
+
+
     /**
      * 获取标签名称
      */
     private fun getTagName(tagId: Long): String {
         return tagNameMap[tagId] ?: "未分类"
-    }
-
-    fun getNoteAt(position: Int): Note {
-        return notes[position]
     }
 
     inner class NoteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -94,6 +84,21 @@ class NoteAdapter(
 
             itemView.setOnClickListener {
                 onNoteClick(note)
+            }
+        }
+    }
+
+    // DiffUtil 回调
+    companion object {
+        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Note>() {
+            // 判断是否是同一个 Item（通常比较 ID）
+            override fun areItemsTheSame(oldItem: Note, newItem: Note): Boolean {
+                return oldItem.noteId == newItem.noteId
+            }
+
+            // 判断内容是否完全一致（用于决定是否刷新 UI 显示）
+            override fun areContentsTheSame(oldItem: Note, newItem: Note): Boolean {
+                return oldItem == newItem
             }
         }
     }

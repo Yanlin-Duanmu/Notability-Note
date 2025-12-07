@@ -91,6 +91,12 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     kapt("androidx.room:room-compiler:2.6.1")  // 添加的关键依赖
 
+
+    //========== Paging 3 ==========
+    implementation("androidx.room:room-paging:2.6.1")
+
+    implementation("androidx.paging:paging-runtime-ktx:3.2.1")
+
     // ========== Kotlin 协程 ==========
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 

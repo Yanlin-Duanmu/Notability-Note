@@ -1,5 +1,6 @@
 package com.noteability.mynote.data.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Update
@@ -52,7 +53,13 @@ interface NoteDao {
     @Query("DELETE FROM notes WHERE noteId = :id")
     suspend fun deleteNoteById(id: Long): Int
 
-    // --- 以下是旧的、有问题的或重复的方法，已被移除 ---
-    // 1. searchNotesByTagAndTitleOrContent 和 searchNotesByTitleOrContent 已被FTS查询替代。
-    // 2. 之前报错的两个方法也已被正确的FTS版本和普通查询版本所覆盖和修正。
+    //Paging 3分页查询
+    @Query("""
+        SELECT * FROM notes 
+        WHERE userId = :userId 
+        AND (:tagId IS NULL OR tagId = :tagId) 
+        AND (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%') 
+        ORDER BY updatedAt DESC
+    """)
+    fun getNotesPagingSource(userId: Long, query: String, tagId: Long?): PagingSource<Int, Note>
 }
