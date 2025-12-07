@@ -166,7 +166,7 @@ class NoteEditActivity : AppCompatActivity() {
             }
         }
 
-        setupListeners()
+        setupAiListeners()
         observeAiState()
     }
 
@@ -543,5 +543,17 @@ class NoteEditActivity : AppCompatActivity() {
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun setupAiListeners() {
+        // AI Summary
+        binding.aiSummaryButton.setOnClickListener {
+            val text = binding.contentEditText.text.toString()
+            if (validateInput(text)) {
+                aiViewModel.onSourceTextChanged(text)
+                aiViewModel.fetchSummary()
+            }
+        }
+
     }
 }
