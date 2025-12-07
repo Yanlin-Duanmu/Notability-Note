@@ -1,6 +1,8 @@
 package com.noteability.mynote.ui.activity
 
 import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -611,7 +613,7 @@ class NoteEditActivity : AppCompatActivity() {
             .setTitle("AI 摘要生成完毕")
             .setMessage(summary)
             .setPositiveButton("复制到剪贴板") { _, _ ->
-                copyToClipboard(summary)
+                copyToClipboard("AI Summary",summary)
             }
             .setNegativeButton("关闭", null)
             .show()
@@ -623,9 +625,16 @@ class NoteEditActivity : AppCompatActivity() {
             .setTitle("AI 推荐标签")
             .setMessage("为您找到以下标签：\n$tagString")
             .setPositiveButton("复制到剪贴板") { _, _ ->
-                copyToClipboard(tagString)
+                copyToClipboard("AI Tag",tagString)
             }
             .setNegativeButton("取消", null)
             .show()
+    }
+
+    private fun copyToClipboard(label:String, text: String) {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText(label, text)
+        clipboard.setPrimaryClip(clip)
+        Toast.makeText(this, "已复制", Toast.LENGTH_SHORT).show()
     }
 }
