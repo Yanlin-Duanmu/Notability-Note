@@ -33,6 +33,7 @@ class NotesViewModel(
     private val _suggestions = MutableStateFlow<List<SearchSuggestion>>(emptyList())
     val suggestions: StateFlow<List<SearchSuggestion>> = _suggestions
 
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
@@ -102,57 +103,53 @@ class NotesViewModel(
     }
 
 
-    fun saveSearchToHistory(query: String) {
-        searchHistoryManager.saveSearchQuery(query)
+
+
+    fun loadSuggestions(query: String) {
+        // 如果输入为空，直接清空智能推荐，不做任何事
+        if (query.isBlank()) {
+            _suggestions.value = emptyList()
+            return
+        }
+
+        // 如果有输入，则加载智能推荐
+        viewModelScope.launch {
+            try {
+                val suggestionsSource = noteRepository.getNotesPagingSource(_loggedInUserId.value, query, _tagId.value)
+                val loadResult = suggestionsSource.load(
+                    PagingSource.LoadParams.Refresh(key = null, loadSize = 5, placeholdersEnabled = false)
+                )
+
+                if (loadResult is PagingSource.LoadResult.Page) {
+                    val titleSuggestions = loadResult.data
+                        .map { note -> SearchSuggestion(note.title, SearchSuggestionType.SUGGESTION) }
+                        .distinctBy { it.text }
+                    _suggestions.value = titleSuggestions
+                } else {
+                    _suggestions.value = emptyList()
+                }
+            } catch (e: Exception) {
+                _suggestions.value = emptyList() // 出错时也清空
+            }
+        }
     }
 
     fun getSearchHistory(): List<String> {
         return searchHistoryManager.getSearchHistory()
     }
 
-    fun loadSuggestions(query: String) {
-        viewModelScope.launch {
-            if (query.isBlank()) {
-                // 【【【 状态一：输入为空，这是正确的历史记录逻辑 】】】
-                // 从 SearchHistoryManager 获取用户真正输入过的搜索词
-                val history = searchHistoryManager.getSearchHistory().map { historyQuery ->
-                    // 将原始搜索词包装成带有 HISTORY 类型的 SearchSuggestion 对象
-                    SearchSuggestion(historyQuery, SearchSuggestionType.HISTORY)
-                }
-                _suggestions.value = history
-            } else {
-                // 【【【 状态二：有输入，这是您已实现的、工作正常的智能推荐逻辑 】】】
-                // (这部分逻辑保持不变，因为它负责的是“智能推荐”，而不是“历史记录”)
-                try {
-                    val suggestionsSource = noteRepository.getNotesPagingSource(_loggedInUserId.value, query, _tagId.value)
-                    val loadResult = suggestionsSource.load(
-                        PagingSource.LoadParams.Refresh(key = null, loadSize = 10, placeholdersEnabled = false)
-                    )
-
-                    if (loadResult is PagingSource.LoadResult.Page) {
-                        val titleSuggestions = loadResult.data
-                            .map { note -> SearchSuggestion(note.title, SearchSuggestionType.SUGGESTION) }
-                            .distinctBy { it.text }
-                            .take(5)
-                        _suggestions.value = titleSuggestions
-                    } else {
-                        _suggestions.value = emptyList()
-                    }
-                } catch (e: Exception) {
-                    _suggestions.value = emptyList()
-                }
-            }
-        }
+    /**
+     * 保存一条搜索历史。
+     */
+    fun saveSearchToHistory(query: String) {
+        searchHistoryManager.addSearchQuery(query) // 调用新的添加方法
     }
 
     fun deleteSearchFromHistory(query: String) {
-        searchHistoryManager.removeSearchQuery(query)
-        loadSuggestions("") // 重新加载历史记录以刷新UI
+        searchHistoryManager.removeSearchQuery(query) // 调用新的删除方法
     }
-    fun clearAllSearchHistory() {
-        searchHistoryManager.clearHistory()
-        loadSuggestions("") // 清空后，重新加载（此时会得到空列表），以触发UI更新
-    }
+
+
     // -------------------------------------------------------------
     // 增删改操作
     // -------------------------------------------------------------
