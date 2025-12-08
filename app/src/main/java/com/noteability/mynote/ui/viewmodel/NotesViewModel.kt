@@ -1,11 +1,14 @@
 package com.noteability.mynote.ui.viewmodel
 
+import androidx.compose.ui.semantics.text
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import androidx.paging.PagingSource
 import androidx.paging.cachedIn
+import androidx.paging.map
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.repository.NoteRepository
 import com.noteability.mynote.ui.adapter.SearchSuggestion
@@ -110,21 +113,33 @@ class NotesViewModel(
     fun loadSuggestions(query: String) {
         viewModelScope.launch {
             if (query.isBlank()) {
-                // 输入为空，显示历史记录
-                val history = searchHistoryManager.getSearchHistory().map {
-                    SearchSuggestion(it, SearchSuggestionType.HISTORY)
+                // 【状态一：输入为空】-> 显示历史记录
+                val history = searchHistoryManager.getSearchHistory().map { historyQuery ->
+                    SearchSuggestion(historyQuery, SearchSuggestionType.HISTORY)
                 }
                 _suggestions.value = history
             } else {
+                // 【状态二：有输入】-> 显示智能推荐
                 try {
-                    val titleSuggestions = noteRepository.searchNotes(query, _tagId.value)
-                        .first() // 获取Flow的第一个值
-                        .map { note -> SearchSuggestion(note.title, SearchSuggestionType.SUGGESTION) }
-                        .distinct() // 去重
-                        .take(5) // 最多取5条
-                    _suggestions.value = titleSuggestions
+                    // 我们从 PagingSource 中获取数据，这比 .first() 更高效，因为它利用了已有的分页逻辑
+                    val suggestionsSource = noteRepository.getNotesPagingSource(_loggedInUserId.value, query, _tagId.value)
+
+                    // 加载一页数据作为建议
+                    val loadResult = suggestionsSource.load(
+                        PagingSource.LoadParams.Refresh(key = null, loadSize = 10, placeholdersEnabled = false)
+                    )
+
+                    if (loadResult is PagingSource.LoadResult.Page) {
+                        val titleSuggestions = loadResult.data
+                            .map { note -> SearchSuggestion(note.title, SearchSuggestionType.SUGGESTION) }
+                            .distinctBy { it.text } // 使用 distinctBy 确保标题唯一
+                            .take(5) // 最多取5条
+                        _suggestions.value = titleSuggestions
+                    } else {
+                        _suggestions.value = emptyList()
+                    }
                 } catch (e: Exception) {
-                    // 忽略建议加载错误，不影响主流程
+                    // 忽略建议加载错误，不影响主流程，仅清空建议列表
                     _suggestions.value = emptyList()
                 }
             }
