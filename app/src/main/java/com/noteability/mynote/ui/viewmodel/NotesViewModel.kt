@@ -148,7 +148,12 @@ class NotesViewModel(
     fun deleteSearchFromHistory(query: String) {
         searchHistoryManager.removeSearchQuery(query) // 调用新的删除方法
     }
-
+    fun clearSearch() {
+        // 只清空搜索词，保持当前的标签筛选 (_tagId) 不变
+        if (_searchQuery.value.isNotEmpty()) {
+            _searchQuery.value = ""
+        }
+    }
 
     // -------------------------------------------------------------
     // 增删改操作
