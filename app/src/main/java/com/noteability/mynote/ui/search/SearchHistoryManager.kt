@@ -32,4 +32,8 @@ class SearchHistoryManager(context: Context) {
             }
         }
     }
+    fun clearHistory() {
+        // This clears the entire search history set from SharedPreferences
+        prefs.edit().remove(historyKey).apply()
+    }
 }
