@@ -138,7 +138,19 @@
                         android:textSize="14sp" />
                 </LinearLayout>
             </HorizontalScrollView>
+            <LinearLayout
+                android:id="@+id/search_history_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp"
+                android:visibility="gone"
+                tools:visibility="visible">
 
+                <!-- 历史记录框将通过代码动态添加到这里 -->
+
+            </LinearLayout>
             <!-- ##### 以下是核心修改区域 ##### -->
             <!-- 内容容器，包含笔记列表、加载指示器、空状态、错误状态以及现在的建议列表 -->
             <FrameLayout
