@@ -7,5 +7,6 @@ data class SearchSuggestion(
 
 enum class SearchSuggestionType {
     HISTORY,
-    SUGGESTION
+    SUGGESTION,
+    NO_MATCH // <-- Add this line
 }
