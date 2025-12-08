@@ -113,18 +113,18 @@ class NotesViewModel(
     fun loadSuggestions(query: String) {
         viewModelScope.launch {
             if (query.isBlank()) {
-                // 【状态一：输入为空】-> 显示历史记录
+                // 【【【 状态一：输入为空，这是正确的历史记录逻辑 】】】
+                // 从 SearchHistoryManager 获取用户真正输入过的搜索词
                 val history = searchHistoryManager.getSearchHistory().map { historyQuery ->
+                    // 将原始搜索词包装成带有 HISTORY 类型的 SearchSuggestion 对象
                     SearchSuggestion(historyQuery, SearchSuggestionType.HISTORY)
                 }
                 _suggestions.value = history
             } else {
-                // 【状态二：有输入】-> 显示智能推荐
+                // 【【【 状态二：有输入，这是您已实现的、工作正常的智能推荐逻辑 】】】
+                // (这部分逻辑保持不变，因为它负责的是“智能推荐”，而不是“历史记录”)
                 try {
-                    // 我们从 PagingSource 中获取数据，这比 .first() 更高效，因为它利用了已有的分页逻辑
                     val suggestionsSource = noteRepository.getNotesPagingSource(_loggedInUserId.value, query, _tagId.value)
-
-                    // 加载一页数据作为建议
                     val loadResult = suggestionsSource.load(
                         PagingSource.LoadParams.Refresh(key = null, loadSize = 10, placeholdersEnabled = false)
                     )
@@ -132,14 +132,13 @@ class NotesViewModel(
                     if (loadResult is PagingSource.LoadResult.Page) {
                         val titleSuggestions = loadResult.data
                             .map { note -> SearchSuggestion(note.title, SearchSuggestionType.SUGGESTION) }
-                            .distinctBy { it.text } // 使用 distinctBy 确保标题唯一
-                            .take(5) // 最多取5条
+                            .distinctBy { it.text }
+                            .take(5)
                         _suggestions.value = titleSuggestions
                     } else {
                         _suggestions.value = emptyList()
                     }
                 } catch (e: Exception) {
-                    // 忽略建议加载错误，不影响主流程，仅清空建议列表
                     _suggestions.value = emptyList()
                 }
             }
@@ -150,7 +149,10 @@ class NotesViewModel(
         searchHistoryManager.removeSearchQuery(query)
         loadSuggestions("") // 重新加载历史记录以刷新UI
     }
-
+    fun clearAllSearchHistory() {
+        searchHistoryManager.clearHistory()
+        loadSuggestions("") // 清空后，重新加载（此时会得到空列表），以触发UI更新
+    }
     // -------------------------------------------------------------
     // 增删改操作
     // -------------------------------------------------------------
