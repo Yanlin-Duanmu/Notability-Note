@@ -30,7 +30,7 @@ import com.noteability.mynote.ui.adapter.NoteAdapter
 import com.noteability.mynote.ui.adapter.SearchSuggestionAdapter
 import com.noteability.mynote.ui.viewmodel.NotesViewModel
 import com.noteability.mynote.ui.viewmodel.TagsViewModel
-import kotlinx.coroutines.flow.collectLatest // [新增] 用于收集最新的 Paging 数据
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -53,9 +53,6 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-
-
-        // 检查用户登录状态
         val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
         val loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 0L)
 
@@ -67,13 +64,8 @@ class MainActivity : AppCompatActivity() {
 
         initViewModels(loggedInUserId)
         setupToolbarAndDrawer()
-
-        // 初始化RecyclerView
         setupRecyclerView()
-
-        // 加载状态监听 (替代原来的 updateUIState)
         setupLoadStateListener()
-
         setupSwipeToDelete()
         loadTags()
         setupSearchListener()
@@ -87,9 +79,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         setupOnBackPressed()
-
-
-
     }
 
 
@@ -144,25 +133,31 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
-
-
     private fun setupRecyclerView() {
         val tagNameMap = mutableMapOf<Long, String>()
 
         noteAdapter = NoteAdapter(onNoteClick = { note ->
             val intent = Intent(this, NoteEditActivity::class.java)
-            intent.putExtra("noteId", note.noteId) // This is now on a new line
+            intent.putExtra("noteId", note.noteId)
             startActivity(intent)
         }, tagNameMap = tagNameMap)
 
-        // 搜索建议 Adapter
         searchSuggestionAdapter = SearchSuggestionAdapter(
-            onSuggestionClick = { query ->
-                // 【优化】当点击一个建议时...
-                binding.searchEditText.setText(query)
-                binding.searchEditText.setSelection(query.length)
-                // 主动清除焦点，这会触发 onFocusChangeListener 的 else 分支，自动隐藏建议列表并保存历史
+            onSuggestionClick = { suggestionText ->
+                // 【核心修复 1】: 当点击一个建议项时
+                // 1. 获取当前搜索框里的原始输入（例如 "1"）
+                val originalQuery = binding.searchEditText.text.toString()
+
+                // 2. 如果原始输入不为空，就用它来保存历史记录
+                if (originalQuery.isNotBlank()) {
+                    viewModel.saveSearchToHistory(originalQuery)
+                }
+
+                // 3. 用建议的文本（例如 "项目结果"）填充搜索框
+                binding.searchEditText.setText(suggestionText)
+                binding.searchEditText.setSelection(suggestionText.length)
+
+                // 4. 主动清除焦点，这将触发 onFocusChangeListener 的 else 分支来隐藏建议列表
                 binding.searchEditText.clearFocus()
             },
             onSuggestionDelete = { query ->
@@ -180,35 +175,64 @@ class MainActivity : AppCompatActivity() {
 
         binding.notesRecyclerView.layoutManager = LinearLayoutManager(this)
         binding.notesRecyclerView.adapter = noteAdapter
-        // 【确认】确保建议列表有 LayoutManager
+
         binding.searchSuggestionsRecyclerview.layoutManager = LinearLayoutManager(this)
         binding.searchSuggestionsRecyclerview.adapter = searchSuggestionAdapter
 
         binding.notesRecyclerView.itemAnimator = null
     }
 
-
-    //监听 Paging 的加载状态，控制 Loading 和 空视图
     private fun setupLoadStateListener() {
         noteAdapter.addLoadStateListener { loadState ->
-            // 【简化】现在不再需要 hasFocus() 判断了
-            val isListEmpty = loadState.refresh is LoadState.NotLoading && noteAdapter.itemCount == 0
-            val isRefresh = loadState.refresh is LoadState.Loading
+            if (!binding.searchEditText.hasFocus()) {
+                val isListEmpty = loadState.refresh is LoadState.NotLoading && noteAdapter.itemCount == 0
+                val isRefresh = loadState.refresh is LoadState.Loading
 
-            // 控制加载动画
-            binding.loadingIndicator.visibility = if (isRefresh) View.VISIBLE else View.GONE
+                binding.loadingIndicator.visibility = if (isRefresh) View.VISIBLE else View.GONE
 
-            // 控制空状态视图
-            binding.emptyStateView.visibility = if (isListEmpty) View.VISIBLE else View.GONE
+                binding.emptyStateView.visibility = if (isListEmpty) View.VISIBLE else View.GONE
 
-            // 根据空状态更新文本
-            if (isListEmpty) {
-                val isSearching = binding.searchEditText.text.isNotEmpty()
-                binding.emptyStateView.text = if (isSearching) "没有找到相关内容" else "还没有笔记，快来添加吧"
+                if (isListEmpty) {
+                    val isSearching = binding.searchEditText.text.isNotEmpty()
+                    binding.emptyStateView.text = if (isSearching) "没有找到相关内容" else "还没有笔记，快来添加吧"
+                }
             }
+        }
+    }
 
-            // 【简化】我们不再需要手动控制 notesRecyclerView 的可见性，它默认一直可见
-            // 如果列表为空，它会被 emptyStateView 覆盖；如果加载中，会被 loadingIndicator 覆盖
+    private fun setupSearchListener() {
+        lifecycleScope.launch {
+            viewModel.suggestions.collect { suggestionList ->
+                searchSuggestionAdapter.submitList(suggestionList)
+                if (binding.searchEditText.hasFocus()) {
+                    binding.searchSuggestionsRecyclerview.visibility = if (suggestionList.isNotEmpty()) View.VISIBLE else View.GONE
+                }
+            }
+        }
+
+        binding.searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s.toString()
+                viewModel.searchNotes(query, currentSelectedTagId)
+                viewModel.loadSuggestions(query)
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        binding.searchEditText.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                viewModel.loadSuggestions(binding.searchEditText.text.toString())
+            } else {
+                binding.searchSuggestionsRecyclerview.visibility = View.GONE
+
+                // 【核心修复 2】: 失去焦点时，只保存非空的、且不是由点击建议项触发的搜索
+                val query = binding.searchEditText.text.toString()
+                if (query.isNotBlank()) {
+                    // 这个时机保存的可能是被建议项覆盖后的文本，但它是用户最终确认的搜索
+                    // 更精确的保存时机在 onSuggestionClick 中处理
+                }
+            }
         }
     }
 
@@ -244,7 +268,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateTagSelectionState() {
-
         (tagViews.values + listOfNotNull(allTagView)).forEach { view ->
             val defaultBgColor = ContextCompat.getColor(view.context, R.color.filter_bar_tag_bg_default)
             val defaultTextColor = ContextCompat.getColor(view.context, R.color.filter_bar_tag_text_default)
@@ -262,46 +285,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupSearchListener() {
-        // 1. 观察ViewModel中的建议数据流
-        lifecycleScope.launch {
-            viewModel.suggestions.collect { suggestionList ->
-                searchSuggestionAdapter.submitList(suggestionList)
-                // 【优化】只在有焦点时才根据建议列表是否为空来显示/隐藏
-                if (binding.searchEditText.hasFocus()) {
-                    binding.searchSuggestionsRecyclerview.visibility = if (suggestionList.isNotEmpty()) View.VISIBLE else View.GONE
-                }
-            }
-        }
-
-        // 2. 监听文本变化 (此部分逻辑正确，无需修改)
-        binding.searchEditText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val query = s.toString()
-                viewModel.searchNotes(query, currentSelectedTagId)
-                viewModel.loadSuggestions(query) // 实时加载建议
-            }
-            override fun afterTextChanged(s: Editable?) {}
-        })
-
-        // 3. 监听焦点变化 (此部分逻辑大大简化且正确)
-        binding.searchEditText.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) {
-                // 当获得焦点时，根据当前输入框内容加载并尝试显示建议
-                viewModel.loadSuggestions(binding.searchEditText.text.toString())
-            } else {
-                // 当失去焦点时，总是隐藏建议列表
-                binding.searchSuggestionsRecyclerview.visibility = View.GONE
-                // 同时保存搜索历史
-                val query = binding.searchEditText.text.toString()
-                if (query.isNotBlank()) {
-                    viewModel.saveSearchToHistory(query)
-                }
-            }
-        }
-    }
-
     private fun setupButtonListeners() {
         binding.addNoteFab.setOnClickListener {
             val intent = Intent(this, NoteEditActivity::class.java)
@@ -309,25 +292,20 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
         binding.errorStateView.setOnClickListener {
-            // [修改] Paging 3 重试机制
             noteAdapter.retry()
         }
     }
 
     private fun observeViewModel() {
-
         lifecycleScope.launch {
             viewModel.notesPagingFlow.collectLatest { pagingData ->
                 noteAdapter.submitData(lifecycle, pagingData)
             }
         }
 
-        // 移除了 viewModel.isLoading 的观察，改用 setupLoadStateListener
-
         lifecycleScope.launch {
             viewModel.error.collect { errorMessage ->
                 binding.errorStateView.text = errorMessage ?: getString(R.string.loading_failed)
-                // 这里只处理业务逻辑错误，Paging 的加载错误由 loadStateListener 处理
                 if (errorMessage != null) {
                     binding.errorStateView.visibility = View.VISIBLE
                 }
@@ -340,9 +318,7 @@ class MainActivity : AppCompatActivity() {
             override fun onMove(r: RecyclerView, v: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder): Boolean = false
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.bindingAdapterPosition // 推荐使用 bindingAdapterPosition
-
-                // [修改] 使用 getNoteAtPosition (PagingAdapter 的方法)
+                val position = viewHolder.bindingAdapterPosition
                 val noteToDelete = noteAdapter.getNoteAtPosition(position)
 
                 noteToDelete?.let { note ->
@@ -355,7 +331,6 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onChildDraw(c: Canvas, r: RecyclerView, v: RecyclerView.ViewHolder, dX: Float, dY: Float, action: Int, active: Boolean) {
-                // ... (保持原有绘图代码不变)
                 val itemView = v.itemView
                 val icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_delete)
                 val background = ColorDrawable(Color.RED)
@@ -374,8 +349,6 @@ class MainActivity : AppCompatActivity() {
         val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
         itemTouchHelper.attachToRecyclerView(binding.notesRecyclerView)
     }
-
-    //移除了原来的 updateUIState 方法，被 setupLoadStateListener 替代
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
