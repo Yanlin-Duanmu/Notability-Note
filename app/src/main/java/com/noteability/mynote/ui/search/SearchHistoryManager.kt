@@ -6,7 +6,7 @@ import android.content.SharedPreferences
 class SearchHistoryManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("search_history", Context.MODE_PRIVATE)
     private val historyKey = "history"
-    private val maxHistorySize = 5 // You can adjust this value
+    private val maxHistorySize = 3 // You can adjust this value
 
     fun getSearchHistory(): List<String> {
         val historySet = prefs.getStringSet(historyKey, emptySet()) ?: emptySet()
