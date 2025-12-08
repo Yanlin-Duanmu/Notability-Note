@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -41,11 +42,9 @@ class MainActivity : AppCompatActivity() {
     private var allTagView: TextView? = null
     private val tagViews = mutableMapOf<Long, TextView>()
 
-    // ViewModel实例
     private lateinit var viewModel: NotesViewModel
     private lateinit var tagsViewModel: TagsViewModel
 
-    // 存储当前选中的标签ID，默认为0表示未筛选标签
     private var currentSelectedTagId: Long = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -144,24 +143,20 @@ class MainActivity : AppCompatActivity() {
 
         searchSuggestionAdapter = SearchSuggestionAdapter(
             onSuggestionClick = { suggestionText ->
-                // 【核心修复 1】: 当点击一个建议项时
-                // 1. 获取当前搜索框里的原始输入（例如 "1"）
+                // 【最终修复：保存原始搜索词的逻辑】
                 val originalQuery = binding.searchEditText.text.toString()
-
-                // 2. 如果原始输入不为空，就用它来保存历史记录
                 if (originalQuery.isNotBlank()) {
                     viewModel.saveSearchToHistory(originalQuery)
                 }
 
-                // 3. 用建议的文本（例如 "项目结果"）填充搜索框
                 binding.searchEditText.setText(suggestionText)
                 binding.searchEditText.setSelection(suggestionText.length)
-
-                // 4. 主动清除焦点，这将触发 onFocusChangeListener 的 else 分支来隐藏建议列表
                 binding.searchEditText.clearFocus()
             },
             onSuggestionDelete = { query ->
                 viewModel.deleteSearchFromHistory(query)
+                // 注意：这里没有调用 updateSearchHistoryView()，因为 onSuggestionDelete
+                // 属于智能推荐列表，而非历史记录框的删除按钮。
             }
         )
 
@@ -184,12 +179,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupLoadStateListener() {
         noteAdapter.addLoadStateListener { loadState ->
+            // 只有当搜索框没有焦点时，才让 Paging 控制 UI，防止与建议/历史浮层冲突
             if (!binding.searchEditText.hasFocus()) {
                 val isListEmpty = loadState.refresh is LoadState.NotLoading && noteAdapter.itemCount == 0
                 val isRefresh = loadState.refresh is LoadState.Loading
 
                 binding.loadingIndicator.visibility = if (isRefresh) View.VISIBLE else View.GONE
-
                 binding.emptyStateView.visibility = if (isListEmpty) View.VISIBLE else View.GONE
 
                 if (isListEmpty) {
@@ -201,38 +196,111 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSearchListener() {
-        lifecycleScope.launch {
-            viewModel.suggestions.collect { suggestionList ->
-                searchSuggestionAdapter.submitList(suggestionList)
-                if (binding.searchEditText.hasFocus()) {
-                    binding.searchSuggestionsRecyclerview.visibility = if (suggestionList.isNotEmpty()) View.VISIBLE else View.GONE
-                }
-            }
-        }
-
+        // 监听文本变化，用于切换“历史记录”和“智能推荐”
         binding.searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s.toString()
-                viewModel.searchNotes(query, currentSelectedTagId)
-                viewModel.loadSuggestions(query)
+                viewModel.searchNotes(query, currentSelectedTagId) // 主列表实时搜索
+
+                if (query.isBlank()) {
+                    // 输入为空: 显示历史记录, 隐藏智能推荐
+                    binding.searchSuggestionsRecyclerview.visibility = View.GONE
+                    updateSearchHistoryView()
+                } else {
+                    // 【核心修复】有输入: 隐藏历史记录, 并立即尝试显示智能推荐列表
+                    binding.searchHistoryContainer.visibility = View.GONE
+
+                    // 主动将会被建议列表设置为可见，即使此时它可能还是空的。
+                    // 这样可以确保它已经准备好接收即将到来的数据。
+                    binding.searchSuggestionsRecyclerview.visibility = View.VISIBLE
+
+                    viewModel.loadSuggestions(query) // 在后台加载数据填充它
+                }
             }
             override fun afterTextChanged(s: Editable?) {}
         })
 
+        // 监听焦点变化，用于控制浮层的整体显示与隐藏
         binding.searchEditText.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
-                viewModel.loadSuggestions(binding.searchEditText.text.toString())
+                // 获得焦点时，根据当前输入框内容决定显示哪个浮层
+                if (binding.searchEditText.text.isBlank()) {
+                    updateSearchHistoryView()
+                } else {
+                    // 如果获得焦点时已经有内容，也确保建议列表是可见的
+                    binding.searchSuggestionsRecyclerview.visibility = View.VISIBLE
+                    viewModel.loadSuggestions(binding.searchEditText.text.toString())
+                }
             } else {
+                // 失去焦点时，隐藏所有浮层
+                binding.searchHistoryContainer.visibility = View.GONE
                 binding.searchSuggestionsRecyclerview.visibility = View.GONE
+            }
+        }
 
-                // 【核心修复 2】: 失去焦点时，只保存非空的、且不是由点击建议项触发的搜索
-                val query = binding.searchEditText.text.toString()
+        // 监听软键盘的“搜索”或“完成”按钮点击事件
+        binding.searchEditText.setOnEditorActionListener { v, actionId, event ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                val query = v.text.toString()
                 if (query.isNotBlank()) {
-                    // 这个时机保存的可能是被建议项覆盖后的文本，但它是用户最终确认的搜索
-                    // 更精确的保存时机在 onSuggestionClick 中处理
+                    viewModel.saveSearchToHistory(query)
+                }
+                binding.searchEditText.clearFocus() // 隐藏键盘和浮层
+                true // 返回 true 表示事件已被处理
+            } else {
+                false
+            }
+        }
+
+        // 观察智能推荐的数据 (现在它只负责更新数据和在数据为空时隐藏列表)
+        lifecycleScope.launch {
+            viewModel.suggestions.collect { suggestionList ->
+                searchSuggestionAdapter.submitList(suggestionList)
+                // 【优化】当数据加载回来后，如果列表是空的，我们再把它隐藏掉
+                if (binding.searchEditText.hasFocus() && binding.searchEditText.text.isNotBlank()) {
+                    if (suggestionList.isEmpty()) {
+                        binding.searchSuggestionsRecyclerview.visibility = View.GONE
+                    }
                 }
             }
+        }
+
+
+    }
+
+
+    // 辅助函数，用于显示和填充新的历史记录框
+    private fun updateSearchHistoryView() {
+        val historyContainer = binding.searchHistoryContainer
+        val historyList = viewModel.getSearchHistory().take(3) // 只取最新的3条
+
+        historyContainer.removeAllViews() // 每次显示前都清空
+
+        if (historyList.isNotEmpty() && binding.searchEditText.text.isBlank()) { // 再次确认输入框为空
+            historyContainer.visibility = View.VISIBLE
+            for (historyText in historyList) {
+                val chipView = layoutInflater.inflate(R.layout.item_history_box, historyContainer, false)
+                val historyTextView = chipView.findViewById<TextView>(R.id.history_text)
+                val deleteButton = chipView.findViewById<ImageView>(R.id.button_delete_history_item)
+
+                historyTextView.text = historyText
+
+                chipView.setOnClickListener {
+                    binding.searchEditText.setText(historyText)
+                    binding.searchEditText.setSelection(historyText.length)
+                }
+
+                deleteButton.setOnClickListener {
+                    viewModel.deleteSearchFromHistory(historyText)
+                    updateSearchHistoryView() // 删除后立即刷新
+                }
+
+                historyContainer.addView(chipView)
+            }
+        } else {
+            historyContainer.visibility = View.GONE
         }
     }
 
