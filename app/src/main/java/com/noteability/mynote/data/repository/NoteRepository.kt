@@ -30,4 +30,7 @@ interface NoteRepository {
 
     // paging 3 获取分页数据源
     fun getNotesPagingSource(userId: Long, query: String, tagId: Long?): PagingSource<Int, Note>
+
+    //批量删除
+    suspend fun deleteNotesList(noteIds: List<Long>)
 }

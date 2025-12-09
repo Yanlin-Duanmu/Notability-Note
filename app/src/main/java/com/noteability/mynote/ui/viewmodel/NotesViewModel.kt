@@ -180,5 +180,18 @@ class NotesViewModel(
             }
         }
     }
+
+    // 批量删除
+    fun deleteNotes(noteIds: List<Long>) {
+        viewModelScope.launch {
+            try {
+                noteRepository.deleteNotesList(noteIds)
+                // 删除成功，Room 会自动通知 PagingAdapter 刷新 UI
+            } catch (e: Exception) {
+                // 处理错误，比如通过 _error Flow 发送错误信息
+                _error.emit("批量删除失败: ${e.message}")
+            }
+        }
+    }
 }
 

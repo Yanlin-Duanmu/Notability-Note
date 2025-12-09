@@ -28,8 +28,8 @@
                 app:contentInsetEnd="0dp"
                 app:contentInsetStart="0dp">
 
-                <!--  Title, middle -->
                 <TextView
+                    android:id="@+id/tvPageTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
@@ -38,18 +38,15 @@
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <!-- Grid icon, right -->
                 <ImageView
+                    android:id="@+id/btnMore"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_gravity="end|center_vertical"
-                    android:padding="8dp"
                     android:layout_marginEnd="12dp"
+                    android:padding="8dp"
                     android:src="@drawable/ic_grid_view" />
-
-
             </androidx.appcompat.widget.Toolbar>
-
         </com.google.android.material.appbar.AppBarLayout>
 
         <LinearLayout
@@ -58,7 +55,6 @@
             android:orientation="vertical"
             app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-            <!-- Search area -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -67,7 +63,6 @@
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="12dp">
 
-                <!-- Search box container -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="48dp"
@@ -90,14 +85,13 @@
                         android:layout_marginStart="8dp"
                         android:background="@null"
                         android:hint="搜索笔记内容或标题"
+                        android:importantForAutofill="no"
                         android:inputType="text"
                         android:textColor="@color/text_dark"
                         android:textColorHint="@color/text_gray"
-                        android:textSize="15sp"
-                        android:importantForAutofill="no" />
+                        android:textSize="15sp" />
                 </LinearLayout>
 
-                <!-- Filter button -->
                 <ImageView
                     android:layout_width="48dp"
                     android:layout_height="48dp"
@@ -123,7 +117,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
-                    <!-- 标签会通过代码动态添加 -->
+
                     <TextView
                         android:id="@+id/tagAll"
                         android:layout_width="wrap_content"
@@ -158,7 +152,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-                <!-- 笔记列表 -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/notesRecyclerView"
                     android:layout_width="match_parent"
@@ -166,7 +159,6 @@
                     android:clipToPadding="false"
                     android:padding="16dp" />
 
-                <!-- 加载指示器 -->
                 <com.google.android.material.progressindicator.CircularProgressIndicator
                     android:id="@+id/loadingIndicator"
                     android:layout_width="wrap_content"
@@ -207,8 +199,7 @@
                     android:visibility="gone"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     tools:listitem="@layout/item_search_suggestion"
-                    tools:visibility="visible"/>
-
+                    tools:visibility="visible" />
             </FrameLayout>
             <!-- ##### 修改区域结束 ##### -->
 
@@ -226,6 +217,32 @@
             app:backgroundTint="@color/brand_primary"
             app:shapeAppearanceOverlay="@style/ShapeAppearance.App.RoundedSquare"
             app:tint="@color/white" />
+
+        <LinearLayout
+            android:id="@+id/batchDeleteBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="@color/white"
+            android:elevation="10dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:visibility="gone">
+            <ImageView
+                android:id="@+id/btnBatchDelete"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_delete"
+                app:tint="@android:color/holo_red_dark"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="删除"
+                android:textColor="@android:color/holo_red_dark"
+                android:textSize="12sp" />
+        </LinearLayout>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

@@ -13,71 +13,164 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical">
 
-        <!-- Title -->
-        <TextView
-            android:id="@+id/noteTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="关于AI产品设计的思考"
-            android:textColor="@color/text_dark"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp"/>
-
-        <!-- Content preview -->
-        <TextView
-            android:id="@+id/noteContentPreview"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="用户体验是核心，需要结合算法的能力边界来设计..."
-            android:textColor="@color/text_gray"
-            android:textSize="15sp"
-            android:maxLines="2"
-            android:ellipsize="end"
-            android:lineSpacingExtra="4dp"
-            android:layout_marginBottom="12dp"/>
-
-        <!-- Bottom bar -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-            <!-- Tag area -->
-            <LinearLayout
-                android:id="@+id/noteTagsContainer"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/noteTitle"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:text="关于AI产品设计的思考"
+                android:textColor="@color/text_dark"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/noteContentPreview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="用户体验是核心，需要结合算法的能力边界来设计..."
+                android:textColor="@color/text_gray"
+                android:textSize="15sp"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="12dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- 标签会通过代码动态添加 -->
-                <!-- Sample style -->
+                <LinearLayout
+                    android:id="@+id/noteTagsContainer"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:text="AI"
+                        android:textSize="12sp"
+                        android:textColor="@color/tag_text_blue"
+                        android:backgroundTint="@color/tag_bg_blue"
+                        android:background="@drawable/bg_rounded"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="4dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
                 <TextView
-                    android:text="AI"
-                    android:textSize="12sp"
-                    android:textColor="@color/tag_text_blue"
-                    android:backgroundTint="@color/tag_bg_blue"
-                    android:background="@drawable/bg_rounded"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="4dp"
+                    android:id="@+id/noteUpdateTime"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:text="昨天 21:30"
+                    android:textColor="@color/text_date"
+                    android:textSize="12sp"/>
             </LinearLayout>
-
-            <!-- Update time -->
-            <TextView
-                android:id="@+id/noteUpdateTime"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="昨天 21:30"
-                android:textColor="@color/text_date"
-                android:textSize="12sp"/>
         </LinearLayout>
-    </LinearLayout>
 
+        <CheckBox
+            android:id="@+id/noteCheckBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:visibility="gone"
+            android:clickable="false"
+            android:focusable="false" />
+    </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
+
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<com.google.android.material.card.MaterialCardView-->
+<!--    xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="wrap_content"-->
+<!--    android:layout_marginBottom="12dp"-->
+<!--    app:cardBackgroundColor="@color/white"-->
+<!--    app:cardCornerRadius="12dp"-->
+<!--    app:cardElevation="2dp"-->
+<!--    app:strokeWidth="0dp">-->
+
+<!--    <LinearLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="vertical"-->
+<!--        android:padding="16dp">-->
+
+<!--        &lt;!&ndash; Title &ndash;&gt;-->
+<!--        <TextView-->
+<!--            android:id="@+id/noteTitle"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="关于AI产品设计的思考"-->
+<!--            android:textColor="@color/text_dark"-->
+<!--            android:textSize="18sp"-->
+<!--            android:textStyle="bold"-->
+<!--            android:layout_marginBottom="8dp"/>-->
+
+<!--        &lt;!&ndash; Content preview &ndash;&gt;-->
+<!--        <TextView-->
+<!--            android:id="@+id/noteContentPreview"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="用户体验是核心，需要结合算法的能力边界来设计..."-->
+<!--            android:textColor="@color/text_gray"-->
+<!--            android:textSize="15sp"-->
+<!--            android:maxLines="2"-->
+<!--            android:ellipsize="end"-->
+<!--            android:lineSpacingExtra="4dp"-->
+<!--            android:layout_marginBottom="12dp"/>-->
+
+<!--        &lt;!&ndash; Bottom bar &ndash;&gt;-->
+<!--        <LinearLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:gravity="center_vertical"-->
+<!--            android:orientation="horizontal">-->
+
+<!--            &lt;!&ndash; Tag area &ndash;&gt;-->
+<!--            <LinearLayout-->
+<!--                android:id="@+id/noteTagsContainer"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_weight="1"-->
+<!--                android:orientation="horizontal">-->
+
+<!--                &lt;!&ndash; 标签会通过代码动态添加 &ndash;&gt;-->
+<!--                &lt;!&ndash; Sample style &ndash;&gt;-->
+<!--                <TextView-->
+<!--                    android:text="AI"-->
+<!--                    android:textSize="12sp"-->
+<!--                    android:textColor="@color/tag_text_blue"-->
+<!--                    android:backgroundTint="@color/tag_bg_blue"-->
+<!--                    android:background="@drawable/bg_rounded"-->
+<!--                    android:paddingHorizontal="10dp"-->
+<!--                    android:paddingVertical="4dp"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"/>-->
+<!--            </LinearLayout>-->
+
+<!--            &lt;!&ndash; Update time &ndash;&gt;-->
+<!--            <TextView-->
+<!--                android:id="@+id/noteUpdateTime"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="昨天 21:30"-->
+<!--                android:textColor="@color/text_date"-->
+<!--                android:textSize="12sp"/>-->
+<!--        </LinearLayout>-->
+<!--    </LinearLayout>-->
+
+<!--</com.google.android.material.card.MaterialCardView>-->
