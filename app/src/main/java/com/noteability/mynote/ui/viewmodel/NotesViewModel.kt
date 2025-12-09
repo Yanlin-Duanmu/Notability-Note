@@ -106,13 +106,11 @@ class NotesViewModel(
 
 
     fun loadSuggestions(query: String) {
-        // 如果输入为空，直接清空智能推荐，不做任何事
         if (query.isBlank()) {
             _suggestions.value = emptyList()
             return
         }
 
-        // 如果有输入，则加载智能推荐
         viewModelScope.launch {
             try {
                 val suggestionsSource = noteRepository.getNotesPagingSource(_loggedInUserId.value, query, _tagId.value)
@@ -121,15 +119,16 @@ class NotesViewModel(
                 )
 
                 if (loadResult is PagingSource.LoadResult.Page) {
-                    val titleSuggestions = loadResult.data
-                        .map { note -> SearchSuggestion(note.title, SearchSuggestionType.SUGGESTION) }
-                        .distinctBy { it.text }
+                    val titleSuggestions = loadResult.data.map { note ->
+                        // 【核心修改】创建 SearchSuggestion 时，同时传入 note.noteId
+                        SearchSuggestion(note.title, SearchSuggestionType.SUGGESTION, note.noteId)
+                    }.distinctBy { it.text }
                     _suggestions.value = titleSuggestions
                 } else {
                     _suggestions.value = emptyList()
                 }
             } catch (e: Exception) {
-                _suggestions.value = emptyList() // 出错时也清空
+                _suggestions.value = emptyList()
             }
         }
     }
@@ -154,7 +153,9 @@ class NotesViewModel(
             _searchQuery.value = ""
         }
     }
-
+    fun clearSearchHistory() {
+        searchHistoryManager.clearHistory()
+    }
     // -------------------------------------------------------------
     // 增删改操作
     // -------------------------------------------------------------
