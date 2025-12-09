@@ -1,11 +1,20 @@
 package com.noteability.mynote.ui.viewmodel
 
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.BackgroundColorSpan
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.graphics.Color
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.repository.NoteRepository
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class NoteDetailViewModel(private val noteRepository: NoteRepository) : ViewModel() {
@@ -24,7 +33,21 @@ class NoteDetailViewModel(private val noteRepository: NoteRepository) : ViewMode
     
     private val _isSaved = MutableStateFlow(false)
     val isSaved: StateFlow<Boolean> = _isSaved
-    
+    // --- StateFlows for Search ---
+    private val _searchQueryInNote = MutableStateFlow("")
+    val searchQueryInNote: StateFlow<String> = _searchQueryInNote.asStateFlow()
+
+    private val _isSearchViewVisible = MutableStateFlow(false)
+    val isSearchViewVisible: StateFlow<Boolean> = _isSearchViewVisible.asStateFlow()
+
+    private val _originalContent = MutableStateFlow("")
+
+    private val _matchRanges = MutableStateFlow<List<IntRange>>(emptyList())
+    val matchRanges: StateFlow<List<IntRange>> = _matchRanges.asStateFlow()
+
+    private val _currentMatchIndex = MutableStateFlow(-1)
+    val currentMatchIndex: StateFlow<Int> = _currentMatchIndex.asStateFlow()
+
     // 加载笔记详情
     fun loadNote(noteId: Long) {
         _isLoading.value = true
@@ -100,5 +123,85 @@ class NoteDetailViewModel(private val noteRepository: NoteRepository) : ViewMode
     // 创建新的空笔记
     fun createNewNote(): Note {
         return Note(noteId = 0, userId = loggedInUserId, tagId = 0, title = "", content = "")
+    }
+    val highlightedContent: Flow<Spannable> = combine(
+        _originalContent,
+        searchQueryInNote,
+        matchRanges,
+        currentMatchIndex
+    ) { content, query, ranges, currentIndex ->
+        val spannable = SpannableString(content)
+        if (query.isNotBlank() && ranges.isNotEmpty()) {
+            ranges.forEachIndexed { index, range ->
+                val color = if (index == currentIndex) {
+                    Color.YELLOW // 当前匹配项
+                } else {
+                    Color.LTGRAY // 其他匹配项
+                }
+                spannable.setSpan(
+                    BackgroundColorSpan(color),
+                    range.first,
+                    range.last + 1,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+        }
+        spannable
+    }.stateIn(viewModelScope,
+        SharingStarted.WhileSubscribed(5000), SpannableString(""))
+    // --- Public Functions for Search ---
+
+    fun onNoteContentChanged(content: String) {
+        _originalContent.value = content
+        updateMatches()
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        _searchQueryInNote.value = query
+        updateMatches()
+    }
+
+    fun toggleSearchView() {
+        val isVisible = !_isSearchViewVisible.value
+        _isSearchViewVisible.value = isVisible
+        if (!isVisible) {
+            // 关闭搜索时，清空搜索词
+            onSearchQueryChanged("")
+        }
+    }
+
+    fun nextMatch() {
+        if (_matchRanges.value.isNotEmpty()) {
+            _currentMatchIndex.value = (_currentMatchIndex.value + 1) % _matchRanges.value.size
+        }
+    }
+
+    fun previousMatch() {
+        if (_matchRanges.value.isNotEmpty()) {
+            _currentMatchIndex.value = if (_currentMatchIndex.value > 0) {
+                _currentMatchIndex.value - 1
+            } else {
+                _matchRanges.value.size - 1
+            }
+        }
+    }
+
+    private fun updateMatches() {
+        val content = _originalContent.value
+        val query = _searchQueryInNote.value
+        if (query.isBlank()) {
+            _matchRanges.value = emptyList()
+            _currentMatchIndex.value = -1
+            return
+        }
+
+        val ranges = mutableListOf<IntRange>()
+        var index = content.indexOf(query, 0, ignoreCase = true)
+        while (index != -1) {
+            ranges.add(index until (index + query.length))
+            index = content.indexOf(query, index + 1, ignoreCase = true)
+        }
+        _matchRanges.value = ranges
+        _currentMatchIndex.value = if (ranges.isEmpty()) -1 else 0
     }
 }
