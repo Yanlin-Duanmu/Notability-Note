@@ -199,21 +199,27 @@ class MainActivity : AppCompatActivity() {
         }
 
         searchSuggestionAdapter = SearchSuggestionAdapter(
-            onSuggestionClick = { suggestionText ->
-                // 【修改】直接使用建议的文本执行搜索
-                viewModel.searchNotes(suggestionText, currentSelectedTagId)
-                // 【修改】清空搜索框文本，并清除焦点，以隐藏浮层
-                binding.searchEditText.setText("")
-                val originalQuery = binding.searchEditText.text.toString()
+            onSuggestionClick = { suggestion ->
+                // 1. 保存触发建议列表的 *原始输入* 到历史记录 (此逻辑保持不变，是正确的)
+                val originalQuery = binding.searchEditText.text.toString().trim()
                 if (originalQuery.isNotBlank()) {
                     viewModel.saveSearchToHistory(originalQuery)
                 }
-                binding.searchEditText.setText(suggestionText)
-                binding.searchEditText.setSelection(suggestionText.length)
+
+                // 2. 【核心修改】使用建议的文本，在当前页面执行搜索
+                val newQuery = suggestion.text
+                viewModel.searchNotes(newQuery, currentSelectedTagId)
+
+                // 3. 【优化体验】清除焦点，隐藏键盘和浮层
                 binding.searchEditText.clearFocus()
+
+                // 4. 【重要】不要将建议文本放回搜索框
+                binding.searchEditText.setText("") // 确保搜索框在搜索后清空
             },
             onSuggestionDelete = { query ->
                 viewModel.deleteSearchFromHistory(query)
+                // 删除后刷新建议列表
+                viewModel.loadSuggestions(binding.searchEditText.text.toString())
             }
         )
 
@@ -259,18 +265,16 @@ class MainActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s.toString()
-                // 【确认】实时搜索调用已被注释，主列表不会随输入更新
-                // viewModel.searchNotes(query, currentSelectedTagId)
-
-                if (query.isBlank()) {
-                    // 当输入为空时，隐藏智能推荐，并更新显示历史记录
-                    binding.searchSuggestionsRecyclerview.visibility = View.GONE
-                    updateSearchHistoryView()
-                } else {
-                    // 当有输入时，隐藏历史记录，显示智能推荐并加载数据
-                    binding.searchHistoryContainer.visibility = View.GONE
-                    binding.searchSuggestionsRecyclerview.visibility = View.VISIBLE
-                    viewModel.loadSuggestions(query)
+                if (binding.searchEditText.hasFocus()) { // 只在有焦点时处理
+                    if (query.isBlank()) {
+                        // 【修改】输入为空时，只隐藏建议列表，不再主动显示历史记录
+                        binding.searchSuggestionsRecyclerview.visibility = View.GONE
+                    } else {
+                        // 有输入时，隐藏历史记录，显示建议列表
+                        binding.searchHistoryContainer.visibility = View.GONE
+                        binding.searchSuggestionsRecyclerview.visibility = View.VISIBLE
+                        viewModel.loadSuggestions(query)
+                    }
                 }
             }
             override fun afterTextChanged(s: Editable?) {}
@@ -341,42 +345,54 @@ class MainActivity : AppCompatActivity() {
 
     // 辅助函数，用于显示和填充新的历史记录框
     private fun updateSearchHistoryView() {
-        val historyList = viewModel.getSearchHistory()
-        val historyContainer = binding.searchHistoryContainer // 直接使用 binding 获取容器
+        val historyList = viewModel.getSearchHistory().take(3) // 最多取3条
+        val historyContainer = binding.searchHistoryFlowLayout // 这是我们刚刚在XML里修改的LinearLayout
 
-        // 清空旧的视图，防止重复添加
+        // 1. 先清空所有旧的视图
         historyContainer.removeAllViews()
 
-        // 只有当搜索框为空且有历史记录时才显示
-        if (historyList.isNotEmpty() && binding.searchEditText.text.isBlank()) {
-            historyContainer.visibility = View.VISIBLE
-            for (historyText in historyList) {
-                // 动态创建 chipView
-                val chipView = layoutInflater.inflate(R.layout.item_history_box, historyContainer, false)
-                val historyTextView = chipView.findViewById<TextView>(R.id.history_text)
-                val deleteButton = chipView.findViewById<ImageView>(R.id.button_delete_history_item)
+        if (historyList.isNotEmpty()) {
+            // 2. 如果有历史记录，则显示整个历史记录区域
+            binding.searchHistoryContainer.visibility = View.VISIBLE
+            // 同时确保建议列表是隐藏的
+            binding.searchSuggestionsRecyclerview.visibility = View.GONE
 
-                historyTextView.text = historyText
+            // 3. 动态添加历史记录项
+            historyList.forEach { historyText ->
+                // 加载你的 item_history_box.xml 布局
+                val historyBoxView = layoutInflater.inflate(R.layout.item_history_box, historyContainer, false)
 
-                // 设置点击事件：直接搜索
-                chipView.setOnClickListener {
-                    // 点击历史记录时，不再填充输入框，而是直接触发搜索
+                // 获取布局中的 TextView 和 ImageView
+                val textView = historyBoxView.findViewById<TextView>(R.id.history_text)
+                val deleteButton = historyBoxView.findViewById<ImageView>(R.id.button_delete_history_item)
+
+                // 设置文本
+                textView.text = historyText
+
+                // 设置整个卡片的点击事件 -> 执行搜索
+                historyBoxView.setOnClickListener {
                     viewModel.searchNotes(historyText, currentSelectedTagId)
-                    // 清空搜索框文本并清除焦点，以隐藏浮层
-                    binding.searchEditText.setText("")
-                    binding.searchEditText.clearFocus()
+                    binding.searchEditText.clearFocus() // 清除焦点，隐藏浮层
                 }
 
-                // 设置删除事件
+                // 设置删除按钮的点击事件 -> 删除此条历史
                 deleteButton.setOnClickListener {
                     viewModel.deleteSearchFromHistory(historyText)
-                    updateSearchHistoryView() // 删除后立即刷新
+                    updateSearchHistoryView() // 刷新历史记录视图
                 }
-                historyContainer.addView(chipView)
+
+                // 将创建好的视图添加到 LinearLayout 中
+                historyContainer.addView(historyBoxView)
             }
+            // 设置“清空所有历史”按钮的点击事件
+            binding.buttonClearHistory.setOnClickListener {
+                viewModel.clearSearchHistory()
+                updateSearchHistoryView() // 刷新视图
+            }
+
         } else {
-            // 不满足条件时隐藏
-            historyContainer.visibility = View.GONE
+            // 4. 如果没有历史记录，隐藏整个区域
+            binding.searchHistoryContainer.visibility = View.GONE
         }
     }
 

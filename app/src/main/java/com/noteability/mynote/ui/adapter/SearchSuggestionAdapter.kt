@@ -17,7 +17,7 @@ private const val VIEW_TYPE_SUGGESTION = 1
 private const val VIEW_TYPE_NO_MATCH = 2
 
 class SearchSuggestionAdapter(
-    private val onSuggestionClick: (String) -> Unit,
+    private val onSuggestionClick: (SearchSuggestion) -> Unit,
     private val onSuggestionDelete: (String) -> Unit
 ) : ListAdapter<SearchSuggestion, RecyclerView.ViewHolder>(SuggestionDiffCallback()) { // 【修改】ViewHolder 类型为通用类型
 
@@ -58,19 +58,33 @@ class SearchSuggestionAdapter(
         RecyclerView.ViewHolder(binding.root) {
         fun bind(suggestion: SearchSuggestion) {
             binding.suggestionTextView.text = suggestion.text
+            // ... when 语句保持不变 ...
             when (suggestion.type) {
-                SearchSuggestionType.HISTORY -> {
-                    binding.imageSuggestionIcon.setImageResource(R.drawable.ic_history)
-                    binding.buttonDelete.visibility = View.VISIBLE
-                }
+                // 如果是笔记标题建议
                 SearchSuggestionType.SUGGESTION -> {
-                    binding.imageSuggestionIcon.setImageResource(R.drawable.ic_search)
+                    // 1. 在左侧显示“搜索”或“标题”图标
+                    binding.imageSuggestionIcon.setImageResource(R.drawable.ic_search) // 使用你现有的搜索图标
+                    // 2. 隐藏右侧的删除按钮（叉号）
                     binding.buttonDelete.visibility = View.GONE
                 }
-                else -> { /* For NO_MATCH or others, hide everything */ }
+                // 如果是历史记录建议 (为了逻辑完整，虽然你当前没用到)
+                SearchSuggestionType.HISTORY -> {
+                    // 在左侧显示“历史”图标
+                    binding.imageSuggestionIcon.setImageResource(R.drawable.ic_history)
+                    // 显示右侧的删除按钮
+                    binding.buttonDelete.visibility = View.VISIBLE
+                }
+                // 其他情况（如无匹配）
+                else -> {
+                    // 可以都隐藏
+                    binding.imageSuggestionIcon.visibility = View.INVISIBLE
+                    binding.buttonDelete.visibility = View.GONE
+                }
             }
+
             binding.root.setOnClickListener {
-                onSuggestionClick(suggestion.text)
+                // 【修改】将完整的 suggestion 对象传递出去
+                onSuggestionClick(suggestion)
             }
             binding.buttonDelete.setOnClickListener {
                 onSuggestionDelete(suggestion.text)
