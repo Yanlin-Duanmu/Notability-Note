@@ -1,0 +1,8 @@
+<!-- 文件路径: res/layout/item_no_match.xml -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:padding="16dp"
+    android:text="无匹配结果"
+    android:textColor="?android:attr/textColorSecondary" />
