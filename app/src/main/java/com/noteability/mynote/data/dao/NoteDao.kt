@@ -62,4 +62,10 @@ interface NoteDao {
         ORDER BY updatedAt DESC
     """)
     fun getNotesPagingSource(userId: Long, query: String, tagId: Long?): PagingSource<Int, Note>
+
+
+    //批量删除
+    @Query("DELETE FROM notes WHERE noteId IN (:noteIds)")
+    suspend fun deleteNoteList(noteIds: List<Long>)
+
 }

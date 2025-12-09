@@ -15,9 +15,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AlertDialog // [新增] 弹窗需要
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.ui.geometry.isEmpty
-import androidx.compose.ui.semantics.text
+import androidx.appcompat.widget.PopupMenu // [新增] 菜单需要
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.lifecycleScope
@@ -46,10 +46,15 @@ class MainActivity : AppCompatActivity() {
     private var allTagView: TextView? = null
     private val tagViews = mutableMapOf<Long, TextView>()
 
+    // ViewModel实例
     private lateinit var viewModel: NotesViewModel
     private lateinit var tagsViewModel: TagsViewModel
 
+    // 存储当前选中的标签ID，默认为0表示未筛选标签
     private var currentSelectedTagId: Long = 0L
+
+    // [新增] 标记当前是否处于批量选择模式
+    private var isSelectionMode = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -170,11 +175,28 @@ class MainActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         val tagNameMap = mutableMapOf<Long, String>()
 
+        // [修改] NoteAdapter 初始化
         noteAdapter = NoteAdapter(onNoteClick = { note ->
+            // 如果在选择模式下，Adapter 内部会处理选中逻辑，不会触发这个回调
+            // 只有在非选择模式下，点击才会跳转
             val intent = Intent(this, NoteEditActivity::class.java)
             intent.putExtra("noteId", note.noteId)
             startActivity(intent)
         }, tagNameMap = tagNameMap)
+
+        // [新增] 监听选中数量变化，更新标题
+        noteAdapter.onSelectionCountChanged = { count ->
+            if (isSelectionMode) {
+                // 假设你的标题栏 TextView ID 是 tvPageTitle，如果没有请替换为你的 ID
+                // 或者如果用了 SupportActionBar 的 title，就用 supportActionBar?.title = ...
+                try {
+                    binding.tvPageTitle.text = "已选择 $count 项"
+                } catch (e: Exception) {
+                    // 容错处理：如果你还没给 Title 设置 ID
+                    supportActionBar?.title = "已选择 $count 项"
+                }
+            }
+        }
 
         searchSuggestionAdapter = SearchSuggestionAdapter(
             onSuggestionClick = { suggestionText ->
@@ -182,6 +204,12 @@ class MainActivity : AppCompatActivity() {
                 viewModel.searchNotes(suggestionText, currentSelectedTagId)
                 // 【修改】清空搜索框文本，并清除焦点，以隐藏浮层
                 binding.searchEditText.setText("")
+                val originalQuery = binding.searchEditText.text.toString()
+                if (originalQuery.isNotBlank()) {
+                    viewModel.saveSearchToHistory(originalQuery)
+                }
+                binding.searchEditText.setText(suggestionText)
+                binding.searchEditText.setSelection(suggestionText.length)
                 binding.searchEditText.clearFocus()
             },
             onSuggestionDelete = { query ->
@@ -214,6 +242,7 @@ class MainActivity : AppCompatActivity() {
                 val isRefresh = loadState.refresh is LoadState.Loading
 
                 binding.loadingIndicator.visibility = if (isRefresh) View.VISIBLE else View.GONE
+
                 binding.emptyStateView.visibility = if (isListEmpty) View.VISIBLE else View.GONE
 
                 if (isListEmpty) {
@@ -261,6 +290,7 @@ class MainActivity : AppCompatActivity() {
                 // 失去焦点时，隐藏所有浮层（历史记录和智能推荐）
                 binding.searchHistoryContainer.visibility = View.GONE
                 binding.searchSuggestionsRecyclerview.visibility = View.GONE
+                val query = binding.searchEditText.text.toString()
             }
         }
 
@@ -269,6 +299,7 @@ class MainActivity : AppCompatActivity() {
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
                 val query = v.text.toString()
                 if (query.isNotBlank()) {
+                    // 逻辑保持不变
                     // 【优化】当用户按键盘搜索时，也直接执行搜索
                     viewModel.saveSearchToHistory(query)
                     viewModel.searchNotes(query, currentSelectedTagId)
@@ -407,6 +438,94 @@ class MainActivity : AppCompatActivity() {
         binding.errorStateView.setOnClickListener {
             noteAdapter.retry()
         }
+
+        // [新增] 右上角菜单按钮点击事件
+        // 请确保 xml 里右上角那个四方块按钮的 ID 是 btnMore
+        try {
+            binding.btnMore.setOnClickListener { view ->
+                showMoreMenu(view)
+            }
+        } catch (e: Exception) {
+            // 如果 ID 不对，请检查 activity_main.xml
+        }
+
+        // [新增] 底部批量删除按钮点击事件
+        try {
+            binding.batchDeleteBar.setOnClickListener { performBatchDelete() }
+            binding.btnBatchDelete.setOnClickListener { performBatchDelete() }
+        } catch (e: Exception) {
+            // 如果 ID 不对，请检查 activity_main.xml
+        }
+    }
+
+    // [新增] 显示右上角弹出菜单
+    private fun showMoreMenu(view: View) {
+        val popup = PopupMenu(this, view)
+        popup.menu.add(0, 1, 0, "视图切换")
+        popup.menu.add(0, 2, 0, "批量删除")
+        popup.menu.add(0, 3, 0, "排序方式")
+
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                2 -> { // 点击批量删除
+                    enterSelectionMode()
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    // [新增] 进入批量选择模式
+    private fun enterSelectionMode() {
+        isSelectionMode = true
+        noteAdapter.setSelectionMode(true)
+
+        // UI 变化：隐藏 FAB，显示删除栏，锁住侧边栏
+        binding.addNoteFab.hide()
+        binding.batchDeleteBar.visibility = View.VISIBLE
+        binding.drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+
+        // 隐藏搜索框，显示“已选X项”标题
+        binding.searchEditText.visibility = View.GONE
+        binding.tvPageTitle.visibility = View.VISIBLE
+        binding.tvPageTitle.text = "已选择 0 项"
+    }
+
+    // [新增] 退出批量选择模式
+    private fun exitSelectionMode() {
+        isSelectionMode = false
+        noteAdapter.setSelectionMode(false)
+
+        // UI 恢复
+        binding.addNoteFab.show()
+        binding.batchDeleteBar.visibility = View.GONE
+        binding.drawerLayout.setDrawerLockMode(androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_UNLOCKED)
+
+        // 恢复搜索框和标题
+        binding.searchEditText.visibility = View.VISIBLE
+        binding.tvPageTitle.text = "我的笔记" // 恢复你的默认标题
+    }
+
+    //  执行批量删除
+    private fun performBatchDelete() {
+        val selectedIds = noteAdapter.getSelectedNoteIds()
+        if (selectedIds.isEmpty()) {
+            showToast("请先选择要删除的笔记")
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("确认删除")
+            .setMessage("确定要删除选中的 ${selectedIds.size} 条笔记吗？")
+            .setPositiveButton("删除") { _, _ ->
+                viewModel.deleteNotes(selectedIds)
+                showToast("已删除 ${selectedIds.size} 条笔记")
+                exitSelectionMode() // 删除后退出选择模式
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
     private fun observeViewModel() {
@@ -431,6 +550,12 @@ class MainActivity : AppCompatActivity() {
             override fun onMove(r: RecyclerView, v: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder): Boolean = false
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                // [修改] 如果处于批量选择模式，禁用滑动删除，防止冲突
+                if (isSelectionMode) {
+                    noteAdapter.notifyItemChanged(viewHolder.bindingAdapterPosition) // 恢复滑动的 Item
+                    return
+                }
+
                 val position = viewHolder.bindingAdapterPosition
                 val noteToDelete = noteAdapter.getNoteAtPosition(position)
 
@@ -444,6 +569,11 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onChildDraw(c: Canvas, r: RecyclerView, v: RecyclerView.ViewHolder, dX: Float, dY: Float, action: Int, active: Boolean) {
+                // [修改] 批量模式下不绘制红色背景
+                if (isSelectionMode) {
+                    super.onChildDraw(c, r, v, dX, dY, action, active)
+                    return
+                }
                 val itemView = v.itemView
                 val icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_delete)
                 val background = ColorDrawable(Color.RED)
@@ -468,24 +598,35 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupOnBackPressed() {
-        onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 when {
+                    // 优先处理批量模式退出
+                    isSelectionMode -> {
+                        exitSelectionMode()
+                    }
+
                     // 1. 如果侧边栏开着，先关侧边栏
                     binding.drawerLayout.isDrawerOpen(GravityCompat.START) -> {
                         binding.drawerLayout.closeDrawer(GravityCompat.START)
                     }
+
                     // 2. 如果搜索框有焦点，先清除焦点
                     binding.searchEditText.hasFocus() -> {
                         binding.searchEditText.clearFocus()
                     }
-                    // 3. 【新增】如果当前处于搜索结果状态，则清除搜索状态
+
+                    // 3. 如果当前处于搜索结果状态，则清除搜索状态
                     viewModel.searchQuery.value.isNotEmpty() -> {
                         viewModel.clearSearch()
                     }
+
                     // 4. 否则，执行默认的返回操作（退出应用）
                     else -> {
-                        finish()
+                        // 这里使用标准的退回逻辑，比直接 finish() 更安全
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                        isEnabled = true
                     }
                 }
             }

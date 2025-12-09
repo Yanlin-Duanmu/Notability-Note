@@ -84,4 +84,10 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     override fun getNotesPagingSource(userId: Long, query: String, tagId: Long?): PagingSource<Int, Note> {
         return noteDao.getNotesPagingSource(userId, query, tagId)
     }
+
+    //批量删除
+    override suspend fun deleteNotesList(noteIds: List<Long>) {
+        noteDao.deleteNoteList(noteIds)
+    }
+
 }
