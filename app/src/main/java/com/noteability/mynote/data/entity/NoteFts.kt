@@ -7,7 +7,7 @@ import androidx.room.Fts4
 @Fts4(
     contentEntity = Note::class,
     tokenizer = "unicode61", // <-- 改为 unicode61
-    tokenizerArgs = ["tokenchars=+"]
+    tokenizerArgs = ["tokenchars=+_"]
 )
 // --- 注解修改结束 ---
 @Entity(tableName = "notes_fts")
