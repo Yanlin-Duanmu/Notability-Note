@@ -68,4 +68,18 @@ interface NoteDao {
     @Query("DELETE FROM notes WHERE noteId IN (:noteIds)")
     suspend fun deleteNoteList(noteIds: List<Long>)
 
+
+
+    // 1. 按编辑时间倒序
+    @Query("SELECT * FROM notes WHERE userId = :userId ORDER BY updatedAt DESC")
+    fun getNotesOrderByTimeDesc(userId: Long): PagingSource<Int, Note>
+
+    // 2. 按创建时间正序
+    @Query("SELECT * FROM notes WHERE userId = :userId ORDER BY createdAt ASC")
+    fun getNotesOrderByTimeAsc(userId: Long): PagingSource<Int, Note>
+
+    // 3.按标题排序
+    @Query("SELECT * FROM notes WHERE userId = :userId ORDER BY title ASC")
+    fun getNotesOrderByTitle(userId: Long): PagingSource<Int, Note>
+
 }

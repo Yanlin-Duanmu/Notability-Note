@@ -1,5 +1,7 @@
 package com.noteability.mynote.ui.viewmodel
 
+import android.adservices.ondevicepersonalization.FederatedComputeScheduler
+import android.text.PrecomputedText
 import androidx.compose.ui.semantics.text
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,6 +11,7 @@ import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.cachedIn
 import androidx.paging.map
+import com.noteability.mynote.data.dao.SortOrder
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.repository.NoteRepository
 import com.noteability.mynote.ui.adapter.SearchSuggestion
@@ -18,6 +21,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -47,17 +51,23 @@ class NotesViewModel(
 
     // 用户 ID 状态
     private val _loggedInUserId = MutableStateFlow(1L)
-
+    //排序状态，默认为编辑时间倒序
+    private val _sortOrder = MutableStateFlow(SortOrder.EDIT_TIME_DESC)
+    // 对外暴露当前排序，给 Activity 弹窗回显用
+    val currentSortOrder: SortOrder
+        get() = _sortOrder.value
     // 定义 PagingData 流
     // 这是一个响应式流，当 用户ID、搜索词 或 标签ID 变化时，自动触发数据库分页查询
     @OptIn(ExperimentalCoroutinesApi::class)
     val notesPagingFlow: Flow<PagingData<Note>> = combine(
         _loggedInUserId,
         _searchQuery,
-        _tagId
-    ) { userId, query, tagId ->
-        Triple(userId, query, tagId)
-    }.flatMapLatest { (userId, query, tagId) ->
+        _tagId ,
+        _sortOrder
+
+    ) { userId, query, tagId, sortOrder ->
+        Params(userId, query, tagId, sortOrder)
+    }.flatMapLatest { params ->
 
         Pager(
             config = PagingConfig(
@@ -66,11 +76,31 @@ class NotesViewModel(
                 initialLoadSize = 20
             ),
             pagingSourceFactory = {
+
+
+                if (params.query.isNotEmpty() || params.tagId != null) {
+                    noteRepository.getNotesPagingSource(params.userId, params.query, params.tagId)
+                }else
                 // 调用 Repository 的分页接口
-                noteRepository.getNotesPagingSource(userId, query, tagId)
+                noteRepository.getAllNotesStream(params.userId,params.sortOrder)
             }
         ).flow
     }.cachedIn(viewModelScope)
+
+
+
+    private data class Params(
+        val userId: Long,
+        val query: String,
+        val tagId: Long?,
+        val sortOrder: SortOrder
+    )
+
+    // [新增] 更新排序方式
+    fun updateSortOrder(newSortOrder: SortOrder) {
+        _sortOrder.value = newSortOrder
+        // 因为 flow 是响应式的，这里修改 value 后，上面的 notesPagingFlow 会自动刷新
+    }
 
 
     // 设置当前登录用户ID
@@ -194,5 +224,23 @@ class NotesViewModel(
             }
         }
     }
+
+    //批量删除恢复（撤销）
+    fun restoreNotes(notes: List<Note>) {
+        viewModelScope.launch {
+            try {
+                // 循环把备份的笔记一条条存回去
+                // 因为 Note 对象里已经包含了 ID 和原有的内容/时间，直接 save 就会恢复原样
+                notes.forEach { note ->
+                    noteRepository.saveNote(note)
+                }
+            } catch (e: Exception) {
+                // 简单的错误处理
+                e.printStackTrace()
+            }
+        }
+    }
+
+
 }
 
