@@ -60,7 +60,8 @@
             android:name=".ui.activity.NoteEditActivity"
             android:exported="false"
             android:label="笔记编辑"
-            android:theme="@style/Theme.MyNote" />
+            android:theme="@style/Theme.MyNote"
+            android:windowSoftInputMode="adjustPan"/>
             
         <activity
             android:name=".ui.activity.RegisterActivity"
