@@ -9,6 +9,7 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -27,6 +28,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.noteability.mynote.R
+import com.noteability.mynote.data.dao.SortOrder
+import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.databinding.ActivityMainBinding
 import com.noteability.mynote.di.ServiceLocator
 import com.noteability.mynote.ui.adapter.NoteAdapter
@@ -35,6 +38,7 @@ import com.noteability.mynote.ui.adapter.SearchSuggestionAdapter
 import com.noteability.mynote.ui.adapter.SearchSuggestionType
 import com.noteability.mynote.ui.viewmodel.NotesViewModel
 import com.noteability.mynote.ui.viewmodel.TagsViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -53,8 +57,11 @@ class MainActivity : AppCompatActivity() {
     // 存储当前选中的标签ID，默认为0表示未筛选标签
     private var currentSelectedTagId: Long = 0L
 
-    // [新增] 标记当前是否处于批量选择模式
+    // 标记当前是否处于批量选择模式
     private var isSelectionMode = false
+
+    //标记是否需要滚到顶部
+    private var needScrollToTop = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,7 +94,50 @@ class MainActivity : AppCompatActivity() {
         }
 
         setupOnBackPressed()
+
+//        injectFakeData()
     }
+
+
+    // 临时代码：批量插入 10,000 条数据用于压力测试
+//    private fun injectFakeData() {
+//
+//        val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
+//        val currentUserId = sharedPreferences.getLong("logged_in_user_id", 0L)
+//        lifecycleScope.launch(Dispatchers.IO) {
+//            val fakeNotes = mutableListOf<Note>()
+//            for (i in 1..10000) {
+//                fakeNotes.add(
+//                    Note(
+//                        userId = currentUserId,
+//                        title = "压力测试笔记 $i",
+//                        content = "这是第 $i 条测试数据，用来测试 Paging 3 在海量数据下的内存表现和加载速度..." +
+//                                "为了增加内存占用，我可以把这段文字写得长一点...".repeat(10), // 重复几次增加体积
+//                        updatedAt = System.currentTimeMillis() - i * 1000,
+//                        tagId = 1L // 假设 0 是默认标签
+//                    )
+//                )
+//                // 每 500 条插一次，防止一次性把内存撑爆
+//                if (fakeNotes.size >= 500) {
+//                    // 注意：你需要确保 NoteDao 有一个 @Insert insertAll(notes: List<Note>) 方法
+//                    // 如果没有，去 Dao 里加一个 @Insert suspend fun insertAll(notes: List<Note>)
+//                    try {
+//                        val repository = ServiceLocator.provideNoteRepository()
+//                        // 这里可能需要你临时在 Repository 开一个后门方法调用 Dao 的 insertAll
+//                        // 或者直接用 dao.insertAll(fakeNotes)
+//                        // 简单起见，你可以循环调用 saveNote (虽然慢点，但能用)
+//                        fakeNotes.forEach { repository.saveNote(it) }
+//                    } catch (e: Exception) { e.printStackTrace() }
+//                    fakeNotes.clear()
+//                    Log.d("Test", "已插入 $i 条数据")
+//                }
+//            }
+//        }
+//    }
+
+
+
+
     override fun onResume() {
         super.onResume()
         // 如果当前处于搜索状态（搜索框无焦点但ViewModel中仍有搜索词），则清除搜索
@@ -187,12 +237,9 @@ class MainActivity : AppCompatActivity() {
         // [新增] 监听选中数量变化，更新标题
         noteAdapter.onSelectionCountChanged = { count ->
             if (isSelectionMode) {
-                // 假设你的标题栏 TextView ID 是 tvPageTitle，如果没有请替换为你的 ID
-                // 或者如果用了 SupportActionBar 的 title，就用 supportActionBar?.title = ...
                 try {
                     binding.tvPageTitle.text = "已选择 $count 项"
                 } catch (e: Exception) {
-                    // 容错处理：如果你还没给 Title 设置 ID
                     supportActionBar?.title = "已选择 $count 项"
                 }
             }
@@ -242,6 +289,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupLoadStateListener() {
         noteAdapter.addLoadStateListener { loadState ->
+
+            // 判断条件：1. 刷新操作已完成 (NotLoading)  2. 刚才按了排序 (needScrollToTop)
+            if (loadState.source.refresh is LoadState.NotLoading && needScrollToTop) {
+                binding.notesRecyclerView.scrollToPosition(0) // 强制滚到第一行
+                needScrollToTop = false // 重置标志位，防止下次普通刷新也乱滚
+            }
+
+
             // 只有当搜索框没有焦点时，才让 Paging 控制 UI，防止与建议/历史浮层冲突
             if (!binding.searchEditText.hasFocus()) {
                 val isListEmpty = loadState.refresh is LoadState.NotLoading && noteAdapter.itemCount == 0
@@ -465,26 +520,33 @@ class MainActivity : AppCompatActivity() {
             // 如果 ID 不对，请检查 activity_main.xml
         }
 
-        // [新增] 底部批量删除按钮点击事件
+        //底部批量删除按钮点击事件
         try {
             binding.batchDeleteBar.setOnClickListener { performBatchDelete() }
             binding.btnBatchDelete.setOnClickListener { performBatchDelete() }
+
+            val btnCancel = binding.btnCancelBatch
+            btnCancel.setOnClickListener { exitSelectionMode() }
         } catch (e: Exception) {
-            // 如果 ID 不对，请检查 activity_main.xml
+            e.printStackTrace()
         }
     }
 
-    // [新增] 显示右上角弹出菜单
+    //  显示右上角弹出菜单
     private fun showMoreMenu(view: View) {
         val popup = PopupMenu(this, view)
-        popup.menu.add(0, 1, 0, "视图切换")
-        popup.menu.add(0, 2, 0, "批量删除")
-        popup.menu.add(0, 3, 0, "排序方式")
+        popup.menu.add(0, 1, 0, "批量删除")
+        popup.menu.add(0, 2, 0, "排序方式") // ID 为 3
 
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                2 -> { // 点击批量删除
+                1 -> {
                     enterSelectionMode()
+                    true
+                }
+                2 -> {
+                    // 点击排序，调用弹窗方法
+                    showSortDialog()
                     true
                 }
                 else -> false
@@ -493,7 +555,43 @@ class MainActivity : AppCompatActivity() {
         popup.show()
     }
 
-    // [新增] 进入批量选择模式
+    // [新增] 显示排序单选对话框
+    private fun showSortDialog() {
+        // 1. 定义显示给用户的选项 (顺序必须和下面的枚举对应)
+        val options = arrayOf("编辑时间 (默认)", "创建时间", "标题")
+
+        // 2. 定义对应的枚举值
+        val sortOrders = arrayOf(
+            SortOrder.EDIT_TIME_DESC,   // 对应 "编辑时间"
+            SortOrder.CREATE_TIME_ASC,  // 对应 "创建时间"
+            SortOrder.TITLE_ASC         // 对应 "标题"
+        )
+
+        // 3. 获取当前 ViewModel 里选中的排序，用于回显 (让弹窗知道哪个该打钩)
+        val currentSort = viewModel.currentSortOrder
+        val currentIdx = sortOrders.indexOf(currentSort)
+
+        // 4. 创建并显示弹窗
+        AlertDialog.Builder(this)
+            .setTitle("排序方式")
+            .setSingleChoiceItems(options, currentIdx) { dialog, which ->
+                // 用户点击了第 'which' 项
+                val selectedSort = sortOrders[which]
+
+                // 通知 ViewModel 更新排序
+                viewModel.updateSortOrder(selectedSort)
+                //更新数据之后滚回顶部
+                needScrollToTop = true
+
+                // 提示用户并关闭弹窗
+                showToast("已按 ${options[which]} 排序")
+                dialog.dismiss()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    // 进入批量选择模式
     private fun enterSelectionMode() {
         isSelectionMode = true
         noteAdapter.setSelectionMode(true)
@@ -531,6 +629,8 @@ class MainActivity : AppCompatActivity() {
             showToast("请先选择要删除的笔记")
             return
         }
+        //删除之前备份数据用于撤销
+        val notesBackup = noteAdapter.getSelectedNotes()
 
         AlertDialog.Builder(this)
             .setTitle("确认删除")
@@ -539,6 +639,17 @@ class MainActivity : AppCompatActivity() {
                 viewModel.deleteNotes(selectedIds)
                 showToast("已删除 ${selectedIds.size} 条笔记")
                 exitSelectionMode() // 删除后退出选择模式
+
+                // 显示Snackbar提供撤销功能
+
+                Snackbar.make(binding.root, "已删除 ${selectedIds.size} 条笔记", Snackbar.LENGTH_LONG)
+                    .setAnchorView(binding.addNoteFab) // 防止挡住悬浮按钮 (如果有的话)
+                    .setAction("撤销") {
+                        // 5. 如果用户点了撤销，就把刚才备份的 notesBackup 存回去
+                        viewModel.restoreNotes(notesBackup)
+                        showToast("已恢复")
+                    }
+                    .show()
             }
             .setNegativeButton("取消", null)
             .show()

@@ -1,6 +1,7 @@
 package com.noteability.mynote.data.repository
 
 import androidx.paging.PagingSource
+import com.noteability.mynote.data.dao.SortOrder
 import com.noteability.mynote.data.entity.Note
 import kotlinx.coroutines.flow.Flow
 
@@ -33,4 +34,9 @@ interface NoteRepository {
 
     //批量删除
     suspend fun deleteNotesList(noteIds: List<Long>)
+
+
+    // 按选择的排序方式排序
+    fun getAllNotesStream(userId: Long, sortOrder: SortOrder): PagingSource<Int, Note>
+
 }
