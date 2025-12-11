@@ -129,6 +129,9 @@ dependencies {
     implementation("io.noties.markwon:editor:4.6.2")
     implementation("io.noties.markwon:html:4.6.2")
     implementation("com.google.android.flexbox:flexbox:3.0.0")
+    // 图片
+    implementation("io.noties.markwon:image-glide:4.6.2")
+    implementation("com.github.bumptech.glide:glide:4.16.0")
 
 }
 
