@@ -117,7 +117,7 @@ class NoteEditActivity : AppCompatActivity() {
         loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 1L)
 
         // 初始化 Markdown 和预览组件
-        markwon = MarkdownUtils.createMarkwon()
+        markwon = MarkdownUtils.createMarkwon(this)
 
         // 设置ServiceLocator上下文
         ServiceLocator.setContext(applicationContext)
