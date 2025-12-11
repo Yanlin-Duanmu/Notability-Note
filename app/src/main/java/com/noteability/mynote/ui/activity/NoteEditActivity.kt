@@ -51,6 +51,8 @@ class NoteEditActivity : AppCompatActivity() {
 
     // 新增：预览相关组件
     private lateinit var markwon: Markwon
+    // --- 新增一个标志位 ---
+    private var shouldSwitchToPreviewOnLoad = false
 
     private var noteId: Long? = null
     private var currentTag: Tag? = null
@@ -166,6 +168,7 @@ class NoteEditActivity : AppCompatActivity() {
 
         // 如果是编辑现有笔记，则加载笔记内容
         if (noteId != null && noteId != -1L) {
+            shouldSwitchToPreviewOnLoad = true
             noteDetailViewModel.loadNote(noteId!!)
         } else {
             // 新建笔记，先设置默认标签名称
@@ -243,10 +246,13 @@ class NoteEditActivity : AppCompatActivity() {
             noteDetailViewModel.note.collect { note ->
                 note?.let {
                     binding.titleEditText.setText(it.title)
+                    binding.contentEditText.setText(it.content)
                     //直接显示 Markdown 文本，不再使用 StyleManager
                     noteDetailViewModel.onNoteContentChanged(it.content) // <-- 替换为这一行
-
-
+                    if (shouldSwitchToPreviewOnLoad) {
+                        togglePreviewMode() // 直接调用这个函数！
+                        shouldSwitchToPreviewOnLoad = false // 重置标志位，防止屏幕旋转等情况再次触发
+                    }
                     // 设置标签
                     if (realTags.isNotEmpty()) {
                         currentTag = realTags.find { tag -> tag.tagId == it.tagId }
