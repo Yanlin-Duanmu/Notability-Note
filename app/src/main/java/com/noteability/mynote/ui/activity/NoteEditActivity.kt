@@ -168,7 +168,7 @@ class NoteEditActivity : AppCompatActivity() {
 
         // 如果是编辑现有笔记，则加载笔记内容
         if (noteId != null && noteId != -1L) {
-            shouldSwitchToPreviewOnLoad = true
+
             noteDetailViewModel.loadNote(noteId!!)
         } else {
             // 新建笔记，先设置默认标签名称
@@ -196,6 +196,9 @@ class NoteEditActivity : AppCompatActivity() {
         if (menu != null) {
             for (i in 0 until menu.size()) {
                 val menuItem = menu.getItem(i)
+                if (menuItem.itemId == R.id.action_search_in_page) {
+                    menuItem.isVisible = !isPreviewMode
+                }
                 val icon = menuItem.icon
                 if (icon != null) {
                     // 3. 为图标设置颜色过滤器，强制其变为我们想要的颜色
@@ -249,10 +252,7 @@ class NoteEditActivity : AppCompatActivity() {
                     binding.contentEditText.setText(it.content)
                     //直接显示 Markdown 文本，不再使用 StyleManager
                     noteDetailViewModel.onNoteContentChanged(it.content) // <-- 替换为这一行
-                    if (shouldSwitchToPreviewOnLoad) {
-                        togglePreviewMode() // 直接调用这个函数！
-                        shouldSwitchToPreviewOnLoad = false // 重置标志位，防止屏幕旋转等情况再次触发
-                    }
+
                     // 设置标签
                     if (realTags.isNotEmpty()) {
                         currentTag = realTags.find { tag -> tag.tagId == it.tagId }
@@ -627,7 +627,7 @@ class NoteEditActivity : AppCompatActivity() {
 
     private fun togglePreviewMode() {
         isPreviewMode = !isPreviewMode
-
+        invalidateOptionsMenu()
         if (isPreviewMode) {
             // 切换到预览模式
             binding.contentEditText.visibility = View.GONE
