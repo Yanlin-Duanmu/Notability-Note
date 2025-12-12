@@ -11,6 +11,7 @@ import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.cachedIn
 import androidx.paging.map
+import com.noteability.mynote.data.dao.NoteDao
 import com.noteability.mynote.data.dao.SortOrder
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.repository.NoteRepository
@@ -47,6 +48,7 @@ class NotesViewModel(
     // 筛选条件状态 (改为 Flow 以驱动 Paging)
     private val _tagId = MutableStateFlow<Long?>(null) // [修改] 默认 null 代表全部
     private val _searchQuery = MutableStateFlow("")
+    private val _isExactTitleSearch = MutableStateFlow(false)
     val searchQuery: StateFlow<String> = _searchQuery
 
     // 用户 ID 状态
@@ -62,27 +64,35 @@ class NotesViewModel(
     val notesPagingFlow: Flow<PagingData<Note>> = combine(
         _loggedInUserId,
         _searchQuery,
-        _tagId ,
-        _sortOrder
-
-    ) { userId, query, tagId, sortOrder ->
-        Params(userId, query, tagId, sortOrder)
+        _tagId,
+        _sortOrder,
+        _isExactTitleSearch // [修改] 监听精确搜索标志
+    ) { userId, query, tagId, sortOrder, isExact ->
+        // [修改] 将 isExact 包装到 Params 中
+        Params(userId, query, tagId, sortOrder, isExact)
     }.flatMapLatest { params ->
-
         Pager(
             config = PagingConfig(
-                pageSize = 20,          // 每页加载 20 条
+                pageSize = 20,
                 enablePlaceholders = false,
                 initialLoadSize = 20
             ),
             pagingSourceFactory = {
-
-
-                if (params.query.isNotEmpty() || params.tagId != null) {
-                    noteRepository.getNotesPagingSource(params.userId, params.query, params.tagId)
-                }else
-                // 调用 Repository 的分页接口
-                noteRepository.getAllNotesStream(params.userId,params.sortOrder)
+                // [核心修改] 根据 isExactSearch 标志选择不同的查询方法
+                when {
+                    // 1. 如果是精确搜索模式
+                    params.isExactSearch && params.query.isNotEmpty() -> {
+                        noteRepository.getNotesByExactTitlePagingSource(params.userId, params.query, params.tagId)
+                    }
+                    // 2. 如果是普通搜索（或标签筛选）
+                    params.query.isNotEmpty() || params.tagId != null -> {
+                        noteRepository.getNotesPagingSource(params.userId, params.query, params.tagId)
+                    }
+                    // 3. 默认情况（无搜索，无筛选）
+                    else -> {
+                        noteRepository.getAllNotesStream(params.userId, params.sortOrder)
+                    }
+                }
             }
         ).flow
     }.cachedIn(viewModelScope)
@@ -93,8 +103,14 @@ class NotesViewModel(
         val userId: Long,
         val query: String,
         val tagId: Long?,
-        val sortOrder: SortOrder
+        val sortOrder: SortOrder,
+        val isExactSearch: Boolean
     )
+    fun searchNotesByExactTitle(title: String, tagId: Long) {
+        _isExactTitleSearch.value = true // 标记为精确搜索
+        _searchQuery.value = title
+        _tagId.value = if (tagId == 0L) null else tagId
+    }
 
     // [新增] 更新排序方式
     fun updateSortOrder(newSortOrder: SortOrder) {
@@ -183,6 +199,7 @@ class NotesViewModel(
             _searchQuery.value = ""
         }
     }
+
     fun clearSearchHistory() {
         searchHistoryManager.clearHistory()
     }
