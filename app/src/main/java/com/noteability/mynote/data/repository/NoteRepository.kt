@@ -38,5 +38,5 @@ interface NoteRepository {
 
     // 按选择的排序方式排序
     fun getAllNotesStream(userId: Long, sortOrder: SortOrder): PagingSource<Int, Note>
-
+    fun getNotesByExactTitlePagingSource(userId: Long, exactTitle: String, tagId: Long?): PagingSource<Int, Note>
 }
