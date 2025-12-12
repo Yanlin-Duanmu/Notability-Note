@@ -254,8 +254,9 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 // 2. 【核心修改】使用建议的文本，在当前页面执行搜索
-                val newQuery = suggestion.text
-                viewModel.searchNotes(newQuery, currentSelectedTagId)
+                val exactTitle = suggestion.text
+                viewModel.searchNotesByExactTitle(exactTitle, currentSelectedTagId)
+
 
                 // 3. 【优化体验】清除焦点，隐藏键盘和浮层
                 binding.searchEditText.clearFocus()
