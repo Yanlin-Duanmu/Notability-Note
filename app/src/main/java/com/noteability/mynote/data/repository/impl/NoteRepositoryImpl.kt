@@ -90,7 +90,9 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     override suspend fun deleteNotesList(noteIds: List<Long>) {
         noteDao.deleteNoteList(noteIds)
     }
-
+    override fun getNotesByExactTitlePagingSource(userId: Long, exactTitle: String, tagId: Long?): PagingSource<Int, Note> {
+        return noteDao.getNotesByExactTitlePagingSource(userId, exactTitle, tagId)
+    }
 
     //根据选择的排序方式排序
     override fun getAllNotesStream(userId: Long, sortOrder: SortOrder): PagingSource<Int, Note> {

@@ -81,5 +81,12 @@ interface NoteDao {
     // 3.按标题排序
     @Query("SELECT * FROM notes WHERE userId = :userId ORDER BY title ASC")
     fun getNotesOrderByTitle(userId: Long): PagingSource<Int, Note>
-
+    @Query("""
+    SELECT * FROM notes 
+    WHERE userId = :userId 
+    AND (:tagId IS NULL OR tagId = :tagId) 
+    AND title LIKE :exactTitle
+    ORDER BY updatedAt DESC
+""")
+    fun getNotesByExactTitlePagingSource(userId: Long, exactTitle: String, tagId: Long?): PagingSource<Int, Note>
 }
