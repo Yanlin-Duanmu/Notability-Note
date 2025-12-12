@@ -62,16 +62,46 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     }
 
     override suspend fun saveNote(note: Note) {
+        val startTime = System.currentTimeMillis()
         val noteToSave = note.copy(userId = currentUserId)
+        val contentLength = note.content.length
+        
         noteDao.insertNote(noteToSave)
+        
+        val endTime = System.currentTimeMillis()
+        val elapsedTime = endTime - startTime
+        
+        // 打印保存操作耗时统计
+        println("=== 保存笔记性能统计 ===")
+        println("操作类型: 新建笔记")
+        println("笔记ID: ${noteToSave.noteId}")
+        println("标题: ${noteToSave.title}")
+        println("内容长度: $contentLength 字符")
+        println("执行时间: $elapsedTime ms")
+        println("====================")
     }
 
     override suspend fun updateNote(note: Note) {
+        val startTime = System.currentTimeMillis()
         val noteToUpdate = note.copy(
             userId = currentUserId,
             updatedAt = System.currentTimeMillis()
         )
+        val contentLength = note.content.length
+        
         noteDao.updateNote(noteToUpdate)
+        
+        val endTime = System.currentTimeMillis()
+        val elapsedTime = endTime - startTime
+        
+        // 打印更新操作耗时统计
+        println("=== 更新笔记性能统计 ===")
+        println("操作类型: 更新笔记")
+        println("笔记ID: ${noteToUpdate.noteId}")
+        println("标题: ${noteToUpdate.title}")
+        println("内容长度: $contentLength 字符")
+        println("执行时间: $elapsedTime ms")
+        println("====================")
     }
 
     override suspend fun deleteNote(noteId: Long) {

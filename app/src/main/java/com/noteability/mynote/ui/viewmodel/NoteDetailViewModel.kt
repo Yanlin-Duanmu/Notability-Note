@@ -45,6 +45,7 @@ class NoteDetailViewModel(private val noteRepository: NoteRepository) : ViewMode
     
     // 保存笔记（新建或更新）
     fun saveNote(note: Note) {
+        val viewModelStartTime = System.currentTimeMillis()
         _isLoading.value = true
         _error.value = null
         _isSaved.value = false
@@ -60,9 +61,28 @@ class NoteDetailViewModel(private val noteRepository: NoteRepository) : ViewMode
                 }
                 _isSaved.value = true
                 _isLoading.value = false
+                
+                val viewModelEndTime = System.currentTimeMillis()
+                val viewModelElapsedTime = viewModelEndTime - viewModelStartTime
+                
+                // 打印ViewModel层保存操作耗时统计
+                println("=== ViewModel 保存操作统计 ===")
+                println("操作类型: ${if (note.noteId == 0L || note.noteId == -1L) "新建笔记" else "更新笔记"}")
+                println("ViewModel 层总耗时: $viewModelElapsedTime ms")
+                println("========================")
             } catch (e: Exception) {
                 _error.value = "保存笔记失败"
                 _isLoading.value = false
+                
+                val viewModelEndTime = System.currentTimeMillis()
+                val viewModelElapsedTime = viewModelEndTime - viewModelStartTime
+                
+                // 打印错误情况下的耗时统计
+                println("=== ViewModel 保存操作统计（错误） ===")
+                println("操作类型: ${if (note.noteId == 0L || note.noteId == -1L) "新建笔记" else "更新笔记"}")
+                println("ViewModel 层总耗时: $viewModelElapsedTime ms")
+                println("错误信息: ${e.message}")
+                println("==============================")
             }
         }
     }

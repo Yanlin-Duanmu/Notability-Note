@@ -277,8 +277,10 @@ class NoteEditActivity : AppCompatActivity() {
     }
 
     private fun saveNote() {
+        val uiStartTime = System.currentTimeMillis()
         val title = binding.titleEditText.text.toString().trim()
         val content = binding.contentEditText.text.toString().trim()
+        val contentLength = content.length
 
         // 添加标题验证
         if (title.isEmpty()) {
@@ -334,7 +336,23 @@ class NoteEditActivity : AppCompatActivity() {
                 }
 
                 // 使用ViewModel保存笔记
+                val viewModelCallStartTime = System.currentTimeMillis()
                 noteDetailViewModel.saveNote(note)
+                val viewModelCallEndTime = System.currentTimeMillis()
+                val viewModelCallElapsedTime = viewModelCallEndTime - viewModelCallStartTime
+                
+                val uiEndTime = System.currentTimeMillis()
+                val uiElapsedTime = uiEndTime - uiStartTime
+                
+                // 打印UI层保存操作耗时统计
+                println("=== UI 层保存操作统计 ===")
+                println("操作类型: ${if (noteId != null && noteId != -1L) "更新笔记" else "新建笔记"}")
+                println("标题: $title")
+                println("内容长度: $contentLength 字符")
+                println("UI 层处理时间: ${viewModelCallStartTime - uiStartTime} ms")
+                println("ViewModel 调用时间: $viewModelCallElapsedTime ms")
+                println("UI 层总耗时: $uiElapsedTime ms")
+                println("====================")
             }
         }
     }
