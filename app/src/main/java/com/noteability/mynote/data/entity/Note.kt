@@ -34,6 +34,7 @@ data class Note(
     val tagId: Long, // 关联标签
     val title: String,
     val content: String,
+    val isLongText: Boolean = false, // 标记是否为长文本
     val styleData: String = "",
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()

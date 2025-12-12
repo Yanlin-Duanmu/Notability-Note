@@ -42,4 +42,9 @@ interface NoteRepository {
     suspend fun updateNoteTag(noteId: Long, tagId: Long): Int
     
     suspend fun updateNoteStyle(noteId: Long, styleData: String): Int
+    
+    // 长文本差分存储相关方法
+    suspend fun getNoteWithFullContent(noteId: Long): Note?
+    
+    suspend fun updateNoteContentWithDiff(noteId: Long, oldContent: String, newContent: String): Int
 }

@@ -60,6 +60,9 @@ class NoteEditActivity : AppCompatActivity() {
 
     // TagRepository实例
     private lateinit var tagRepository: TagRepositoryImpl
+    
+    // 耗时统计相关
+    private var uiRenderEndTime: Long = 0L
 
     // 创建NoteDetailViewModelFactory
     private class NoteDetailViewModelFactory(private val applicationContext: Context) :
@@ -244,6 +247,26 @@ class NoteEditActivity : AppCompatActivity() {
                             }
                         }
                     }
+                    
+                    // 记录UI渲染完成时间
+                    uiRenderEndTime = System.currentTimeMillis()
+                    
+                    // 打印完整耗时统计
+                    val loadStartTime = noteDetailViewModel.getLoadStartTime()
+                    val dbQueryEndTime = noteDetailViewModel.getDbQueryEndTime()
+                    
+                    val totalTime = uiRenderEndTime - loadStartTime
+                    val dbTime = dbQueryEndTime - loadStartTime
+                    val uiTime = uiRenderEndTime - dbQueryEndTime
+                    
+                    println("=== 笔记打开耗时统计 ===")
+                    println("笔记ID: ${it.noteId}")
+                    println("标题: ${it.title}")
+                    println("内容长度: ${it.content.length} 字符")
+                    println("总耗时: $totalTime ms")
+                    println("数据库查询耗时: $dbTime ms")
+                    println("UI渲染耗时: $uiTime ms")
+                    println("====================")
                 }
             }
         }
@@ -577,6 +600,8 @@ class NoteEditActivity : AppCompatActivity() {
 
 
         private fun setupTextWatchers() {
+            // 不需要实现具体的内容变化检测，因为saveNote方法中已经有了完整的变化检测逻辑
+            // 我们使用originalNote来比较哪些字段发生了变化
         }
 
         private fun handleBackPress() {

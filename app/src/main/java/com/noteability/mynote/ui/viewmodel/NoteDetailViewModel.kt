@@ -25,14 +25,28 @@ class NoteDetailViewModel(private val noteRepository: NoteRepository) : ViewMode
     private val _isSaved = MutableStateFlow(false)
     val isSaved: StateFlow<Boolean> = _isSaved
     
+    // 耗时统计相关
+    private var loadStartTime: Long = 0L
+    private var dbQueryEndTime: Long = 0L
+    
+    // 获取加载开始时间
+    fun getLoadStartTime(): Long = loadStartTime
+    
+    // 获取数据库查询完成时间
+    fun getDbQueryEndTime(): Long = dbQueryEndTime
+    
     // 加载笔记详情
     fun loadNote(noteId: Long) {
+        loadStartTime = System.currentTimeMillis()
         _isLoading.value = true
         _error.value = null
         
         viewModelScope.launch {
             try {
+                // 使用仓库的getNoteById方法，该方法已经被实现为返回完整内容
+                // 包括应用所有差分版本后的长文本内容
                 noteRepository.getNoteById(noteId).collect { note ->
+                    dbQueryEndTime = System.currentTimeMillis()
                     _note.value = note
                     _isLoading.value = false
                 }
