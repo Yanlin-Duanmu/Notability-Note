@@ -119,5 +119,89 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     override suspend fun deleteNotesList(noteIds: List<Long>) {
         noteDao.deleteNoteList(noteIds)
     }
+    
+    override suspend fun updateNoteTitle(noteId: Long, title: String): Int {
+        val startTime = System.currentTimeMillis()
+        val updatedAt = System.currentTimeMillis()
+        
+        val affectedRows = noteDao.updateNoteTitle(noteId, currentUserId, title, updatedAt)
+        
+        val endTime = System.currentTimeMillis()
+        val elapsedTime = endTime - startTime
+        
+        // 打印更新操作耗时统计
+        println("=== 更新笔记标题性能统计 ===")
+        println("操作类型: 更新标题")
+        println("笔记ID: $noteId")
+        println("标题: $title")
+        println("执行时间: $elapsedTime ms")
+        println("受影响行数: $affectedRows")
+        println("====================")
+        
+        return affectedRows
+    }
+    
+    override suspend fun updateNoteContent(noteId: Long, content: String): Int {
+        val startTime = System.currentTimeMillis()
+        val updatedAt = System.currentTimeMillis()
+        val contentLength = content.length
+        
+        val affectedRows = noteDao.updateNoteContent(noteId, currentUserId, content, updatedAt)
+        
+        val endTime = System.currentTimeMillis()
+        val elapsedTime = endTime - startTime
+        
+        // 打印更新操作耗时统计
+        println("=== 更新笔记内容性能统计 ===")
+        println("操作类型: 更新内容")
+        println("笔记ID: $noteId")
+        println("内容长度: $contentLength 字符")
+        println("执行时间: $elapsedTime ms")
+        println("受影响行数: $affectedRows")
+        println("====================")
+        
+        return affectedRows
+    }
+    
+    override suspend fun updateNoteTag(noteId: Long, tagId: Long): Int {
+        val startTime = System.currentTimeMillis()
+        val updatedAt = System.currentTimeMillis()
+        
+        val affectedRows = noteDao.updateNoteTag(noteId, currentUserId, tagId, updatedAt)
+        
+        val endTime = System.currentTimeMillis()
+        val elapsedTime = endTime - startTime
+        
+        // 打印更新操作耗时统计
+        println("=== 更新笔记标签性能统计 ===")
+        println("操作类型: 更新标签")
+        println("笔记ID: $noteId")
+        println("标签ID: $tagId")
+        println("执行时间: $elapsedTime ms")
+        println("受影响行数: $affectedRows")
+        println("====================")
+        
+        return affectedRows
+    }
+    
+    override suspend fun updateNoteStyle(noteId: Long, styleData: String): Int {
+        val startTime = System.currentTimeMillis()
+        val updatedAt = System.currentTimeMillis()
+        
+        val affectedRows = noteDao.updateNoteStyle(noteId, currentUserId, styleData, updatedAt)
+        
+        val endTime = System.currentTimeMillis()
+        val elapsedTime = endTime - startTime
+        
+        // 打印更新操作耗时统计
+        println("=== 更新笔记样式性能统计 ===")
+        println("操作类型: 更新样式")
+        println("笔记ID: $noteId")
+        println("执行时间: $elapsedTime ms")
+        println("受影响行数: $affectedRows")
+        println("====================")
+        
+        return affectedRows
+    }
 
 }

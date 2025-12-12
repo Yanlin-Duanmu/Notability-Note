@@ -67,5 +67,18 @@ interface NoteDao {
     //批量删除
     @Query("DELETE FROM notes WHERE noteId IN (:noteIds)")
     suspend fun deleteNoteList(noteIds: List<Long>)
+    
+    // 单个字段更新方法
+    @Query("UPDATE notes SET title = :title, updatedAt = :updatedAt WHERE noteId = :noteId AND userId = :userId")
+    suspend fun updateNoteTitle(noteId: Long, userId: Long, title: String, updatedAt: Long): Int
+    
+    @Query("UPDATE notes SET content = :content, updatedAt = :updatedAt WHERE noteId = :noteId AND userId = :userId")
+    suspend fun updateNoteContent(noteId: Long, userId: Long, content: String, updatedAt: Long): Int
+    
+    @Query("UPDATE notes SET tagId = :tagId, updatedAt = :updatedAt WHERE noteId = :noteId AND userId = :userId")
+    suspend fun updateNoteTag(noteId: Long, userId: Long, tagId: Long, updatedAt: Long): Int
+    
+    @Query("UPDATE notes SET styleData = :styleData, updatedAt = :updatedAt WHERE noteId = :noteId AND userId = :userId")
+    suspend fun updateNoteStyle(noteId: Long, userId: Long, styleData: String, updatedAt: Long): Int
 
 }

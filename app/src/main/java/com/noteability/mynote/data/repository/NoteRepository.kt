@@ -33,4 +33,13 @@ interface NoteRepository {
 
     //批量删除
     suspend fun deleteNotesList(noteIds: List<Long>)
+    
+    // 单个字段更新方法
+    suspend fun updateNoteTitle(noteId: Long, title: String): Int
+    
+    suspend fun updateNoteContent(noteId: Long, content: String): Int
+    
+    suspend fun updateNoteTag(noteId: Long, tagId: Long): Int
+    
+    suspend fun updateNoteStyle(noteId: Long, styleData: String): Int
 }

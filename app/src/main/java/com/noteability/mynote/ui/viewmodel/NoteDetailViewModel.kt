@@ -108,6 +108,124 @@ class NoteDetailViewModel(private val noteRepository: NoteRepository) : ViewMode
         _isSaved.value = false
     }
     
+    // 单个字段更新方法
+    fun updateNoteTitle(noteId: Long, title: String) {
+        val viewModelStartTime = System.currentTimeMillis()
+        _isLoading.value = true
+        _error.value = null
+        _isSaved.value = false
+        
+        viewModelScope.launch {
+            try {
+                noteRepository.updateNoteTitle(noteId, title)
+                _isSaved.value = true
+                _isLoading.value = false
+                
+                val viewModelEndTime = System.currentTimeMillis()
+                val viewModelElapsedTime = viewModelEndTime - viewModelStartTime
+                
+                // 打印ViewModel层更新操作耗时统计
+                println("=== ViewModel 更新标题操作统计 ===")
+                println("操作类型: 更新标题")
+                println("笔记ID: $noteId")
+                println("ViewModel 层总耗时: $viewModelElapsedTime ms")
+                println("========================")
+            } catch (e: Exception) {
+                _error.value = "更新标题失败"
+                _isLoading.value = false
+                
+                val viewModelEndTime = System.currentTimeMillis()
+                val viewModelElapsedTime = viewModelEndTime - viewModelStartTime
+                
+                // 打印错误情况下的耗时统计
+                println("=== ViewModel 更新标题操作统计（错误） ===")
+                println("操作类型: 更新标题")
+                println("笔记ID: $noteId")
+                println("ViewModel 层总耗时: $viewModelElapsedTime ms")
+                println("错误信息: ${e.message}")
+                println("================================")
+            }
+        }
+    }
+    
+    fun updateNoteContent(noteId: Long, content: String) {
+        val viewModelStartTime = System.currentTimeMillis()
+        _isLoading.value = true
+        _error.value = null
+        _isSaved.value = false
+        
+        viewModelScope.launch {
+            try {
+                noteRepository.updateNoteContent(noteId, content)
+                _isSaved.value = true
+                _isLoading.value = false
+                
+                val viewModelEndTime = System.currentTimeMillis()
+                val viewModelElapsedTime = viewModelEndTime - viewModelStartTime
+                
+                // 打印ViewModel层更新操作耗时统计
+                println("=== ViewModel 更新内容操作统计 ===")
+                println("操作类型: 更新内容")
+                println("笔记ID: $noteId")
+                println("ViewModel 层总耗时: $viewModelElapsedTime ms")
+                println("========================")
+            } catch (e: Exception) {
+                _error.value = "更新内容失败"
+                _isLoading.value = false
+                
+                val viewModelEndTime = System.currentTimeMillis()
+                val viewModelElapsedTime = viewModelEndTime - viewModelStartTime
+                
+                // 打印错误情况下的耗时统计
+                println("=== ViewModel 更新内容操作统计（错误） ===")
+                println("操作类型: 更新内容")
+                println("笔记ID: $noteId")
+                println("ViewModel 层总耗时: $viewModelElapsedTime ms")
+                println("错误信息: ${e.message}")
+                println("================================")
+            }
+        }
+    }
+    
+    fun updateNoteTag(noteId: Long, tagId: Long) {
+        val viewModelStartTime = System.currentTimeMillis()
+        _isLoading.value = true
+        _error.value = null
+        _isSaved.value = false
+        
+        viewModelScope.launch {
+            try {
+                noteRepository.updateNoteTag(noteId, tagId)
+                _isSaved.value = true
+                _isLoading.value = false
+                
+                val viewModelEndTime = System.currentTimeMillis()
+                val viewModelElapsedTime = viewModelEndTime - viewModelStartTime
+                
+                // 打印ViewModel层更新操作统计
+                println("=== ViewModel 更新标签操作统计 ===")
+                println("操作类型: 更新标签")
+                println("笔记ID: $noteId")
+                println("ViewModel 层总耗时: $viewModelElapsedTime ms")
+                println("========================")
+            } catch (e: Exception) {
+                _error.value = "更新标签失败"
+                _isLoading.value = false
+                
+                val viewModelEndTime = System.currentTimeMillis()
+                val viewModelElapsedTime = viewModelEndTime - viewModelStartTime
+                
+                // 打印错误情况下的耗时统计
+                println("=== ViewModel 更新标签操作统计（错误） ===")
+                println("操作类型: 更新标签")
+                println("笔记ID: $noteId")
+                println("ViewModel 层总耗时: $viewModelElapsedTime ms")
+                println("错误信息: ${e.message}")
+                println("================================")
+            }
+        }
+    }
+    
     // 设置当前登录用户ID
     fun setLoggedInUserId(userId: Long) {
         loggedInUserId = userId
