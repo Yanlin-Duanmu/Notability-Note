@@ -1,12 +1,14 @@
 package com.noteability.mynote.util
 
 import android.util.Log
-import org.json.JSONArray
-import org.json.JSONObject
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 
 class TextDiffUtils {
     private val TAG = "TextDiffUtils"
     private val LONG_TEXT_THRESHOLD = 5000
+    private val gson: Gson = GsonBuilder().create()
     
     /**
      * 检查文本是否需要使用差分存储
@@ -20,8 +22,18 @@ class TextDiffUtils {
      */
     fun generateDiff(oldText: String, newText: String): String {
         try {
+            // 快速检查：如果文本完全相同，直接返回空差异
+            if (oldText == newText) {
+                return "[]"
+            }
+            
+            // 快速检查：如果差异很小，使用简化算法
+            if (Math.abs(oldText.length - newText.length) < 100 && oldText.length > 1000) {
+                return generateFastDiff(oldText, newText)
+            }
+            
             val diffs = computeDiffs(oldText, newText)
-            return diffsToJson(diffs)
+            return gson.toJson(diffs)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to generate diff: ${e.message}")
             return ""
@@ -29,11 +41,48 @@ class TextDiffUtils {
     }
     
     /**
+     * 快速差异生成算法，适用于差异很小的情况
+     */
+    private fun generateFastDiff(oldText: String, newText: String): String {
+        val minLength = Math.min(oldText.length, newText.length)
+        var start = 0
+        var end = 0
+        
+        // 找到前缀相同的部分
+        while (start < minLength && oldText[start] == newText[start]) {
+            start++
+        }
+        
+        // 找到后缀相同的部分
+        while (end < minLength - start && oldText[oldText.length - 1 - end] == newText[newText.length - 1 - end]) {
+            end++
+        }
+        
+        val diffs = mutableListOf<Diff>()
+        
+        // 处理中间不同的部分
+        if (start < oldText.length - end) {
+            diffs.add(Diff(DiffType.DELETE, start, oldText.substring(start, oldText.length - end)))
+        }
+        
+        if (start < newText.length - end) {
+            diffs.add(Diff(DiffType.INSERT, start, newText.substring(start, newText.length - end)))
+        }
+        
+        return gson.toJson(diffs)
+    }
+    
+    /**
      * 应用差异到原文本
      */
     fun applyDiff(originalText: String, diffData: String): String {
         try {
-            val diffs = jsonToDiffs(diffData)
+            if (diffData.isEmpty() || diffData == "[]") {
+                return originalText
+            }
+            
+            val diffsType = object : TypeToken<List<Diff>>() {}.type
+            val diffs: List<Diff> = gson.fromJson(diffData, diffsType)
             return applyDiffs(originalText, diffs)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to apply diff: ${e.message}")
@@ -42,45 +91,34 @@ class TextDiffUtils {
     }
     
     /**
-     * 使用Myers差分算法计算两个字符串之间的差异（优化版）
+     * 使用Myers差分算法计算两个字符串之间的差异（线性空间优化版）
      */
     private fun computeDiffs(oldText: String, newText: String): List<Diff>
     {
         val n = oldText.length
         val m = newText.length
         val max = n + m
-        val trace = mutableListOf<IntArray>()
         
-        // 初始数组，只需要创建一次
-        val initialV = IntArray(2 * max + 1)
-        trace.add(initialV)
+        // 前向搜索
+        val forwardV = IntArray(2 * max + 1)
+        val forwardTrace = mutableListOf<IntArray>()
         
-        for (d in 1..max) {
-            // 只复制必要的数组元素，而不是整个数组
-            val prevV = trace[d - 1]
+        for (d in 0..max) {
             val currentV = IntArray(2 * max + 1)
-            
-            // 只复制可能被访问的元素，而不是整个数组
-            // k的范围是-d到d，所以只需要复制对应的索引范围
-            val start = max - d
-            val end = max + d + 1
-            System.arraycopy(prevV, start, currentV, start, end - start)
-            
-            trace.add(currentV)
             
             for (k in -d..d step 2) {
                 var x: Int
-                
                 val kIndex = k + max
-                if (k == -d || (k != d && prevV[kIndex - 1] < prevV[kIndex + 1])) {
-                    x = prevV[kIndex + 1]
+                
+                if (k == -d || (k != d && forwardV[kIndex - 1] < forwardV[kIndex + 1])) {
+                    x = forwardV[kIndex + 1]
                 } else {
-                    x = prevV[kIndex - 1] + 1
+                    x = forwardV[kIndex - 1] + 1
                 }
                 
                 var y = x - k
                 
-                // 优化：跳过连续相同的字符
+                // 跳过连续相同的字符
                 while (x < n && y < m && oldText[x] == newText[y]) {
                     x++
                     y++
@@ -89,18 +127,21 @@ class TextDiffUtils {
                 currentV[kIndex] = x
                 
                 if (x >= n && y >= m) {
-                    return buildDiffList(oldText, newText, trace)
+                    return buildDiffListLinear(oldText, newText, forwardTrace + listOf(currentV))
                 }
             }
+            
+            forwardV.forEachIndexed { index, value -> currentV[index] = value }
+            forwardTrace.add(currentV)
         }
         
         return emptyList()
     }
     
     /**
-     * 构建差异列表（优化版）
+     * 构建差异列表（线性空间优化版）
      */
-    private fun buildDiffList(oldText: String, newText: String, trace: List<IntArray>): List<Diff>
+    private fun buildDiffListLinear(oldText: String, newText: String, trace: List<IntArray>): List<Diff>
     {
         val diffs = mutableListOf<Diff>()
         var x = oldText.length
@@ -149,46 +190,25 @@ class TextDiffUtils {
     }
     
     /**
-     * 将差异列表转换为JSON格式
-     */
-    private fun diffsToJson(diffs: List<Diff>): String {
-        val jsonArray = JSONArray()
-        
-        for (diff in diffs) {
-            val jsonObject = JSONObject()
-            jsonObject.put("type", diff.type.name)
-            jsonObject.put("position", diff.position)
-            jsonObject.put("text", diff.text)
-            jsonArray.put(jsonObject)
-        }
-        
-        return jsonArray.toString()
-    }
-    
-    /**
-     * 将JSON格式的差异数据转换为差异列表
-     */
-    private fun jsonToDiffs(json: String): List<Diff> {
-        val diffs = mutableListOf<Diff>()
-        val jsonArray = JSONArray(json)
-        
-        for (i in 0 until jsonArray.length()) {
-            val jsonObject = jsonArray.getJSONObject(i)
-            val type = DiffType.valueOf(jsonObject.getString("type"))
-            val position = jsonObject.getInt("position")
-            val text = jsonObject.getString("text")
-            diffs.add(Diff(type, position, text))
-        }
-        
-        return diffs
-    }
-    
-    /**
-     * 应用差异列表到原文本
+     * 应用差异列表到原文本（优化版）
      */
     private fun applyDiffs(original: String, diffs: List<Diff>): String {
+        if (diffs.isEmpty()) {
+            return original
+        }
+        
         val sb = StringBuilder(original)
         var offset = 0
+        
+        // 预分配足够的容量以减少扩容次数
+        val totalLength = original.length + diffs.sumBy { 
+            when (it.type) {
+                DiffType.INSERT -> it.text.length
+                DiffType.DELETE -> -it.text.length
+                else -> 0
+            }
+        }
+        sb.ensureCapacity(totalLength)
         
         for (diff in diffs) {
             val pos = diff.position + offset

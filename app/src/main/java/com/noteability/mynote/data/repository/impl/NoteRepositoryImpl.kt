@@ -125,15 +125,25 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     }
     
     override suspend fun updateNoteContent(noteId: Long, content: String): Int {
+        val totalStartTime = System.currentTimeMillis()
         val updatedAt = System.currentTimeMillis()
         
-        // 获取当前笔记
+        // 获取当前笔记 - 非存储操作
+        val noteStartTime = System.currentTimeMillis()
         val note = noteDao.getNoteById(noteId)
+        val noteEndTime = System.currentTimeMillis()
+        val noteElapsedTime = noteEndTime - noteStartTime
+        
         if (note == null || note.userId != currentUserId) {
             return 0
         }
         
+        // 判断是否为长文本 - 非存储操作
+        val isLongTextStartTime = System.currentTimeMillis()
         val isLongText = diffUtils.shouldUseDiffStorage(content)
+        val isLongTextEndTime = System.currentTimeMillis()
+        val isLongTextElapsedTime = isLongTextEndTime - isLongTextStartTime
+        
         var affectedRows = 0
         
         // 根据文本长度决定使用普通更新还是差分存储
@@ -143,50 +153,98 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
             
             // 只有当笔记之前不是长文本时，才需要更新isLongText字段
             if (!note.isLongText) {
+                val updateLongTextStartTime = System.currentTimeMillis()
                 noteDao.updateNoteIsLongText(noteId, currentUserId, true, updatedAt)
+                val updateLongTextEndTime = System.currentTimeMillis()
+                val updateLongTextElapsedTime = updateLongTextEndTime - updateLongTextStartTime
             }
         } else {
             // 短文本直接更新
+            val updateContentStartTime = System.currentTimeMillis()
             affectedRows = noteDao.updateNoteContent(noteId, currentUserId, content, updatedAt)
+            val updateContentEndTime = System.currentTimeMillis()
+            val updateContentElapsedTime = updateContentEndTime - updateContentStartTime
             
             // 如果之前是长文本，现在变成短文本，更新isLongText字段
             if (note.isLongText) {
+                val updateLongTextStartTime = System.currentTimeMillis()
                 noteDao.updateNoteIsLongText(noteId, currentUserId, false, updatedAt)
+                val updateLongTextEndTime = System.currentTimeMillis()
+                val updateLongTextElapsedTime = updateLongTextEndTime - updateLongTextStartTime
             }
         }
+        
+        val totalEndTime = System.currentTimeMillis()
+        val totalElapsedTime = totalEndTime - totalStartTime
+        
+        println("=== Repository 更新内容操作详细统计 ===")
+        println("总耗时: $totalElapsedTime ms")
+        println("获取当前笔记耗时: $noteElapsedTime ms")
+        println("判断是否为长文本耗时: $isLongTextElapsedTime ms")
+        println("==================================")
         
         return affectedRows
     }
     
     override suspend fun updateNoteContentWithDiff(noteId: Long, oldContent: String, newContent: String): Int {
-        // 生成差分数据
+        val totalDiffStartTime = System.currentTimeMillis()
+        
+        // 生成差分数据 - 非存储操作，可能耗时
+        val diffGenStartTime = System.currentTimeMillis()
         val diffData = diffUtils.generateDiff(oldContent, newContent)
+        val diffGenEndTime = System.currentTimeMillis()
+        val diffGenElapsedTime = diffGenEndTime - diffGenStartTime
+        
         if (diffData.isEmpty()) {
             return 0
         }
         
-        // 获取当前最新版本
+        // 获取当前最新版本 - 存储操作
+        val getLatestVersionStartTime = System.currentTimeMillis()
         val latestVersion = noteDao.getLatestNoteContentVersion(noteId)
+        val getLatestVersionEndTime = System.currentTimeMillis()
+        val getLatestVersionElapsedTime = getLatestVersionEndTime - getLatestVersionStartTime
+        
         val nextVersionNumber = latestVersion?.versionNumber?.plus(1) ?: 1
         
-        // 保存差分版本
+        // 构建版本对象 - 非存储操作
+        val buildVersionStartTime = System.currentTimeMillis()
         val version = NoteContentVersion(
             noteId = noteId,
             versionNumber = nextVersionNumber,
             diffData = diffData,
             contentLength = newContent.length
         )
+        val buildVersionEndTime = System.currentTimeMillis()
+        val buildVersionElapsedTime = buildVersionEndTime - buildVersionStartTime
         
-        // 计时开始 - 只统计存储操作
-        val startTime = System.currentTimeMillis()
+        // 保存差分版本 - 核心存储操作
+        val storageStartTime = System.currentTimeMillis()
         val insertedId = noteDao.insertNoteContentVersion(version)
-        
-        val storageTime = System.currentTimeMillis() - startTime
+        val storageEndTime = System.currentTimeMillis()
+        val storageElapsedTime = storageEndTime - storageStartTime
         
         // 定期合并版本，避免版本过多
         if (nextVersionNumber % 10 == 0) {
+            val mergeVersionsStartTime = System.currentTimeMillis()
             mergeVersions(noteId)
+            val mergeVersionsEndTime = System.currentTimeMillis()
+            val mergeVersionsElapsedTime = mergeVersionsEndTime - mergeVersionsStartTime
+            
+            println("  合并版本耗时: $mergeVersionsElapsedTime ms")
         }
+        
+        val totalDiffEndTime = System.currentTimeMillis()
+        val totalDiffElapsedTime = totalDiffEndTime - totalDiffStartTime
+        
+        // 打印差分存储详细统计
+        println("=== 差分存储操作详细统计 ===")
+        println("总耗时: $totalDiffElapsedTime ms")
+        println("生成差分数据耗时: $diffGenElapsedTime ms")
+        println("获取最新版本耗时: $getLatestVersionElapsedTime ms")
+        println("构建版本对象耗时: $buildVersionElapsedTime ms")
+        println("核心存储操作耗时: $storageElapsedTime ms")
+        println("==================================")
         
         return 1
     }

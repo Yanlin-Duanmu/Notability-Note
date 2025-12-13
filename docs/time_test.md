@@ -84,33 +84,30 @@
 2025-12-12 22:08:14.198  4571-4571  System.out              com.noteability.mynote               I  ========================
 ## 修改笔记性能测试（差分算法更新版本）
 ## 修改笔记内容（删除“# Android应用性能优化完全指南”）然后保存，执行耗时
-2025-12-12 23:44:43.480  3100-3100  System.out              com.noteability.mynote               I  === UI 层字段更新操作统计 ===
-2025-12-12 23:44:43.480  3100-3100  System.out              com.noteability.mynote               I  操作类型: 字段更新
-2025-12-12 23:44:43.480  3100-3100  System.out              com.noteability.mynote               I  笔记ID: 4
-2025-12-12 23:44:43.481  3100-3100  System.out              com.noteability.mynote               I  标题变化: false
-2025-12-12 23:44:43.481  3100-3100  System.out              com.noteability.mynote               I  内容变化: true
-2025-12-12 23:44:43.481  3100-3100  System.out              com.noteability.mynote               I  标签变化: false
-2025-12-12 23:44:43.481  3100-3100  System.out              com.noteability.mynote               I  ViewModel调用耗时: 4 ms
-2025-12-12 23:44:43.538  3100-3108  eability.mynote         com.noteability.mynote               I  Background young concurrent mark compact GC freed 2300KB AllocSpace bytes, 6(268KB) LOS objects, 8% free, 14MB/15MB, paused 7.610ms,4.507ms total 43.402ms
-2025-12-12 23:44:43.703  3100-3100  System.out              com.noteability.mynote               I  === 差分存储性能统计 ===
-2025-12-12 23:44:43.703  3100-3100  System.out              com.noteability.mynote               I  笔记ID: 4
-2025-12-12 23:44:43.703  3100-3100  System.out              com.noteability.mynote               I  版本号: 1
-2025-12-12 23:44:43.703  3100-3100  System.out              com.noteability.mynote               I  差分数据长度: 896 字符
-2025-12-12 23:44:43.703  3100-3100  System.out              com.noteability.mynote               I  存储操作时间: 136 ms
-2025-12-12 23:44:43.703  3100-3100  System.out              com.noteability.mynote               I  ====================
-2025-12-12 23:44:43.764  3100-3100  System.out              com.noteability.mynote               I  === 更新笔记内容性能统计 ===
-2025-12-12 23:44:43.765  3100-3100  System.out              com.noteability.mynote               I  操作类型: 更新内容
-2025-12-12 23:44:43.765  3100-3100  System.out              com.noteability.mynote               I  笔记ID: 4
-2025-12-12 23:44:43.765  3100-3100  System.out              com.noteability.mynote               I  内容长度: 19970 字符
-2025-12-12 23:44:43.765  3100-3100  System.out              com.noteability.mynote               I  是否长文本: true
-2025-12-12 23:44:43.766  3100-3100  System.out              com.noteability.mynote               I  存储操作时间: 15 ms
-2025-12-12 23:44:43.766  3100-3100  System.out              com.noteability.mynote               I  受影响行数: 1
-2025-12-12 23:44:43.766  3100-3100  System.out              com.noteability.mynote               I  ====================
-2025-12-12 23:44:43.785  3100-3100  System.out              com.noteability.mynote               I  === ViewModel 更新内容操作统计 ===
-2025-12-12 23:44:43.785  3100-3100  System.out              com.noteability.mynote               I  操作类型: 更新内容
-2025-12-12 23:44:43.785  3100-3100  System.out              com.noteability.mynote               I  笔记ID: 4
-2025-12-12 23:44:43.785  3100-3100  System.out              com.noteability.mynote               I  ViewModel 层总耗时: 32 ms
-2025-12-12 23:44:43.785  3100-3100  System.out              com.noteability.mynote               I  ========================
+2025-12-13 13:37:54.680  3710-3710  System.out              com.noteability.mynote               I  === UI 层字段更新操作统计 ===
+2025-12-13 13:37:54.680  3710-3710  System.out              com.noteability.mynote               I  操作类型: 字段更新
+2025-12-13 13:37:54.680  3710-3710  System.out              com.noteability.mynote               I  笔记ID: 7
+2025-12-13 13:37:54.680  3710-3710  System.out              com.noteability.mynote               I  标题变化: false
+2025-12-13 13:37:54.680  3710-3710  System.out              com.noteability.mynote               I  内容变化: true
+2025-12-13 13:37:54.680  3710-3710  System.out              com.noteability.mynote               I  标签变化: false
+2025-12-13 13:37:54.680  3710-3710  System.out              com.noteability.mynote               I  ViewModel调用耗时: 0 ms
+2025-12-13 13:37:54.698  3710-3710  System.out              com.noteability.mynote               I  === 差分存储操作详细统计 ===
+2025-12-13 13:37:54.699  3710-3710  System.out              com.noteability.mynote               I  总耗时: 13 ms
+2025-12-13 13:37:54.699  3710-3710  System.out              com.noteability.mynote               I  生成差分数据耗时: 6 ms
+2025-12-13 13:37:54.700  3710-3710  System.out              com.noteability.mynote               I  获取最新版本耗时: 5 ms
+2025-12-13 13:37:54.700  3710-3710  System.out              com.noteability.mynote               I  构建版本对象耗时: 0 ms
+2025-12-13 13:37:54.701  3710-3710  System.out              com.noteability.mynote               I  核心存储操作耗时: 2 ms
+2025-12-13 13:37:54.701  3710-3710  System.out              com.noteability.mynote               I  ==================================
+2025-12-13 13:37:54.701  3710-3710  System.out              com.noteability.mynote               I  === Repository 更新内容操作详细统计 ===
+2025-12-13 13:37:54.701  3710-3710  System.out              com.noteability.mynote               I  总耗时: 20 ms
+2025-12-13 13:37:54.701  3710-3710  System.out              com.noteability.mynote               I  获取当前笔记耗时: 4 ms
+2025-12-13 13:37:54.701  3710-3710  System.out              com.noteability.mynote               I  判断是否为长文本耗时: 0 ms
+2025-12-13 13:37:54.701  3710-3710  System.out              com.noteability.mynote               I  ==================================
+2025-12-13 13:37:54.723  3710-3710  System.out              com.noteability.mynote               I  === ViewModel 更新内容操作统计 ===
+2025-12-13 13:37:54.725  3710-3710  System.out              com.noteability.mynote               I  操作类型: 更新内容
+2025-12-13 13:37:54.726  3710-3710  System.out              com.noteability.mynote               I  笔记ID: 7
+2025-12-13 13:37:54.726  3710-3710  System.out              com.noteability.mynote               I  ViewModel 层总耗时: 44 ms
+2025-12-13 13:37:54.727  3710-3710  System.out              com.noteability.mynote               I  ========================
 
 
 # 打开笔记耗时(无差分算法 两次打开耗时统计)
