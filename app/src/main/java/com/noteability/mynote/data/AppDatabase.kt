@@ -15,7 +15,7 @@ import com.noteability.mynote.data.entity.Tag
 
 @Database(
     entities = [User::class, Note::class, Tag::class, NoteFts::class, NoteContentVersion::class],
-    version = 9, // 升级数据库版本，添加NoteContentVersion实体
+    version = 10, // 升级数据库版本，解决架构验证失败问题
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

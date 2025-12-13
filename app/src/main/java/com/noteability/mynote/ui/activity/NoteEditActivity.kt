@@ -285,26 +285,7 @@ class NoteEditActivity : AppCompatActivity() {
                             }
                         }
                     }
-                    
-                    // 记录UI渲染完成时间
-                    uiRenderEndTime = System.currentTimeMillis()
-                    
-                    // 打印完整耗时统计
-                    val loadStartTime = noteDetailViewModel.getLoadStartTime()
-                    val dbQueryEndTime = noteDetailViewModel.getDbQueryEndTime()
-                    
-                    val totalTime = uiRenderEndTime - loadStartTime
-                    val dbTime = dbQueryEndTime - loadStartTime
-                    val uiTime = uiRenderEndTime - dbQueryEndTime
-                    
-                    println("=== 笔记打开耗时统计 ===")
-                    println("笔记ID: ${it.noteId}")
-                    println("标题: ${it.title}")
-                    println("内容长度: ${it.content.length} 字符")
-                    println("总耗时: $totalTime ms")
-                    println("数据库查询耗时: $dbTime ms")
-                    println("UI渲染耗时: $uiTime ms")
-                    println("====================")
+
                 }
             }
         }
@@ -483,7 +464,6 @@ class NoteEditActivity : AppCompatActivity() {
 
                 if (noteId != null && noteId != -1L && originalNote != null) {
                     // 更新现有笔记 - 检查哪些字段发生了变化
-                    val viewModelCallStartTime = System.currentTimeMillis()
 
                     // 标题变化检测
                     if (originalNote?.title != title) {
@@ -500,16 +480,6 @@ class NoteEditActivity : AppCompatActivity() {
                         noteDetailViewModel.updateNoteTag(noteId!!, tagIdToUse)
                     }
 
-                    val viewModelCallEndTime = System.currentTimeMillis()
-                    val viewModelCallElapsedTime = viewModelCallEndTime - viewModelCallStartTime
-
-                    println("=== UI 层字段更新操作统计 ===")
-                    println("操作类型: 字段更新")
-                    println("笔记ID: $noteId")
-                    println("标题变化: ${originalNote?.title != title}")
-                    println("内容变化: ${originalNote?.content != content}")
-                    println("标签变化: ${originalNote?.tagId != tagIdToUse}")
-                    println("ViewModel调用耗时: $viewModelCallElapsedTime ms")
                 } else {
                     // 创建新笔记或无法使用字段更新
                     val note = if (noteId != null && noteId != -1L) {
@@ -536,23 +506,7 @@ class NoteEditActivity : AppCompatActivity() {
                     }
 
                     // 使用ViewModel保存笔记
-                    val viewModelCallStartTime = System.currentTimeMillis()
                     noteDetailViewModel.saveNote(note)
-                    val viewModelCallEndTime = System.currentTimeMillis()
-                    val viewModelCallElapsedTime = viewModelCallEndTime - viewModelCallStartTime
-
-                    val uiEndTime = System.currentTimeMillis()
-                    val uiElapsedTime = uiEndTime - uiStartTime
-
-                    // 打印UI层保存操作耗时统计
-                    println("=== UI 层保存操作统计 ===")
-                    println("操作类型: ${if (noteId != null && noteId != -1L) "更新笔记" else "新建笔记"}")
-                    println("标题: $title")
-                    println("内容长度: $contentLength 字符")
-                    println("UI 层处理时间: ${viewModelCallStartTime - uiStartTime} ms")
-                    println("ViewModel 调用时间: $viewModelCallElapsedTime ms")
-                    println("UI 层总耗时: $uiElapsedTime ms")
-                    println("====================")
                 }
             }
         }
