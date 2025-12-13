@@ -59,7 +59,7 @@ class NoteEditActivity : AppCompatActivity() {
     private var isBold = false
     private var isItalic = false
     private var isUnderline = false
-    private var isPreviewMode = false
+    private var isPreviewMode = true
 
     // 原始笔记（用于比较哪些字段发生了变化）
     private var originalNote: Note? = null
@@ -189,6 +189,32 @@ class NoteEditActivity : AppCompatActivity() {
 
         setupAiListeners()
         observeAiState()
+        
+        // 初始化默认显示为预览模式
+        initializePreviewMode()
+    }
+    
+    /**
+     * 初始化预览模式显示
+     */
+    private fun initializePreviewMode() {
+        if (isPreviewMode) {
+            // 直接设置预览模式的UI状态，不调用togglePreviewMode
+            binding.contentEditText.visibility = View.GONE
+            binding.previewTextView.visibility = View.VISIBLE
+            
+            // 渲染Markdown内容
+            val markdownText = binding.contentEditText.text.toString()
+            MarkdownUtils.renderMarkdown(binding.previewTextView, markdownText, markwon)
+            
+            // 按钮文字改成“编辑”
+            binding.previewButton.text = "编辑"
+            
+            // 隐藏键盘
+            binding.contentEditText.clearFocus()
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(binding.contentEditText.windowToken, 0)
+        }
     }
 
 
@@ -284,6 +310,11 @@ class NoteEditActivity : AppCompatActivity() {
                                 }
                             }
                         }
+                    }
+                    
+                    // 笔记内容加载完成后，应用预览模式
+                    if (isPreviewMode) {
+                        initializePreviewMode()
                     }
 
                 }
