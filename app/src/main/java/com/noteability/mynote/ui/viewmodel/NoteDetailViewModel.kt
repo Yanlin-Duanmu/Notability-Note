@@ -47,6 +47,13 @@ class NoteDetailViewModel(private val noteRepository: NoteRepository) : ViewMode
 
     private val _currentMatchIndex = MutableStateFlow(-1)
     val currentMatchIndex: StateFlow<Int> = _currentMatchIndex.asStateFlow()
+    
+
+
+
+    
+    
+    
 
     // 加载笔记详情
     fun loadNote(noteId: Long) {
@@ -55,6 +62,8 @@ class NoteDetailViewModel(private val noteRepository: NoteRepository) : ViewMode
         
         viewModelScope.launch {
             try {
+                // 使用仓库的getNoteById方法，该方法已经被实现为返回完整内容
+                // 包括应用所有差分版本后的长文本内容
                 noteRepository.getNoteById(noteId).collect { note ->
                     _note.value = note
                     _isLoading.value = false
@@ -109,6 +118,58 @@ class NoteDetailViewModel(private val noteRepository: NoteRepository) : ViewMode
     // 重置保存状态
     fun resetSaveState() {
         _isSaved.value = false
+    }
+    
+    // 单个字段更新方法
+    fun updateNoteTitle(noteId: Long, title: String) {
+        _isLoading.value = true
+        _error.value = null
+        _isSaved.value = false
+        
+        viewModelScope.launch {
+            try {
+                noteRepository.updateNoteTitle(noteId, title)
+                _isSaved.value = true
+                _isLoading.value = false
+            } catch (e: Exception) {
+                _error.value = "更新标题失败"
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    fun updateNoteContent(noteId: Long, content: String) {
+        _isLoading.value = true
+        _error.value = null
+        _isSaved.value = false
+        
+        viewModelScope.launch {
+            try {
+                noteRepository.updateNoteContent(noteId, content)
+                _isSaved.value = true
+                _isLoading.value = false
+            } catch (e: Exception) {
+                _error.value = "更新内容失败"
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    fun updateNoteTag(noteId: Long, tagId: Long) {
+        _isLoading.value = true
+        _error.value = null
+        _isSaved.value = false
+        
+        viewModelScope.launch {
+            try {
+                noteRepository.updateNoteTag(noteId, tagId)
+                _isSaved.value = true
+                _isLoading.value = false
+            } catch (e: Exception) {
+                _error.value = "更新标签失败"
+                _isLoading.value = false
+            }
+        }
     }
     
     // 设置当前登录用户ID

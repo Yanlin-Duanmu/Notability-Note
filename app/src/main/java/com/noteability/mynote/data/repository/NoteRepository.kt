@@ -39,4 +39,18 @@ interface NoteRepository {
     // 按选择的排序方式排序
     fun getAllNotesStream(userId: Long, sortOrder: SortOrder): PagingSource<Int, Note>
     fun getNotesByExactTitlePagingSource(userId: Long, exactTitle: String, tagId: Long?): PagingSource<Int, Note>
+    
+    // 单个字段更新方法
+    suspend fun updateNoteTitle(noteId: Long, title: String): Int
+    
+    suspend fun updateNoteContent(noteId: Long, content: String): Int
+    
+    suspend fun updateNoteTag(noteId: Long, tagId: Long): Int
+    
+    suspend fun updateNoteStyle(noteId: Long, styleData: String): Int
+    
+    // 长文本差分存储相关方法
+    suspend fun getNoteWithFullContent(noteId: Long): Note?
+    
+    suspend fun updateNoteContentWithDiff(noteId: Long, oldContent: String, newContent: String): Int
 }

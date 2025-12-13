@@ -6,7 +6,9 @@ import com.noteability.mynote.data.AppDatabase
 import com.noteability.mynote.data.dao.NoteDao
 import com.noteability.mynote.data.dao.SortOrder
 import com.noteability.mynote.data.entity.Note
+import com.noteability.mynote.data.entity.NoteContentVersion
 import com.noteability.mynote.data.repository.NoteRepository
+import com.noteability.mynote.util.TextDiffUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -16,6 +18,7 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     }
 
     private var currentUserId = 1L
+    private val diffUtils = TextDiffUtils()
 
     fun updateCurrentUserId(userId: Long) {
         this.currentUserId = userId
@@ -30,7 +33,8 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     }
 
     override fun getNoteById(noteId: Long): Flow<Note?> = flow {
-        val note = noteDao.getNoteById(noteId)
+        val note = getNoteWithFullContent(noteId)
+        // 确保只返回当前用户的笔记
         emit(if (note?.userId == currentUserId) note else null)
     }
 
@@ -63,15 +67,23 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     }
 
     override suspend fun saveNote(note: Note) {
-        val noteToSave = note.copy(userId = currentUserId)
+        val isLongText = diffUtils.shouldUseDiffStorage(note.content)
+        val noteToSave = note.copy(
+            userId = currentUserId,
+            isLongText = isLongText
+        )
+        
         noteDao.insertNote(noteToSave)
     }
 
     override suspend fun updateNote(note: Note) {
+        val isLongText = diffUtils.shouldUseDiffStorage(note.content)
         val noteToUpdate = note.copy(
             userId = currentUserId,
-            updatedAt = System.currentTimeMillis()
+            updatedAt = System.currentTimeMillis(),
+            isLongText = isLongText
         )
+        
         noteDao.updateNote(noteToUpdate)
     }
 
@@ -101,6 +113,130 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
             SortOrder.CREATE_TIME_ASC -> noteDao.getNotesOrderByTimeAsc(userId)
             SortOrder.TITLE_ASC -> noteDao.getNotesOrderByTitle(userId)
         }
+    }
+    
+    override suspend fun updateNoteTitle(noteId: Long, title: String): Int {
+        val updatedAt = System.currentTimeMillis()
+        
+        return noteDao.updateNoteTitle(noteId, currentUserId, title, updatedAt)
+    }
+    
+    override suspend fun updateNoteContent(noteId: Long, content: String): Int {
+        val updatedAt = System.currentTimeMillis()
+        
+        val note = noteDao.getNoteById(noteId)
+        
+        if (note == null || note.userId != currentUserId) {
+            return 0
+        }
+        
+        val isLongText = diffUtils.shouldUseDiffStorage(content)
+        
+        var affectedRows = 0
+        
+        // 根据文本长度决定使用普通更新还是差分存储
+        if (isLongText) {
+            // 使用差分存储
+            affectedRows = updateNoteContentWithDiff(noteId, note.content, content)
+            
+            // 只有当笔记之前不是长文本时，才需要更新isLongText字段
+            if (!note.isLongText) {
+                noteDao.updateNoteIsLongText(noteId, currentUserId, true, updatedAt)
+            }
+        } else {
+            // 短文本直接更新
+            affectedRows = noteDao.updateNoteContent(noteId, currentUserId, content, updatedAt)
+            
+            // 如果之前是长文本，现在变成短文本，更新isLongText字段
+            if (note.isLongText) {
+                noteDao.updateNoteIsLongText(noteId, currentUserId, false, updatedAt)
+            }
+        }
+        
+        return affectedRows
+    }
+    
+    override suspend fun updateNoteContentWithDiff(noteId: Long, oldContent: String, newContent: String): Int {
+        val diffData = diffUtils.generateDiff(oldContent, newContent)
+        
+        if (diffData.isEmpty()) {
+            return 0
+        }
+        
+        val latestVersion = noteDao.getLatestNoteContentVersion(noteId)
+        val nextVersionNumber = latestVersion?.versionNumber?.plus(1) ?: 1
+        
+        val version = NoteContentVersion(
+            noteId = noteId,
+            versionNumber = nextVersionNumber,
+            diffData = diffData,
+            contentLength = newContent.length
+        )
+        
+        noteDao.insertNoteContentVersion(version)
+        
+        // 定期合并版本，避免版本过多
+        if (nextVersionNumber % 10 == 0) {
+            mergeVersions(noteId)
+        }
+        
+        return 1
+    }
+    
+    private suspend fun mergeVersions(noteId: Long) {
+        // 获取所有版本
+        val versions = noteDao.getAllNoteContentVersions(noteId)
+        if (versions.size < 5) return
+        
+        // 获取原内容
+        val note = noteDao.getNoteById(noteId) ?: return
+        
+        // 合并所有版本生成最新内容
+        var mergedContent = note.content
+        versions.forEach { version ->
+            mergedContent = diffUtils.applyDiff(mergedContent, version.diffData)
+        }
+        
+        // 更新原Note的content字段
+        noteDao.updateNoteContent(noteId, currentUserId, mergedContent, System.currentTimeMillis())
+        
+        // 删除所有旧版本
+        noteDao.deleteOldNoteContentVersions(noteId, versions.last().versionNumber)
+    }
+    
+    override suspend fun getNoteWithFullContent(noteId: Long): Note? {
+        val note = noteDao.getNoteById(noteId) ?: return null
+        
+        if (!note.isLongText || note.userId != currentUserId) {
+            return note
+        }
+        
+        // 检查是否有差分版本
+        val versions = noteDao.getAllNoteContentVersions(noteId)
+        if (versions.isEmpty()) {
+            return note
+        }
+        
+        // 应用所有差分版本生成完整内容
+        var fullContent = note.content
+        versions.forEach { version ->
+            fullContent = diffUtils.applyDiff(fullContent, version.diffData)
+        }
+        
+        // 返回包含完整内容的Note
+        return note.copy(content = fullContent)
+    }
+    
+    override suspend fun updateNoteTag(noteId: Long, tagId: Long): Int {
+        val updatedAt = System.currentTimeMillis()
+        
+        return noteDao.updateNoteTag(noteId, currentUserId, tagId, updatedAt)
+    }
+    
+    override suspend fun updateNoteStyle(noteId: Long, styleData: String): Int {
+        val updatedAt = System.currentTimeMillis()
+        
+        return noteDao.updateNoteStyle(noteId, currentUserId, styleData, updatedAt)
     }
 
 }

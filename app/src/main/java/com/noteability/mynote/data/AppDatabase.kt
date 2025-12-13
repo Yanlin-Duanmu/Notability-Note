@@ -10,11 +10,12 @@ import com.noteability.mynote.data.dao.TagDao
 import com.noteability.mynote.data.entity.User
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.entity.NoteFts
+import com.noteability.mynote.data.entity.NoteContentVersion
 import com.noteability.mynote.data.entity.Tag
 
 @Database(
-    entities = [User::class, Note::class, Tag::class, NoteFts::class],
-    version = 8, // 1. 将版本号再次提升，例如 7 -> 8
+    entities = [User::class, Note::class, Tag::class, NoteFts::class, NoteContentVersion::class],
+    version = 10, // 升级数据库版本，解决架构验证失败问题
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

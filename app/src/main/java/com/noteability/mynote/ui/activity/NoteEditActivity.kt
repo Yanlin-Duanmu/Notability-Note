@@ -59,14 +59,20 @@ class NoteEditActivity : AppCompatActivity() {
     private var isBold = false
     private var isItalic = false
     private var isUnderline = false
-    private var isPreviewMode = false
+    private var isPreviewMode = true
+
+    // 原始笔记（用于比较哪些字段发生了变化）
+    private var originalNote: Note? = null
 
     // 真实标签数据列表
     private val realTags = mutableListOf<Tag>()
 
     // TagRepository实例
     private lateinit var tagRepository: TagRepositoryImpl
-    private lateinit var contentWatcher: TextWatcher
+    private lateinit var contentWatcher: TextWatcher    
+    // 耗时统计相关
+    private var uiRenderEndTime: Long = 0L
+
     // 创建NoteDetailViewModelFactory
     private class NoteDetailViewModelFactory(private val applicationContext: Context) :
         ViewModelProvider.Factory {
@@ -183,6 +189,32 @@ class NoteEditActivity : AppCompatActivity() {
 
         setupAiListeners()
         observeAiState()
+        
+        // 初始化默认显示为预览模式
+        initializePreviewMode()
+    }
+    
+    /**
+     * 初始化预览模式显示
+     */
+    private fun initializePreviewMode() {
+        if (isPreviewMode) {
+            // 直接设置预览模式的UI状态，不调用togglePreviewMode
+            binding.contentEditText.visibility = View.GONE
+            binding.previewTextView.visibility = View.VISIBLE
+            
+            // 渲染Markdown内容
+            val markdownText = binding.contentEditText.text.toString()
+            MarkdownUtils.renderMarkdown(binding.previewTextView, markdownText, markwon)
+            
+            // 按钮文字改成“编辑”
+            binding.previewButton.text = "编辑"
+            
+            // 隐藏键盘
+            binding.contentEditText.clearFocus()
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(binding.contentEditText.windowToken, 0)
+        }
     }
 
 
@@ -248,6 +280,9 @@ class NoteEditActivity : AppCompatActivity() {
         lifecycleScope.launch {
             noteDetailViewModel.note.collect { note ->
                 note?.let {
+                    // 保存原始笔记的副本（用于比较字段变化）
+                    originalNote = it.copy()
+
                     binding.titleEditText.setText(it.title)
                     binding.contentEditText.setText(it.content)
                     //直接显示 Markdown 文本，不再使用 StyleManager
@@ -276,6 +311,12 @@ class NoteEditActivity : AppCompatActivity() {
                             }
                         }
                     }
+                    
+                    // 笔记内容加载完成后，应用预览模式
+                    if (isPreviewMode) {
+                        initializePreviewMode()
+                    }
+
                 }
             }
         }
@@ -417,8 +458,10 @@ class NoteEditActivity : AppCompatActivity() {
 
 
     private fun saveNote() {
+        val uiStartTime = System.currentTimeMillis()
         val title = binding.titleEditText.text.toString().trim()
         val content = binding.contentEditText.text.toString().trim()
+        val contentLength = content.length
 
         // 添加标题验证
         if (title.isEmpty()) {
@@ -450,217 +493,238 @@ class NoteEditActivity : AppCompatActivity() {
                     tagIdToUse = uncategorizedTag?.tagId ?: 1
                 }
 
-                val note = if (noteId != null && noteId != -1L) {
-                    // 更新现有笔记
-                    Note(
-                        noteId = noteId!!,
-                        userId = loggedInUserId,
-                        tagId = tagIdToUse,
-                        title = title,
-                        content = content,
-                        updatedAt = System.currentTimeMillis()
-                    )
-                } else {
-                    // 创建新笔记
-                    Note(
-                        noteId = 0,
-                        userId = loggedInUserId,
-                        tagId = tagIdToUse,
-                        title = title,
-                        content = content,
-                        createdAt = System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis()
-                    )
-                }
+                if (noteId != null && noteId != -1L && originalNote != null) {
+                    // 更新现有笔记 - 检查哪些字段发生了变化
 
-                // 使用ViewModel保存笔记
-                noteDetailViewModel.saveNote(note)
+                    // 标题变化检测
+                    if (originalNote?.title != title) {
+                        noteDetailViewModel.updateNoteTitle(noteId!!, title)
+                    }
+
+                    // 内容变化检测
+                    if (originalNote?.content != content) {
+                        noteDetailViewModel.updateNoteContent(noteId!!, content)
+                    }
+
+                    // 标签变化检测
+                    if (originalNote?.tagId != tagIdToUse) {
+                        noteDetailViewModel.updateNoteTag(noteId!!, tagIdToUse)
+                    }
+
+                } else {
+                    // 创建新笔记或无法使用字段更新
+                    val note = if (noteId != null && noteId != -1L) {
+                        // 更新现有笔记（全量更新）
+                        Note(
+                            noteId = noteId!!,
+                            userId = loggedInUserId,
+                            tagId = tagIdToUse,
+                            title = title,
+                            content = content,
+                            updatedAt = System.currentTimeMillis()
+                        )
+                    } else {
+                        // 创建新笔记
+                        Note(
+                            noteId = 0,
+                            userId = loggedInUserId,
+                            tagId = tagIdToUse,
+                            title = title,
+                            content = content,
+                            createdAt = System.currentTimeMillis(),
+                            updatedAt = System.currentTimeMillis()
+                        )
+                    }
+
+                    // 使用ViewModel保存笔记
+                    noteDetailViewModel.saveNote(note)
+                }
             }
         }
     }
 
     private fun shareNote() {
-        val title = binding.titleEditText.text.toString().trim()
-        val content = binding.contentEditText.text.toString().trim()
+            val title = binding.titleEditText.text.toString().trim()
+            val content = binding.contentEditText.text.toString().trim()
 
-        if (title.isEmpty() && content.isEmpty()) {
-            showToast("没有可分享的内容")
-            return
+            if (title.isEmpty() && content.isEmpty()) {
+                showToast("没有可分享的内容")
+                return
+            }
+
+            val shareContent = if (title.isNotEmpty()) "$title\n\n$content" else content
+            val shareIntent = Intent(Intent.ACTION_SEND)
+            shareIntent.type = "text/plain"
+            shareIntent.putExtra(Intent.EXTRA_TEXT, shareContent)
+            startActivity(Intent.createChooser(shareIntent, "分享笔记"))
         }
 
-        val shareContent = if (title.isNotEmpty()) "$title\n\n$content" else content
-        val shareIntent = Intent(Intent.ACTION_SEND)
-        shareIntent.type = "text/plain"
-        shareIntent.putExtra(Intent.EXTRA_TEXT, shareContent)
-        startActivity(Intent.createChooser(shareIntent, "分享笔记"))
-    }
-
-    private fun showDeleteConfirmationDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("删除笔记")
-            .setMessage("确定要删除这篇笔记吗？")
-            .setPositiveButton("删除") { dialog, which ->
-                if (noteId != null && noteId != -1L) {
-                    noteDetailViewModel.deleteNote(noteId!!)
-                    showToast("笔记已删除")
-                }
-                finish()
-            }
-            .setNegativeButton("取消") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        noteDetailViewModel.resetSaveState()
-    }
-
-    private fun initViewModels() {
-        noteDetailViewModel.setLoggedInUserId(loggedInUserId)
-        tagsViewModel.setLoggedInUserId(loggedInUserId)
-    }
-
-    private fun loadTags() {
-        tagsViewModel.loadTags()
-    }
-
-    private fun observeTags() {
-        lifecycleScope.launch {
-            try {
-                tagsViewModel.tags.collect { tags ->
-                    realTags.clear()
-                    realTags.addAll(tags)
-
-                    if (currentTag == null && realTags.isNotEmpty()) {
-                        val preSelectedTagId = intent.getLongExtra("preSelectedTagId", 0L)
-                        if (preSelectedTagId > 0) {
-                            currentTag = realTags.find { it.tagId == preSelectedTagId }
-                        }
-
-                        if (currentTag == null) {
-                            // 当没有预选中的标签时，优先选择"未归档"标签
-                            currentTag = realTags.find { it.name == "未归档" } ?: realTags[0]
-                        }
-
-                        binding.tagTextView.text = currentTag?.name
+        private fun showDeleteConfirmationDialog() {
+            AlertDialog.Builder(this)
+                .setTitle("删除笔记")
+                .setMessage("确定要删除这篇笔记吗？")
+                .setPositiveButton("删除") { dialog, which ->
+                    if (noteId != null && noteId != -1L) {
+                        noteDetailViewModel.deleteNote(noteId!!)
+                        showToast("笔记已删除")
                     }
+                    finish()
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+                .setNegativeButton("取消") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .show()
+        }
+
+        override fun onDestroy() {
+            super.onDestroy()
+            noteDetailViewModel.resetSaveState()
+        }
+
+        private fun initViewModels() {
+            noteDetailViewModel.setLoggedInUserId(loggedInUserId)
+            tagsViewModel.setLoggedInUserId(loggedInUserId)
+        }
+
+        private fun loadTags() {
+            tagsViewModel.loadTags()
+        }
+
+        private fun observeTags() {
+            lifecycleScope.launch {
+                try {
+                    tagsViewModel.tags.collect { tags ->
+                        realTags.clear()
+                        realTags.addAll(tags)
+
+                        if (currentTag == null && realTags.isNotEmpty()) {
+                            val preSelectedTagId = intent.getLongExtra("preSelectedTagId", 0L)
+                            if (preSelectedTagId > 0) {
+                                currentTag = realTags.find { it.tagId == preSelectedTagId }
+                            }
+
+                            if (currentTag == null) {
+                                // 当没有预选中的标签时，优先选择"未归档"标签
+                                currentTag = realTags.find { it.name == "未归档" } ?: realTags[0]
+                            }
+
+                            binding.tagTextView.text = currentTag?.name
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
-    }
 
-    private fun handlePreSelectedTag(preSelectedTagId: Long) {
-        if (realTags.isNotEmpty()) {
-            currentTag = realTags.find { it.tagId == preSelectedTagId }
-            if (currentTag == null && realTags.isNotEmpty()) {
-                // 当找不到预选中的标签时，优先选择"未归档"标签
-                currentTag = realTags.find { it.name == "未归档" } ?: realTags[0]
-            }
-            binding.tagTextView.text = currentTag?.name
-        }
-    }
-
-    private fun showTagSelectionDialog() {
-        if (realTags.isEmpty()) {
-            showToast("没有可用的标签")
-            return
-        }
-
-        val tagNames = realTags.map { it.name }.toTypedArray()
-
-        AlertDialog.Builder(this)
-            .setTitle("选择标签")
-            .setItems(tagNames) { dialog, which ->
-                currentTag = realTags[which]
+        private fun handlePreSelectedTag(preSelectedTagId: Long) {
+            if (realTags.isNotEmpty()) {
+                currentTag = realTags.find { it.tagId == preSelectedTagId }
+                if (currentTag == null && realTags.isNotEmpty()) {
+                    // 当找不到预选中的标签时，优先选择"未归档"标签
+                    currentTag = realTags.find { it.name == "未归档" } ?: realTags[0]
+                }
                 binding.tagTextView.text = currentTag?.name
             }
-            .setNegativeButton("取消") { dialog, _ ->
-                dialog.dismiss()
+        }
+
+        private fun showTagSelectionDialog() {
+            if (realTags.isEmpty()) {
+                showToast("没有可用的标签")
+                return
             }
-            .show()
-    }
 
-    private fun setupFormattingButtons() {
-        binding.boldButton.setOnClickListener {
-            MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "bold")
-            isBold = !isBold
-            binding.boldButton.setColorFilter(
-                if (isBold) getColor(R.color.brand_primary) else getColor(
-                    R.color.text_gray
+            val tagNames = realTags.map { it.name }.toTypedArray()
+
+            AlertDialog.Builder(this)
+                .setTitle("选择标签")
+                .setItems(tagNames) { dialog, which ->
+                    currentTag = realTags[which]
+                    binding.tagTextView.text = currentTag?.name
+                }
+                .setNegativeButton("取消") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .show()
+        }
+
+        private fun setupFormattingButtons() {
+            binding.boldButton.setOnClickListener {
+                MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "bold")
+                isBold = !isBold
+                binding.boldButton.setColorFilter(
+                    if (isBold) getColor(R.color.brand_primary) else getColor(
+                        R.color.text_gray
+                    )
                 )
-            )
-        }
+            }
 
-        binding.italicButton.setOnClickListener {
-            MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "italic")
-            isItalic = !isItalic
-            binding.italicButton.setColorFilter(
-                if (isItalic) getColor(R.color.brand_primary) else getColor(
-                    R.color.text_gray
+            binding.italicButton.setOnClickListener {
+                MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "italic")
+                isItalic = !isItalic
+                binding.italicButton.setColorFilter(
+                    if (isItalic) getColor(R.color.brand_primary) else getColor(
+                        R.color.text_gray
+                    )
                 )
-            )
-        }
+            }
 
-        binding.underlineButton.setOnClickListener {
-            MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "underline")
-            isUnderline = !isUnderline
-            binding.underlineButton.setColorFilter(
-                if (isUnderline) getColor(R.color.brand_primary) else getColor(
-                    R.color.text_gray
+            binding.underlineButton.setOnClickListener {
+                MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "underline")
+                isUnderline = !isUnderline
+                binding.underlineButton.setColorFilter(
+                    if (isUnderline) getColor(R.color.brand_primary) else getColor(
+                        R.color.text_gray
+                    )
                 )
-            )
+            }
+
+            binding.bulletListButton.setOnClickListener {
+                MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "bullet")
+            }
+
+            binding.numberListButton.setOnClickListener {
+                MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "numbered")
+            }
         }
 
-        binding.bulletListButton.setOnClickListener {
-            MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "bullet")
+
+        private fun togglePreviewMode() {
+            isPreviewMode = !isPreviewMode
+            invalidateOptionsMenu()
+            if (isPreviewMode) {
+                // 切换到预览模式
+                binding.contentEditText.visibility = View.GONE
+                binding.previewTextView.visibility = View.VISIBLE
+
+                val markdownText = binding.contentEditText.text.toString()
+                MarkdownUtils.renderMarkdown(binding.previewTextView, markdownText, markwon)
+
+                // 按钮文字改成“编辑”
+                binding.previewButton.text = "编辑"
+
+                // 隐藏键盘
+                binding.contentEditText.clearFocus()
+                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(binding.contentEditText.windowToken, 0)
+
+            } else {
+                // 切换到编辑模式
+                binding.contentEditText.visibility = View.VISIBLE
+                binding.previewTextView.visibility = View.GONE
+
+                // 按钮文字改成“预览”
+                binding.previewButton.text = "预览"
+
+                // 显示键盘
+                binding.contentEditText.requestFocus()
+                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showSoftInput(binding.contentEditText, InputMethodManager.SHOW_IMPLICIT)
+            }
         }
 
-        binding.numberListButton.setOnClickListener {
-            MarkdownUtils.insertMarkdownFormat(binding.contentEditText, "numbered")
-        }
-    }
 
-
-    private fun togglePreviewMode() {
-        isPreviewMode = !isPreviewMode
-        invalidateOptionsMenu()
-        if (isPreviewMode) {
-            // 切换到预览模式
-            binding.contentEditText.visibility = View.GONE
-            binding.previewTextView.visibility = View.VISIBLE
-
-            val markdownText = binding.contentEditText.text.toString()
-            MarkdownUtils.renderMarkdown(binding.previewTextView, markdownText, markwon)
-
-            // 按钮文字改成“编辑”
-            binding.previewButton.text = "编辑"
-
-            // 隐藏键盘
-            binding.contentEditText.clearFocus()
-            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.hideSoftInputFromWindow(binding.contentEditText.windowToken, 0)
-
-        } else {
-            // 切换到编辑模式
-            binding.contentEditText.visibility = View.VISIBLE
-            binding.previewTextView.visibility = View.GONE
-
-            // 按钮文字改成“预览”
-            binding.previewButton.text = "预览"
-
-            // 显示键盘
-            binding.contentEditText.requestFocus()
-            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.showSoftInput(binding.contentEditText, InputMethodManager.SHOW_IMPLICIT)
-        }
-    }
-
-
-    private fun setupTextWatchers() {
+        private fun setupTextWatchers() {
         contentWatcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -697,141 +761,143 @@ class NoteEditActivity : AppCompatActivity() {
         binding.searchCloseButton.setOnClickListener {
             noteDetailViewModel.toggleSearchView()
         }
-    }
-
-    private fun handleBackPress() {
-        val hasChanges = binding.titleEditText.text.toString()
-            .isNotEmpty() || binding.contentEditText.text.toString().isNotEmpty()
-        if (hasChanges) {
-            AlertDialog.Builder(this)
-                .setTitle("保存笔记")
-                .setMessage("是否保存当前笔记？")
-                .setPositiveButton("保存") { dialog, which ->
-                    saveNote()
-                    finish()
-                }
-                .setNegativeButton("不保存") { dialog, which ->
-                    finish()
-                }
-                .setNeutralButton("取消") { dialog, which ->
-                    dialog.dismiss()
-                }
-                .show()
-        } else {
-            finish()
-        }
-    }
-
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
-
-    private fun setupAiListeners() {
-        // AI Summary
-        binding.aiSummaryButton.setOnClickListener {
-            val text = binding.contentEditText.text.toString()
-            if (validateInput(text)) {
-                aiViewModel.onSourceTextChanged(text)
-                aiViewModel.fetchSummary()
-            }
+            // 不需要实现具体的内容变化检测，因为saveNote方法中已经有了完整的变化检测逻辑
+            // 我们使用originalNote来比较哪些字段发生了变化
         }
 
-        // AI Tagging
-        binding.aiTagButton.setOnClickListener {
-            val text = binding.contentEditText.text.toString()
-            val currentTags = binding.tagTextView.text.toString()
-            if (validateInput(text)) {
-                aiViewModel.onSourceTextChanged(text)
-                aiViewModel.onTagsInputChanged(currentTags)
-                aiViewModel.fetchTags()
-            }
-        }
-    }
-
-    private fun validateInput(text: String): Boolean {
-        if (text.isBlank()) {
-            Toast.makeText(this, "请先输入笔记内容", Toast.LENGTH_SHORT).show()
-            return false
-        }
-        return true
-    }
-
-    private fun observeAiState() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                aiViewModel.uiState.collect { state ->
-                    // Handle loading
-                    updateLoadingState(state.isLoading)
-
-                    // Handle error
-                    state.error?.let {
-                        Toast.makeText(this@NoteEditActivity, it, Toast.LENGTH_SHORT).show()
+        private fun handleBackPress() {
+            val hasChanges = binding.titleEditText.text.toString()
+                .isNotEmpty() || binding.contentEditText.text.toString().isNotEmpty()
+            if (hasChanges) {
+                AlertDialog.Builder(this)
+                    .setTitle("保存笔记")
+                    .setMessage("是否保存当前笔记？")
+                    .setPositiveButton("保存") { dialog, which ->
+                        saveNote()
+                        finish()
                     }
-
-                    // Summary dialog
-                    if (state.summaryResult.isNotEmpty() && state.summaryResult != lastSummary) {
-                        lastSummary = state.summaryResult
-                        showSummaryDialog(state.summaryResult)
+                    .setNegativeButton("不保存") { dialog, which ->
+                        finish()
                     }
-
-                    // Tag dialog
-                    if (state.tagResult.isNotEmpty() && state.tagResult != lastTags) {
-                        lastTags = state.tagResult
-                        showTagDialog(state.tagResult)
+                    .setNeutralButton("取消") { dialog, which ->
+                        dialog.dismiss()
                     }
-                }
-            }
-        }
-    }
-
-    private fun updateLoadingState(isLoading: Boolean) {
-        binding.aiProgressBar.apply {
-            if (isLoading) {
-                isIndeterminate = true
-                show()
+                    .show()
             } else {
-                hide()
+                finish()
             }
         }
 
-        with(binding.aiSummaryButton) {
-            isEnabled = !isLoading
-            alpha = if (isLoading) 0.5f else 1.0f
+        private fun showToast(message: String) {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         }
 
-        with(binding.aiTagButton) {
-            isEnabled = !isLoading
-            alpha = if (isLoading) 0.5f else 1.0f
+        private fun setupAiListeners() {
+            // AI Summary
+            binding.aiSummaryButton.setOnClickListener {
+                val text = binding.contentEditText.text.toString()
+                if (validateInput(text)) {
+                    aiViewModel.onSourceTextChanged(text)
+                    aiViewModel.fetchSummary()
+                }
+            }
+
+            // AI Tagging
+            binding.aiTagButton.setOnClickListener {
+                val text = binding.contentEditText.text.toString()
+                val currentTags = binding.tagTextView.text.toString()
+                if (validateInput(text)) {
+                    aiViewModel.onSourceTextChanged(text)
+                    aiViewModel.onTagsInputChanged(currentTags)
+                    aiViewModel.fetchTags()
+                }
+            }
+        }
+
+        private fun validateInput(text: String): Boolean {
+            if (text.isBlank()) {
+                Toast.makeText(this, "请先输入笔记内容", Toast.LENGTH_SHORT).show()
+                return false
+            }
+            return true
+        }
+
+        private fun observeAiState() {
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    aiViewModel.uiState.collect { state ->
+                        // Handle loading
+                        updateLoadingState(state.isLoading)
+
+                        // Handle error
+                        state.error?.let {
+                            Toast.makeText(this@NoteEditActivity, it, Toast.LENGTH_SHORT).show()
+                        }
+
+                        // Summary dialog
+                        if (state.summaryResult.isNotEmpty() && state.summaryResult != lastSummary) {
+                            lastSummary = state.summaryResult
+                            showSummaryDialog(state.summaryResult)
+                        }
+
+                        // Tag dialog
+                        if (state.tagResult.isNotEmpty() && state.tagResult != lastTags) {
+                            lastTags = state.tagResult
+                            showTagDialog(state.tagResult)
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun updateLoadingState(isLoading: Boolean) {
+            binding.aiProgressBar.apply {
+                if (isLoading) {
+                    isIndeterminate = true
+                    show()
+                } else {
+                    hide()
+                }
+            }
+
+            with(binding.aiSummaryButton) {
+                isEnabled = !isLoading
+                alpha = if (isLoading) 0.5f else 1.0f
+            }
+
+            with(binding.aiTagButton) {
+                isEnabled = !isLoading
+                alpha = if (isLoading) 0.5f else 1.0f
+            }
+        }
+
+        private fun showSummaryDialog(summary: String) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("AI 摘要生成完毕")
+                .setMessage(summary)
+                .setPositiveButton("复制到剪贴板") { _, _ ->
+                    copyToClipboard("AI Summary", summary)
+                }
+                .setNegativeButton("关闭", null)
+                .show()
+        }
+
+        private fun showTagDialog(tags: List<String>) {
+            val tagString = tags.joinToString(", ")
+            MaterialAlertDialogBuilder(this)
+                .setTitle("AI 推荐标签")
+                .setMessage("为您找到以下标签：\n$tagString")
+                .setPositiveButton("复制到剪贴板") { _, _ ->
+                    copyToClipboard("AI Tag", tagString)
+                }
+                .setNegativeButton("取消", null)
+                .show()
+        }
+
+        private fun copyToClipboard(label: String, text: String) {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText(label, text)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, "已复制", Toast.LENGTH_SHORT).show()
         }
     }
-
-    private fun showSummaryDialog(summary: String) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle("AI 摘要生成完毕")
-            .setMessage(summary)
-            .setPositiveButton("复制到剪贴板") { _, _ ->
-                copyToClipboard("AI Summary", summary)
-            }
-            .setNegativeButton("关闭", null)
-            .show()
-    }
-
-    private fun showTagDialog(tags: List<String>) {
-        val tagString = tags.joinToString(", ")
-        MaterialAlertDialogBuilder(this)
-            .setTitle("AI 推荐标签")
-            .setMessage("为您找到以下标签：\n$tagString")
-            .setPositiveButton("复制到剪贴板") { _, _ ->
-                copyToClipboard("AI Tag", tagString)
-            }
-            .setNegativeButton("取消", null)
-            .show()
-    }
-
-    private fun copyToClipboard(label: String, text: String) {
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText(label, text)
-        clipboard.setPrimaryClip(clip)
-        Toast.makeText(this, "已复制", Toast.LENGTH_SHORT).show()
-    }
-}

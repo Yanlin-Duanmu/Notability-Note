@@ -7,6 +7,7 @@ import androidx.room.Update
 import androidx.room.Delete
 import androidx.room.Query
 import com.noteability.mynote.data.entity.Note
+import com.noteability.mynote.data.entity.NoteContentVersion
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -67,7 +68,40 @@ interface NoteDao {
     //批量删除
     @Query("DELETE FROM notes WHERE noteId IN (:noteIds)")
     suspend fun deleteNoteList(noteIds: List<Long>)
+    
+    // 单个字段更新方法
+    @Query("UPDATE notes SET title = :title, updatedAt = :updatedAt WHERE noteId = :noteId AND userId = :userId")
+    suspend fun updateNoteTitle(noteId: Long, userId: Long, title: String, updatedAt: Long): Int
+    
+    @Query("UPDATE notes SET content = :content, updatedAt = :updatedAt WHERE noteId = :noteId AND userId = :userId")
+    suspend fun updateNoteContent(noteId: Long, userId: Long, content: String, updatedAt: Long): Int
+    
+    @Query("UPDATE notes SET tagId = :tagId, updatedAt = :updatedAt WHERE noteId = :noteId AND userId = :userId")
+    suspend fun updateNoteTag(noteId: Long, userId: Long, tagId: Long, updatedAt: Long): Int
+    
+    @Query("UPDATE notes SET styleData = :styleData, updatedAt = :updatedAt WHERE noteId = :noteId AND userId = :userId")
+    suspend fun updateNoteStyle(noteId: Long, userId: Long, styleData: String, updatedAt: Long): Int
 
+    // NoteContentVersion相关方法
+    @Insert
+    suspend fun insertNoteContentVersion(version: NoteContentVersion): Long
+    
+    @Query("SELECT * FROM note_content_versions WHERE noteId = :noteId ORDER BY versionNumber DESC LIMIT 1")
+    suspend fun getLatestNoteContentVersion(noteId: Long): NoteContentVersion?
+    
+    @Query("SELECT * FROM note_content_versions WHERE noteId = :noteId ORDER BY versionNumber")
+    suspend fun getAllNoteContentVersions(noteId: Long): List<NoteContentVersion>
+    
+    @Query("DELETE FROM note_content_versions WHERE noteId = :noteId AND versionNumber < :minVersionNumber")
+    suspend fun deleteOldNoteContentVersions(noteId: Long, minVersionNumber: Int): Int
+    
+    // 更新笔记的isLongText字段
+    @Query("UPDATE notes SET isLongText = :isLongText, updatedAt = :updatedAt WHERE noteId = :noteId AND userId = :userId")
+    suspend fun updateNoteIsLongText(noteId: Long, userId: Long, isLongText: Boolean, updatedAt: Long): Int
+    
+    // 更新笔记的updatedAt字段
+    @Query("UPDATE notes SET updatedAt = :updatedAt WHERE noteId = :noteId AND userId = :userId")
+    suspend fun updateNoteUpdatedAt(noteId: Long, userId: Long, updatedAt: Long): Int
 
 
     // 1. 按编辑时间倒序
