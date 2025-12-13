@@ -5,15 +5,15 @@ import android.widget.TextView
 import com.noteability.mynote.MyNoteApplication
 import io.noties.markwon.Markwon
 import io.noties.markwon.html.HtmlPlugin
+import io.noties.markwon.image.glide.GlideImagesPlugin
 
 object MarkdownUtils {
 
-    // 创建 Markwon 实例
-    fun createMarkwon(): Markwon {
-        return Markwon.builder(MyNoteApplication.context)
+    fun createMarkwon(context: android.content.Context): Markwon {
+        return Markwon.builder(context)
             .usePlugin(HtmlPlugin.create())
+            .usePlugin(GlideImagesPlugin.create(context))
             .build()
-
     }
 
     // 插入 Markdown 格式

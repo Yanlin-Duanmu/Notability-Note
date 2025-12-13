@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.paging.PagingSource
 import com.noteability.mynote.data.AppDatabase
 import com.noteability.mynote.data.dao.NoteDao
+import com.noteability.mynote.data.dao.SortOrder
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.entity.NoteContentVersion
 import com.noteability.mynote.data.repository.NoteRepository
@@ -110,6 +111,18 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     //批量删除
     override suspend fun deleteNotesList(noteIds: List<Long>) {
         noteDao.deleteNoteList(noteIds)
+    }
+    override fun getNotesByExactTitlePagingSource(userId: Long, exactTitle: String, tagId: Long?): PagingSource<Int, Note> {
+        return noteDao.getNotesByExactTitlePagingSource(userId, exactTitle, tagId)
+    }
+
+    //根据选择的排序方式排序
+    override fun getAllNotesStream(userId: Long, sortOrder: SortOrder): PagingSource<Int, Note> {
+        return when (sortOrder) {
+            SortOrder.EDIT_TIME_DESC -> noteDao.getNotesOrderByTimeDesc(userId)
+            SortOrder.CREATE_TIME_ASC -> noteDao.getNotesOrderByTimeAsc(userId)
+            SortOrder.TITLE_ASC -> noteDao.getNotesOrderByTitle(userId)
+        }
     }
     
     override suspend fun updateNoteTitle(noteId: Long, title: String): Int {

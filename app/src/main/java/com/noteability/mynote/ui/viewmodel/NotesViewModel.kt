@@ -1,5 +1,7 @@
 package com.noteability.mynote.ui.viewmodel
 
+import android.adservices.ondevicepersonalization.FederatedComputeScheduler
+import android.text.PrecomputedText
 import androidx.compose.ui.semantics.text
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,6 +11,8 @@ import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.cachedIn
 import androidx.paging.map
+import com.noteability.mynote.data.dao.NoteDao
+import com.noteability.mynote.data.dao.SortOrder
 import com.noteability.mynote.data.entity.Note
 import com.noteability.mynote.data.repository.NoteRepository
 import com.noteability.mynote.ui.adapter.SearchSuggestion
@@ -18,6 +22,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -43,34 +48,75 @@ class NotesViewModel(
     // 筛选条件状态 (改为 Flow 以驱动 Paging)
     private val _tagId = MutableStateFlow<Long?>(null) // [修改] 默认 null 代表全部
     private val _searchQuery = MutableStateFlow("")
+    private val _isExactTitleSearch = MutableStateFlow(false)
     val searchQuery: StateFlow<String> = _searchQuery
 
     // 用户 ID 状态
     private val _loggedInUserId = MutableStateFlow(1L)
-
+    //排序状态，默认为编辑时间倒序
+    private val _sortOrder = MutableStateFlow(SortOrder.EDIT_TIME_DESC)
+    // 对外暴露当前排序，给 Activity 弹窗回显用
+    val currentSortOrder: SortOrder
+        get() = _sortOrder.value
     // 定义 PagingData 流
     // 这是一个响应式流，当 用户ID、搜索词 或 标签ID 变化时，自动触发数据库分页查询
     @OptIn(ExperimentalCoroutinesApi::class)
     val notesPagingFlow: Flow<PagingData<Note>> = combine(
         _loggedInUserId,
         _searchQuery,
-        _tagId
-    ) { userId, query, tagId ->
-        Triple(userId, query, tagId)
-    }.flatMapLatest { (userId, query, tagId) ->
-
+        _tagId,
+        _sortOrder,
+        _isExactTitleSearch // [修改] 监听精确搜索标志
+    ) { userId, query, tagId, sortOrder, isExact ->
+        // [修改] 将 isExact 包装到 Params 中
+        Params(userId, query, tagId, sortOrder, isExact)
+    }.flatMapLatest { params ->
         Pager(
             config = PagingConfig(
-                pageSize = 20,          // 每页加载 20 条
+                pageSize = 20,
                 enablePlaceholders = false,
                 initialLoadSize = 20
             ),
             pagingSourceFactory = {
-                // 调用 Repository 的分页接口
-                noteRepository.getNotesPagingSource(userId, query, tagId)
+                // [核心修改] 根据 isExactSearch 标志选择不同的查询方法
+                when {
+                    // 1. 如果是精确搜索模式
+                    params.isExactSearch && params.query.isNotEmpty() -> {
+                        noteRepository.getNotesByExactTitlePagingSource(params.userId, params.query, params.tagId)
+                    }
+                    // 2. 如果是普通搜索（或标签筛选）
+                    params.query.isNotEmpty() || params.tagId != null -> {
+                        noteRepository.getNotesPagingSource(params.userId, params.query, params.tagId)
+                    }
+                    // 3. 默认情况（无搜索，无筛选）
+                    else -> {
+                        noteRepository.getAllNotesStream(params.userId, params.sortOrder)
+                    }
+                }
             }
         ).flow
     }.cachedIn(viewModelScope)
+
+
+
+    private data class Params(
+        val userId: Long,
+        val query: String,
+        val tagId: Long?,
+        val sortOrder: SortOrder,
+        val isExactSearch: Boolean
+    )
+    fun searchNotesByExactTitle(title: String, tagId: Long) {
+        _isExactTitleSearch.value = true // 标记为精确搜索
+        _searchQuery.value = title
+        _tagId.value = if (tagId == 0L) null else tagId
+    }
+
+    // [新增] 更新排序方式
+    fun updateSortOrder(newSortOrder: SortOrder) {
+        _sortOrder.value = newSortOrder
+        // 因为 flow 是响应式的，这里修改 value 后，上面的 notesPagingFlow 会自动刷新
+    }
 
 
     // 设置当前登录用户ID
@@ -106,13 +152,11 @@ class NotesViewModel(
 
 
     fun loadSuggestions(query: String) {
-        // 如果输入为空，直接清空智能推荐，不做任何事
         if (query.isBlank()) {
             _suggestions.value = emptyList()
             return
         }
 
-        // 如果有输入，则加载智能推荐
         viewModelScope.launch {
             try {
                 val suggestionsSource = noteRepository.getNotesPagingSource(_loggedInUserId.value, query, _tagId.value)
@@ -121,15 +165,16 @@ class NotesViewModel(
                 )
 
                 if (loadResult is PagingSource.LoadResult.Page) {
-                    val titleSuggestions = loadResult.data
-                        .map { note -> SearchSuggestion(note.title, SearchSuggestionType.SUGGESTION) }
-                        .distinctBy { it.text }
+                    val titleSuggestions = loadResult.data.map { note ->
+                        // 【核心修改】创建 SearchSuggestion 时，同时传入 note.noteId
+                        SearchSuggestion(note.title, SearchSuggestionType.SUGGESTION, note.noteId)
+                    }.distinctBy { it.text }
                     _suggestions.value = titleSuggestions
                 } else {
                     _suggestions.value = emptyList()
                 }
             } catch (e: Exception) {
-                _suggestions.value = emptyList() // 出错时也清空
+                _suggestions.value = emptyList()
             }
         }
     }
@@ -155,6 +200,9 @@ class NotesViewModel(
         }
     }
 
+    fun clearSearchHistory() {
+        searchHistoryManager.clearHistory()
+    }
     // -------------------------------------------------------------
     // 增删改操作
     // -------------------------------------------------------------
@@ -193,5 +241,23 @@ class NotesViewModel(
             }
         }
     }
+
+    //批量删除恢复（撤销）
+    fun restoreNotes(notes: List<Note>) {
+        viewModelScope.launch {
+            try {
+                // 循环把备份的笔记一条条存回去
+                // 因为 Note 对象里已经包含了 ID 和原有的内容/时间，直接 save 就会恢复原样
+                notes.forEach { note ->
+                    noteRepository.saveNote(note)
+                }
+            } catch (e: Exception) {
+                // 简单的错误处理
+                e.printStackTrace()
+            }
+        }
+    }
+
+
 }
 

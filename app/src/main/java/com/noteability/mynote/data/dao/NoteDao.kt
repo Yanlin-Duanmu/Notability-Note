@@ -102,4 +102,25 @@ interface NoteDao {
     // 更新笔记的updatedAt字段
     @Query("UPDATE notes SET updatedAt = :updatedAt WHERE noteId = :noteId AND userId = :userId")
     suspend fun updateNoteUpdatedAt(noteId: Long, userId: Long, updatedAt: Long): Int
+
+
+    // 1. 按编辑时间倒序
+    @Query("SELECT * FROM notes WHERE userId = :userId ORDER BY updatedAt DESC")
+    fun getNotesOrderByTimeDesc(userId: Long): PagingSource<Int, Note>
+
+    // 2. 按创建时间正序
+    @Query("SELECT * FROM notes WHERE userId = :userId ORDER BY createdAt ASC")
+    fun getNotesOrderByTimeAsc(userId: Long): PagingSource<Int, Note>
+
+    // 3.按标题排序
+    @Query("SELECT * FROM notes WHERE userId = :userId ORDER BY title ASC")
+    fun getNotesOrderByTitle(userId: Long): PagingSource<Int, Note>
+    @Query("""
+    SELECT * FROM notes 
+    WHERE userId = :userId 
+    AND (:tagId IS NULL OR tagId = :tagId) 
+    AND title LIKE :exactTitle
+    ORDER BY updatedAt DESC
+""")
+    fun getNotesByExactTitlePagingSource(userId: Long, exactTitle: String, tagId: Long?): PagingSource<Int, Note>
 }

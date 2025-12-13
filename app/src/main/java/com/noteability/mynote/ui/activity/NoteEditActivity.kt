@@ -1,5 +1,9 @@
 package com.noteability.mynote.ui.activity
-
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.core.view.isVisible
+import kotlinx.coroutines.flow.combine
+import android.widget.TextView
 import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -14,6 +18,7 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -33,6 +38,8 @@ import com.noteability.mynote.ui.viewmodel.TagsViewModel
 import com.noteability.mynote.utils.MarkdownUtils
 import io.noties.markwon.Markwon
 import kotlinx.coroutines.launch
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 
 class NoteEditActivity : AppCompatActivity() {
 
@@ -44,6 +51,8 @@ class NoteEditActivity : AppCompatActivity() {
 
     // 新增：预览相关组件
     private lateinit var markwon: Markwon
+    // --- 新增一个标志位 ---
+    private var shouldSwitchToPreviewOnLoad = false
 
     private var noteId: Long? = null
     private var currentTag: Tag? = null
@@ -60,7 +69,7 @@ class NoteEditActivity : AppCompatActivity() {
 
     // TagRepository实例
     private lateinit var tagRepository: TagRepositoryImpl
-    
+    private lateinit var contentWatcher: TextWatcher    
     // 耗时统计相关
     private var uiRenderEndTime: Long = 0L
 
@@ -116,7 +125,7 @@ class NoteEditActivity : AppCompatActivity() {
         loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 1L)
 
         // 初始化 Markdown 和预览组件
-        markwon = MarkdownUtils.createMarkwon()
+        markwon = MarkdownUtils.createMarkwon(this)
 
         // 设置ServiceLocator上下文
         ServiceLocator.setContext(applicationContext)
@@ -159,12 +168,13 @@ class NoteEditActivity : AppCompatActivity() {
 
         // 设置文本变化监听器
         setupTextWatchers()
-
+        setupInPageSearchListeners()
         // 观察ViewModel中的数据变化
         observeViewModel()
 
         // 如果是编辑现有笔记，则加载笔记内容
         if (noteId != null && noteId != -1L) {
+
             noteDetailViewModel.loadNote(noteId!!)
         } else {
             // 新建笔记，先设置默认标签名称
@@ -181,17 +191,39 @@ class NoteEditActivity : AppCompatActivity() {
         observeAiState()
     }
 
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.note_edit_menu, menu)
+
+        // 1. 获取一个深色（例如黑色）
+        val iconColor = ContextCompat.getColor(this, android.R.color.black)
+
+        // 2. 遍历菜单中的每一个item
+        if (menu != null) {
+            for (i in 0 until menu.size()) {
+                val menuItem = menu.getItem(i)
+                if (menuItem.itemId == R.id.action_search_in_page) {
+                    menuItem.isVisible = !isPreviewMode
+                }
+                val icon = menuItem.icon
+                if (icon != null) {
+                    // 3. 为图标设置颜色过滤器，强制其变为我们想要的颜色
+                    // 这样做不会影响返回箭头，只影响菜单中的图标
+                    icon.colorFilter = PorterDuffColorFilter(iconColor, PorterDuff.Mode.SRC_IN)
+                }
+            }
+        }
         return true
     }
+
+
+
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             android.R.id.home -> {
                 handleBackPress()
-                return true
-            }
+                return true}
 
             R.id.action_save -> {
                 saveNote()
@@ -207,9 +239,15 @@ class NoteEditActivity : AppCompatActivity() {
                 showDeleteConfirmationDialog()
                 return true
             }
+            // +++ 新增下面这个 when 分支 +++
+            R.id.action_search_in_page -> {
+                noteDetailViewModel.toggleSearchView()
+                return true
+            }
         }
         return super.onOptionsItemSelected(item)
     }
+
 
     private fun observeViewModel() {
         // 观察笔记数据变化
@@ -220,9 +258,9 @@ class NoteEditActivity : AppCompatActivity() {
                     originalNote = it.copy()
 
                     binding.titleEditText.setText(it.title)
-                    //直接显示 Markdown 文本，不再使用 StyleManager
                     binding.contentEditText.setText(it.content)
-                    togglePreviewMode()
+                    //直接显示 Markdown 文本，不再使用 StyleManager
+                    noteDetailViewModel.onNoteContentChanged(it.content) // <-- 替换为这一行
 
                     // 设置标签
                     if (realTags.isNotEmpty()) {
@@ -271,6 +309,7 @@ class NoteEditActivity : AppCompatActivity() {
             }
         }
 
+        // +++ 恢复对 loadingIndicator 和 errorTextView 的控制 +++
         // 观察加载状态
         lifecycleScope.launch {
             noteDetailViewModel.isLoading.collect { isLoading ->
@@ -292,6 +331,7 @@ class NoteEditActivity : AppCompatActivity() {
                 }
             }
         }
+        // +++ 恢复结束 +++
 
         // 观察保存状态
         lifecycleScope.launch {
@@ -303,7 +343,107 @@ class NoteEditActivity : AppCompatActivity() {
                 }
             }
         }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                noteDetailViewModel.highlightedContent.collect { highlightedText ->
+                    // 暂时移除监听器，防止在程序设置文本时触发死循环
+                    if (::contentWatcher.isInitialized) { // 确保 watcher 已初始化
+                        binding.contentEditText.removeTextChangedListener(contentWatcher)
+                    }
+
+                    val selectionStart = binding.contentEditText.selectionStart
+                    val selectionEnd = binding.contentEditText.selectionEnd
+                    binding.contentEditText.setText(highlightedText, TextView.BufferType.SPANNABLE)
+
+                    // 尝试恢复光标位置
+                    try {
+                        if (selectionStart <= highlightedText.length && selectionEnd <= highlightedText.length) {
+                            binding.contentEditText.setSelection(selectionStart, selectionEnd)
+                        }
+                    } catch (e: Exception) {
+                        // 如果失败，将光标移到末尾
+                        binding.contentEditText.setSelection(highlightedText.length)
+                    }
+
+                    // 重新添加监听器
+                    if (::contentWatcher.isInitialized) {
+                        binding.contentEditText.addTextChangedListener(contentWatcher)
+                    }
+                }
+            }
+        }
+
+// 观察搜索栏的可见性
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                noteDetailViewModel.isSearchViewVisible.collect { isVisible ->
+                    binding.searchBarContainer.isVisible = isVisible
+                    if (isVisible) {
+                        binding.searchInPageEditText.requestFocus()
+                        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                        imm.showSoftInput(binding.searchInPageEditText, InputMethodManager.SHOW_IMPLICIT)
+                    } else {
+                        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                        imm.hideSoftInputFromWindow(binding.searchInPageEditText.windowToken, 0)
+                    }
+                }
+            }
+        }
+
+// 观察并更新搜索匹配计数
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                combine(
+                    noteDetailViewModel.currentMatchIndex,
+                    noteDetailViewModel.matchRanges,
+                    noteDetailViewModel.searchQueryInNote
+                ) { index, ranges, query ->
+                    if (query.isBlank()) " " else if (ranges.isEmpty()) "0/0" else "${index + 1}/${ranges.size}"
+                }.collect { countText ->
+                    binding.searchMatchCount.text = countText
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                noteDetailViewModel.currentMatchIndex.collect { index ->
+                    // 只有在有有效匹配项时才执行
+                    if (index != -1) {
+                        scrollToMatch(index)
+                    }
+                }
+            }
+        }
     }
+    private fun scrollToMatch(matchIndex: Int) {
+        // 确保 EditText 有布局并且 ViewModel 中有匹配范围
+        val layout = binding.contentEditText.layout ?: return
+        val ranges = noteDetailViewModel.matchRanges.value
+        if (matchIndex < 0 || matchIndex >= ranges.size) {
+            return
+        }
+
+        // 1. 获取当前匹配项在文本中的起始位置
+        val currentRange = ranges[matchIndex]
+        val startOffset = currentRange.first
+
+        // 2. 计算该位置所在的行号
+        val line = layout.getLineForOffset(startOffset)
+
+        // 3. 计算该行的顶部Y坐标 (相对于EditText的顶部)
+        val lineTop = layout.getLineTop(line)
+
+        // 4. 获取EditText在NestedScrollView中的相对Y坐标
+        val editTextTop = binding.contentEditText.top
+
+        // 5. 计算最终需要滚动的Y坐标
+        val scrollY = editTextTop + lineTop
+
+        // 6. 命令 NestedScrollView 滚动
+        binding.nestedScrollViewId.smoothScrollTo(0, scrollY)
+    }
+
 
     private fun saveNote() {
         val uiStartTime = System.currentTimeMillis()
@@ -566,7 +706,7 @@ class NoteEditActivity : AppCompatActivity() {
 
         private fun togglePreviewMode() {
             isPreviewMode = !isPreviewMode
-
+            invalidateOptionsMenu()
             if (isPreviewMode) {
                 // 切换到预览模式
                 binding.contentEditText.visibility = View.GONE
@@ -600,6 +740,42 @@ class NoteEditActivity : AppCompatActivity() {
 
 
         private fun setupTextWatchers() {
+        contentWatcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                // 当用户在 EditText 中输入时，将纯文本内容同步到 ViewModel
+                // 注意：这里传递 s.toString() 是为了获取无样式的纯文本
+                noteDetailViewModel.onNoteContentChanged(s.toString())
+            }
+        }
+        binding.contentEditText.addTextChangedListener(contentWatcher)
+    }
+
+    private fun setupInPageSearchListeners() {
+        // 监听搜索输入框的文本变化
+        binding.searchInPageEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                noteDetailViewModel.onSearchQueryChanged(s.toString())
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        // "上一个" 按钮
+        binding.searchPreviousButton.setOnClickListener {
+            noteDetailViewModel.previousMatch()
+        }
+
+        // "下一个" 按钮
+        binding.searchNextButton.setOnClickListener {
+            noteDetailViewModel.nextMatch()
+        }
+
+        // "关闭" 按钮
+        binding.searchCloseButton.setOnClickListener {
+            noteDetailViewModel.toggleSearchView()
+        }
             // 不需要实现具体的内容变化检测，因为saveNote方法中已经有了完整的变化检测逻辑
             // 我们使用originalNote来比较哪些字段发生了变化
         }

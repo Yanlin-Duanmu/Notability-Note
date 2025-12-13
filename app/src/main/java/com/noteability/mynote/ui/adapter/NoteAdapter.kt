@@ -178,6 +178,18 @@ class NoteAdapter(
         return tagNameMap[tagId] ?: "未分类"
     }
 
+    // 获取被选中的完整笔记对象列表 (用于撤销备份)
+    fun getSelectedNotes(): List<Note> {
+        val notes = mutableListOf<Note>()
+        snapshot().items.forEach { note ->
+            if (selectedNoteIds.contains(note.noteId)) {
+                notes.add(note)
+            }
+        }
+        return notes
+    }
+
+
     inner class NoteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val noteTitle: TextView = itemView.findViewById(R.id.noteTitle)
         private val noteContentPreview: TextView = itemView.findViewById(R.id.noteContentPreview)
@@ -201,7 +213,7 @@ class NoteAdapter(
                 tagsContainer.addView(tagView)
             }
 
-            // [修改] 核心交互逻辑
+            //  核心交互逻辑
             if (isSelectionMode) {
                 // 1. 如果是选择模式，显示 CheckBox
                 noteCheckBox.visibility = View.VISIBLE
@@ -242,4 +254,7 @@ class NoteAdapter(
             }
         }
     }
+
+
+
 }
