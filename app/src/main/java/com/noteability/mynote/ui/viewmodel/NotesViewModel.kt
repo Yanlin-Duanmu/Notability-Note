@@ -131,6 +131,7 @@ class NotesViewModel(
     fun loadNotes() {
         _tagId.value = null // null 代表全部
         _searchQuery.value = ""
+        _isExactTitleSearch.value = false // 重置精确搜索标志
         _error.value = null
     }
 
@@ -138,12 +139,14 @@ class NotesViewModel(
     fun loadNotesByTag(tagId: Long) {
         _tagId.value = tagId
         _searchQuery.value = ""
+        _isExactTitleSearch.value = false // 重置精确搜索标志
         _error.value = null
     }
 
     // 搜索笔记
     fun searchNotes(query: String, tagId: Long) {
         _searchQuery.value = query
+        _isExactTitleSearch.value = false // 重置精确搜索标志
         // 如果 tagId 是 0，转为 null 表示搜索全部标签
         _tagId.value = if (tagId == 0L) null else tagId
     }
@@ -197,6 +200,7 @@ class NotesViewModel(
         // 只清空搜索词，保持当前的标签筛选 (_tagId) 不变
         if (_searchQuery.value.isNotEmpty()) {
             _searchQuery.value = ""
+            _isExactTitleSearch.value = false // 重置精确搜索标志
         }
     }
 
