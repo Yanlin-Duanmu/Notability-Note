@@ -34,7 +34,11 @@ class TagsViewModel(private val tagRepository: TagRepository) : ViewModel() {
         viewModelScope.launch {
             try {
                 tagRepository.getAllTags().collect { tags ->
-                    _tags.value = tags
+                    // 特殊处理"未归档"标签，确保它始终排在第一位
+                    val sortedTags = tags.sortedWith(compareBy {
+                        if (it.name == "未归档") "0" else it.name
+                    })
+                    _tags.value = sortedTags
                     _isLoading.value = false
                 }
             } catch (e: Exception) {
@@ -52,7 +56,11 @@ class TagsViewModel(private val tagRepository: TagRepository) : ViewModel() {
         viewModelScope.launch {
             try {
                 tagRepository.searchTags(query).collect { searchResults ->
-                    _tags.value = searchResults
+                    // 特殊处理"未归档"标签，确保它始终排在第一位
+                    val sortedResults = searchResults.sortedWith(compareBy {
+                        if (it.name == "未归档") "0" else it.name
+                    })
+                    _tags.value = sortedResults
                     _isLoading.value = false
                 }
             } catch (e: Exception) {
