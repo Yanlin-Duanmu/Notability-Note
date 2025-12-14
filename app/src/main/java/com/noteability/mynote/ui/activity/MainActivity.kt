@@ -140,10 +140,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // 如果当前处于搜索状态（搜索框无焦点但ViewModel中仍有搜索词），则清除搜索
-        if (!binding.searchEditText.hasFocus() && viewModel.searchQuery.value.isNotEmpty()) {
-            viewModel.clearSearch()
-        }
+        // 不再根据搜索框状态自动清除搜索，避免影响用户正常搜索结果
+        // 用户可以通过点击"全部"或其他方式手动清除搜索
     }
     private fun setupClearSearchListeners() {
         // 我们不再使用 setOnClickListener，因为它会被全屏的 RecyclerView 拦截。
@@ -429,6 +427,7 @@ class MainActivity : AppCompatActivity() {
                 historyBoxView.setOnClickListener {
                     viewModel.searchNotes(historyText, currentSelectedTagId)
                     binding.searchEditText.clearFocus() // 清除焦点，隐藏浮层
+                    binding.searchEditText.setText("") // 搜索完成后清空搜索框
                 }
 
                 // 设置删除按钮的点击事件 -> 删除此条历史
