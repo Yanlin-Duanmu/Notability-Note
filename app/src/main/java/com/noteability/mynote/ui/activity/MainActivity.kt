@@ -427,6 +427,8 @@ class MainActivity : AppCompatActivity() {
 
                 // 设置整个卡片的点击事件 -> 执行搜索
                 historyBoxView.setOnClickListener {
+                    // 将搜索词设置到搜索框UI上
+                    binding.searchEditText.setText(historyText)
                     viewModel.searchNotes(historyText, currentSelectedTagId)
                     binding.searchEditText.clearFocus() // 清除焦点，隐藏浮层
                 }
