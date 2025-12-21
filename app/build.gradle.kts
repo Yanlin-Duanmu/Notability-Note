@@ -51,10 +51,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-//    composeOptions {
-//        // 指定 Compose Compiler 版本与 Kotlin 2.0 兼容
-//        kotlinCompilerExtensionVersion = "1.5.3"
-//    }
 
     kotlinOptions {
         jvmTarget = "17"
@@ -62,7 +58,7 @@ android {
 
     buildFeatures {
         viewBinding = true
-        // compose = false
+        compose = true
         buildConfig = true
     }
 }
@@ -123,6 +119,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.activity.compose)
+
     implementation("com.google.code.gson:gson:2.10.1")
     // Markwon 核心库
     implementation("io.noties.markwon:core:4.6.2")
@@ -132,6 +129,8 @@ dependencies {
     // 图片
     implementation("io.noties.markwon:image-glide:4.6.2")
     implementation("com.github.bumptech.glide:glide:4.16.0")
+
+
 
 }
 
