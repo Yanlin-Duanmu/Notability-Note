@@ -16,8 +16,10 @@ class ComposeNoteEditActivity : ComponentActivity() {
         setContent {
             MyNoteTheme {
                 NoteEditScreen(
+                    tagName = "Design Principles", // Sample tag for demo
                     onBackClick = { finish() },
-                    onMoreClick = { /* TODO: Implement more menu */ }
+                    onMoreClick = { /* TODO: Implement more menu */ },
+                    onTagClick = { /* TODO: Handle tag click */ }
                 )
             }
         }

@@ -2,18 +2,12 @@ package com.noteability.mynote.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.noteability.mynote.R
 
 // Font Family
-val Roboto = FontFamily(
-    Font(R.font.roboto_regular, FontWeight.Normal),
-    Font(R.font.roboto_light, FontWeight.Light),
-    // Add other font weights here if needed (e.g., Bold, Medium)
-)
+val Roboto = FontFamily.SansSerif
 
 // Typography
 val Typography = Typography(

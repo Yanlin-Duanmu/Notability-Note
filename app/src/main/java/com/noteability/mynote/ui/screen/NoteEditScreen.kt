@@ -3,6 +3,7 @@ package com.noteability.mynote.ui.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,7 @@ import androidx.compose.material.icons.outlined.FormatBold
 import androidx.compose.material.icons.outlined.FormatItalic
 import androidx.compose.material.icons.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.FormatQuote
+import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -74,8 +76,10 @@ fun NoteEditScreen(
             "Maintain consistency in design elements and terminology throughout the app. This helps users learn the interface faster and reduces confusion. For example, a button for saving should always look and behave the same way.\n\n" +
             "3. Feedback\n" +
             "Provide immediate and clear feedback for every user action. This can be a visual cue, a sound, or a vibration. This reassures the user that the system has received their input.",
+    tagName: String? = null,
     onBackClick: () -> Unit,
-    onMoreClick: () -> Unit
+    onMoreClick: () -> Unit,
+    onTagClick: () -> Unit = {}
 ) {
     var title by remember { mutableStateOf(initialTitle) }
     var content by remember { mutableStateOf(initialContent) }
@@ -84,9 +88,11 @@ fun NoteEditScreen(
         topBar = {
             TopBar(
                 title = title,
+                tagName = tagName,
                 onTitleChange = { title = it },
                 onBackClick = onBackClick,
-                onMoreClick = onMoreClick
+                onMoreClick = onMoreClick,
+                onTagClick = onTagClick
             )
         },
         bottomBar = {
@@ -133,15 +139,17 @@ fun NoteEditScreen(
 @Composable
 fun TopBar(
     title: String,
+    tagName: String?,
     onTitleChange: (String) -> Unit,
     onBackClick: () -> Unit,
-    onMoreClick: () -> Unit
+    onMoreClick: () -> Unit,
+    onTagClick: () -> Unit
 ) {
     Column(modifier = Modifier.statusBarsPadding()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 4.dp),
+                .padding(horizontal = 4.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBackClick) {
@@ -152,33 +160,42 @@ fun TopBar(
                 )
             }
 
-            BasicTextField(
-                value = title,
-                onValueChange = onTitleChange,
-                textStyle = TextStyle(
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground
-                ),
-                singleLine = true,
+            Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 16.dp),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                decorationBox = { innerTextField ->
-                    if (title.isEmpty()) {
-                        Text(
-                            text = "Untitled Note",
-                            style = TextStyle(
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                    .padding(horizontal = 16.dp)
+            ) {
+                BasicTextField(
+                    value = title,
+                    onValueChange = onTitleChange,
+                    textStyle = TextStyle(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    decorationBox = { innerTextField ->
+                        if (title.isEmpty()) {
+                            Text(
+                                text = "Untitled Note",
+                                style = TextStyle(
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             )
-                        )
+                        }
+                        innerTextField()
                     }
-                    innerTextField()
+                )
+
+                if (!tagName.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    TagChip(tagName = tagName, onClick = onTagClick)
                 }
-            )
+            }
 
             IconButton(onClick = onMoreClick) {
                 Icon(
@@ -203,9 +220,9 @@ fun BottomFormattingBar(modifier: Modifier = Modifier) {
     ) {
         Row(
             modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .horizontalScroll(rememberScrollState())
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(0.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Standard Formatting Icons
@@ -235,7 +252,6 @@ fun BottomFormattingBar(modifier: Modifier = Modifier) {
 
             // AI Feature Buttons
             AiFeatureButton(icon = Icons.Outlined.AutoAwesome, contentDescription = "AI Summary")
-            Spacer(modifier = Modifier.width(4.dp))
             AiFeatureButton(icon = Icons.Outlined.Brush, contentDescription = "AI Style")
         }
     }
@@ -260,6 +276,32 @@ fun FormattingIconButton(
 }
 
 @Composable
+fun TagChip(
+    tagName: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50.dp))
+            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = tagName,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+@Composable
 fun AiFeatureButton(
     icon: ImageVector,
     contentDescription: String,
@@ -267,16 +309,17 @@ fun AiFeatureButton(
 ) {
     Box(
         modifier = Modifier
+            .padding(2.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             .clickable(onClick = onClick)
-            .padding(8.dp)
+            .padding(6.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(24.dp)
         )
     }
 }
@@ -285,6 +328,10 @@ fun AiFeatureButton(
 @Composable
 fun NoteEditScreenPreview() {
     MaterialTheme {
-        NoteEditScreen(onBackClick = {}, onMoreClick = {})
+        NoteEditScreen(
+            tagName = "Design System",
+            onBackClick = {},
+            onMoreClick = {}
+        )
     }
 }
