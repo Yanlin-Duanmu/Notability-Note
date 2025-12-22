@@ -53,10 +53,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,9 +70,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mohamedrejeb.richeditor.ui.material3.RichTextEditorDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import com.noteability.mynote.data.entity.Tag
 import com.noteability.mynote.ui.viewmodel.NoteEditUiState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditScreen(
     uiState: NoteEditUiState,
@@ -83,6 +89,25 @@ fun NoteEditScreen(
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showTagDialog by remember { mutableStateOf(false) }
+    
+    // Initialize rich text state
+    val richTextState = rememberRichTextState()
+
+    // Load initial markdown content when data loading is finished
+    var isInitialized by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading && !isInitialized) {
+            richTextState.setMarkdown(uiState.content)
+            isInitialized = true
+        }
+    }
+
+    // Sync rich text changes back to ViewModel as markdown
+    LaunchedEffect(richTextState.annotatedString) {
+        if (isInitialized) {
+            onContentChange(richTextState.toMarkdown())
+        }
+    }
 
     if (showTagDialog) {
         TagSelectionDialog(
@@ -158,16 +183,20 @@ fun NoteEditScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp, vertical = 32.dp)
             ) {
-                BasicTextField(
-                    value = uiState.content,
-                    onValueChange = onContentChange,
+                RichTextEditor(
+                    state = richTextState,
+                    modifier = Modifier.fillMaxWidth(),
                     textStyle = TextStyle(
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.onBackground,
                         lineHeight = 24.sp
                     ),
-                    modifier = Modifier.fillMaxWidth(),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
+                    colors = RichTextEditorDefaults.richTextEditorColors(
+                        cursorColor = MaterialTheme.colorScheme.primary,
+                        focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                        unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                        containerColor = androidx.compose.ui.graphics.Color.Transparent
+                    )
                 )
             }
         }
