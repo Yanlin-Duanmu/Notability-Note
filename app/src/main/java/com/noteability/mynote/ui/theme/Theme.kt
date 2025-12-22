@@ -36,7 +36,9 @@ private val DarkColorScheme = darkColorScheme(
     onSurfaceVariant = Neutral60,
 
     error = ErrorRed,
-    onError = White
+    onError = White,
+
+    outlineVariant = Neutral40
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -50,16 +52,18 @@ private val LightColorScheme = lightColorScheme(
     secondaryContainer = Neutral90,
     onSecondaryContainer = Neutral20,
 
-    background = Neutral99,
+    background = White,
     onBackground = Neutral10,
 
     surface = White,
     onSurface = Neutral10,
     surfaceVariant = Neutral95,
-    onSurfaceVariant = Neutral60,
+    onSurfaceVariant = Neutral40,
 
     error = ErrorRed,
-    onError = White
+    onError = White,
+
+    outlineVariant = Neutral90
 )
 
 // Theme Composable
