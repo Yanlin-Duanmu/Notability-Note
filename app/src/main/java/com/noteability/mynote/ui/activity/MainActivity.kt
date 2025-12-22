@@ -227,7 +227,7 @@ class MainActivity : AppCompatActivity() {
         noteAdapter = NoteAdapter(onNoteClick = { note ->
             // 如果在选择模式下，Adapter 内部会处理选中逻辑，不会触发这个回调
             // 只有在非选择模式下，点击才会跳转
-            val intent = Intent(this, NoteEditActivity::class.java)
+            val intent = Intent(this, ComposeNoteEditActivity::class.java)
             intent.putExtra("noteId", note.noteId)
             startActivity(intent)
         }, tagNameMap = tagNameMap)
@@ -502,7 +502,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupButtonListeners() {
         binding.addNoteFab.setOnClickListener {
-            val intent = Intent(this, NoteEditActivity::class.java)
+            val intent = Intent(this, ComposeNoteEditActivity::class.java)
             if (currentSelectedTagId > 0) intent.putExtra("preSelectedTagId", currentSelectedTagId)
             startActivity(intent)
         }

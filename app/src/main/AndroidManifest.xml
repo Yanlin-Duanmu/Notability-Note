@@ -62,6 +62,13 @@
             android:label="笔记编辑"
             android:theme="@style/Theme.MyNote"
             android:windowSoftInputMode="adjustPan"/>
+
+        <activity
+            android:name=".ui.activity.ComposeNoteEditActivity"
+            android:exported="false"
+            android:label="新版笔记编辑"
+            android:theme="@style/Theme.MyNote"
+            android:windowSoftInputMode="adjustResize"/>
             
         <activity
             android:name=".ui.activity.RegisterActivity"

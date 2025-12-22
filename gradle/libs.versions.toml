@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.1"
+agp = "8.13.2"
 kotlin = "2.0.21"
 coreKtx = "1.10.1"
 junit = "4.13.2"
@@ -35,6 +35,7 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 okhttp-bom = { group = "com.squareup.okhttp3", name = "okhttp-bom", version.ref = "okhttp" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp" }
 okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor" }
+androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
