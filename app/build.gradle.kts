@@ -7,13 +7,11 @@ if (localPropertiesFile.exists()) {
 }
 
 plugins {
-    // id("com.android.application")
-    // id("org.jetbrains.kotlin.android") version "2.0.21"
-    id("kotlin-kapt")
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -80,16 +78,15 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
 
     // ========== Room（数据库）==========
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    kapt("androidx.room:room-compiler:2.6.1")  // 添加的关键依赖
-
 
     //========== Paging 3 ==========
-    implementation("androidx.room:room-paging:2.6.1")
+    implementation(libs.room.paging)
 
     implementation("androidx.paging:paging-runtime-ktx:3.2.1")
 
@@ -132,6 +129,8 @@ dependencies {
 
     implementation(libs.androidx.material.icons.extended)
 
+    // Rich Text Editor
+    implementation(libs.richeditor.compose)
 }
 
 
