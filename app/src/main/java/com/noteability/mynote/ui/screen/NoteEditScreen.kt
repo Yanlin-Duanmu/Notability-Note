@@ -249,7 +249,7 @@ fun FormattingIconButton(
 ) {
     IconButton(
         onClick = onClick,
-        modifier = Modifier.size(40.dp)
+        modifier = Modifier.size(32.dp)
     ) {
         Icon(
             imageVector = icon,
@@ -276,7 +276,7 @@ fun AiFeatureButton(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(24.dp)
         )
     }
 }
