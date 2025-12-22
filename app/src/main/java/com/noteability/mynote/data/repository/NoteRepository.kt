@@ -6,6 +6,9 @@ import com.noteability.mynote.data.entity.Note
 import kotlinx.coroutines.flow.Flow
 
 interface NoteRepository {
+    // Set current user ID for multi-user support
+    fun setCurrentUserId(userId: Long)
+    
     // 获取所有笔记
     fun getAllNotes(): Flow<List<Note>>
     
