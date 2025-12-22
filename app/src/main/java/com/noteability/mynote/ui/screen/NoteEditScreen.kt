@@ -3,6 +3,7 @@ package com.noteability.mynote.ui.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -203,9 +204,9 @@ fun BottomFormattingBar(modifier: Modifier = Modifier) {
     ) {
         Row(
             modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .horizontalScroll(rememberScrollState())
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Standard Formatting Icons
@@ -235,7 +236,6 @@ fun BottomFormattingBar(modifier: Modifier = Modifier) {
 
             // AI Feature Buttons
             AiFeatureButton(icon = Icons.Outlined.AutoAwesome, contentDescription = "AI Summary")
-            Spacer(modifier = Modifier.width(4.dp))
             AiFeatureButton(icon = Icons.Outlined.Brush, contentDescription = "AI Style")
         }
     }
