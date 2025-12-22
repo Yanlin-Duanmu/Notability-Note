@@ -56,7 +56,7 @@ object ServiceLocator {
         val sharedPreferences = context!!.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         val userId = sharedPreferences.getLong("logged_in_user_id", 0L)
         if (userId > 0) {
-            (repository as NoteRepositoryImpl).updateCurrentUserId(userId)
+            (repository as NoteRepositoryImpl).setCurrentUserId(userId)
         }
         repository
     }
@@ -68,7 +68,7 @@ object ServiceLocator {
         val sharedPreferences = context!!.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         val userId = sharedPreferences.getLong("logged_in_user_id", 0L)
         if (userId > 0) {
-            (repository as TagRepositoryImpl).updateCurrentUserId(userId)
+            (repository as TagRepositoryImpl).setCurrentUserId(userId)
         }
         repository
     }
@@ -98,8 +98,8 @@ object ServiceLocator {
     // 更新当前登录用户ID到所有需要的仓库
     fun updateLoggedInUserId(userId: Long) {
         // 更新NoteRepository
-        (noteRepository as? NoteRepositoryImpl)?.updateCurrentUserId(userId)
+        (noteRepository as? NoteRepositoryImpl)?.setCurrentUserId(userId)
         // 更新TagRepository
-        (tagRepository as? TagRepositoryImpl)?.updateCurrentUserId(userId)
+        (tagRepository as? TagRepositoryImpl)?.setCurrentUserId(userId)
     }
 }
