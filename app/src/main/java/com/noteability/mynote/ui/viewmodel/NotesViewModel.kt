@@ -119,12 +119,9 @@ class NotesViewModel(
     }
 
 
-    // 设置当前登录用户ID
     fun setLoggedInUserId(userId: Long) {
         _loggedInUserId.value = userId
-        if (noteRepository is com.noteability.mynote.data.repository.impl.NoteRepositoryImpl) {
-            noteRepository.updateCurrentUserId(userId)
-        }
+        noteRepository.setCurrentUserId(userId)
     }
 
     // 加载所有笔记

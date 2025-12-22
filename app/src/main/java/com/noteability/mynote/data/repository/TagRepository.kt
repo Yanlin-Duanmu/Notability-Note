@@ -4,6 +4,9 @@ import com.noteability.mynote.data.entity.Tag
 import kotlinx.coroutines.flow.Flow
 
 interface TagRepository {
+    // Set current user ID for multi-user support
+    fun setCurrentUserId(userId: Long)
+    
     // 获取所有标签
     fun getAllTags(): Flow<List<Tag>>
     

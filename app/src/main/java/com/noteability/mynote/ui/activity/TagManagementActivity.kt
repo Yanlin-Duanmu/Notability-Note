@@ -133,7 +133,7 @@ class TagManagementActivity : AppCompatActivity() {
         val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         val loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 0L)
         if (loggedInUserId > 0) {
-            noteRepository.updateCurrentUserId(loggedInUserId)
+            noteRepository.setCurrentUserId(loggedInUserId)
         }
         
         // 观察标签列表变化

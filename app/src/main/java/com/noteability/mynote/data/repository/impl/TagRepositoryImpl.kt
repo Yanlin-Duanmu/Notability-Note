@@ -13,11 +13,9 @@ class TagRepositoryImpl(private val context: Context) : TagRepository {
         AppDatabase.getDatabase(context).tagDao()
     }
     
-    // 当前用户ID（实际应用中应该从登录状态获取）
     private var currentUserId = 0L
-    
-    // 更新当前用户ID
-    fun updateCurrentUserId(userId: Long) {
+
+    override fun setCurrentUserId(userId: Long) {
         this.currentUserId = userId
     }
     
