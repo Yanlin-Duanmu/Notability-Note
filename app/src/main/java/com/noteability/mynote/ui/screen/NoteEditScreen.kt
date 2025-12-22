@@ -39,6 +39,7 @@ import androidx.compose.material.icons.outlined.FormatBold
 import androidx.compose.material.icons.outlined.FormatItalic
 import androidx.compose.material.icons.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.FormatQuote
+import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -75,8 +76,10 @@ fun NoteEditScreen(
             "Maintain consistency in design elements and terminology throughout the app. This helps users learn the interface faster and reduces confusion. For example, a button for saving should always look and behave the same way.\n\n" +
             "3. Feedback\n" +
             "Provide immediate and clear feedback for every user action. This can be a visual cue, a sound, or a vibration. This reassures the user that the system has received their input.",
+    tagName: String? = null,
     onBackClick: () -> Unit,
-    onMoreClick: () -> Unit
+    onMoreClick: () -> Unit,
+    onTagClick: () -> Unit = {}
 ) {
     var title by remember { mutableStateOf(initialTitle) }
     var content by remember { mutableStateOf(initialContent) }
@@ -85,9 +88,11 @@ fun NoteEditScreen(
         topBar = {
             TopBar(
                 title = title,
+                tagName = tagName,
                 onTitleChange = { title = it },
                 onBackClick = onBackClick,
-                onMoreClick = onMoreClick
+                onMoreClick = onMoreClick,
+                onTagClick = onTagClick
             )
         },
         bottomBar = {
@@ -134,9 +139,11 @@ fun NoteEditScreen(
 @Composable
 fun TopBar(
     title: String,
+    tagName: String?,
     onTitleChange: (String) -> Unit,
     onBackClick: () -> Unit,
-    onMoreClick: () -> Unit
+    onMoreClick: () -> Unit,
+    onTagClick: () -> Unit
 ) {
     Column(modifier = Modifier.statusBarsPadding()) {
         Row(
@@ -189,6 +196,18 @@ fun TopBar(
                 )
             }
         }
+
+        if (!tagName.isNullOrBlank()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 68.dp, end = 16.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TagChip(tagName = tagName, onClick = onTagClick)
+            }
+        }
+
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
@@ -206,7 +225,7 @@ fun BottomFormattingBar(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .horizontalScroll(rememberScrollState())
                 .padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(0.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Standard Formatting Icons
@@ -249,13 +268,39 @@ fun FormattingIconButton(
 ) {
     IconButton(
         onClick = onClick,
-        modifier = Modifier.size(32.dp)
+        modifier = Modifier.size(40.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+fun TagChip(
+    tagName: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50)) // Fully rounded
+            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 4.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = tagName,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
 
@@ -267,10 +312,11 @@ fun AiFeatureButton(
 ) {
     Box(
         modifier = Modifier
+            .padding(2.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             .clickable(onClick = onClick)
-            .padding(8.dp)
+            .padding(6.dp)
     ) {
         Icon(
             imageVector = icon,
@@ -285,6 +331,10 @@ fun AiFeatureButton(
 @Composable
 fun NoteEditScreenPreview() {
     MaterialTheme {
-        NoteEditScreen(onBackClick = {}, onMoreClick = {})
+        NoteEditScreen(
+            tagName = "Design System",
+            onBackClick = {},
+            onMoreClick = {}
+        )
     }
 }
