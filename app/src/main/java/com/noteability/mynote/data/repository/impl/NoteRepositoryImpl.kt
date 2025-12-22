@@ -20,7 +20,7 @@ class NoteRepositoryImpl(private val context: Context) : NoteRepository {
     private var currentUserId = 1L
     private val diffUtils = TextDiffUtils()
 
-    fun updateCurrentUserId(userId: Long) {
+    override fun setCurrentUserId(userId: Long) {
         this.currentUserId = userId
     }
 
