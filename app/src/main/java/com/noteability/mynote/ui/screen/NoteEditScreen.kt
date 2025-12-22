@@ -21,10 +21,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
@@ -35,18 +33,24 @@ import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.outlined.DataObject
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FormatBold
 import androidx.compose.material.icons.outlined.FormatItalic
 import androidx.compose.material.icons.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.FormatQuote
-import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Save
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -56,8 +60,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
@@ -65,38 +67,69 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.noteability.mynote.data.entity.Tag
+import com.noteability.mynote.ui.viewmodel.NoteEditUiState
 
 @Composable
 fun NoteEditScreen(
-    initialTitle: String = "UI/UX Design Principles",
-    initialContent: String = "In user interface (UI) and user experience (UX) design, several core principles guide the creation of effective and enjoyable digital products. Understanding these is key to building intuitive applications.\n\n" +
-            "1. Clarity and Simplicity\n" +
-            "The design should be clear and easy to understand. Avoid unnecessary elements that could confuse the user. Every element should have a purpose.\n\n" +
-            "2. Consistency\n" +
-            "Maintain consistency in design elements and terminology throughout the app. This helps users learn the interface faster and reduces confusion. For example, a button for saving should always look and behave the same way.\n\n" +
-            "3. Feedback\n" +
-            "Provide immediate and clear feedback for every user action. This can be a visual cue, a sound, or a vibration. This reassures the user that the system has received their input.",
-    tagName: String? = null,
+    uiState: NoteEditUiState,
+    onTitleChange: (String) -> Unit,
+    onContentChange: (String) -> Unit,
     onBackClick: () -> Unit,
-    onMoreClick: () -> Unit,
-    onTagClick: () -> Unit = {}
+    onSaveClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onTagClick: () -> Unit,
+    onTagSelected: (Tag) -> Unit
 ) {
-    var title by remember { mutableStateOf(initialTitle) }
-    var content by remember { mutableStateOf(initialContent) }
+    var showMenu by remember { mutableStateOf(false) }
+    var showTagDialog by remember { mutableStateOf(false) }
+
+    if (showTagDialog) {
+        TagSelectionDialog(
+            tags = uiState.allTags,
+            onDismissRequest = { showTagDialog = false },
+            onTagSelected = {
+                onTagSelected(it)
+                showTagDialog = false
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
             TopBar(
-                title = title,
-                tagName = tagName,
-                onTitleChange = { title = it },
+                title = uiState.title,
+                tagName = uiState.currentTag?.name,
+                onTitleChange = onTitleChange,
                 onBackClick = onBackClick,
-                onMoreClick = onMoreClick,
-                onTagClick = onTagClick
+                onMoreClick = { showMenu = true },
+                onTagClick = { showTagDialog = true },
+                menu = {
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("保存") },
+                            onClick = {
+                                showMenu = false
+                                onSaveClick()
+                            },
+                            leadingIcon = { Icon(Icons.Outlined.Save, contentDescription = null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("删除") },
+                            onClick = {
+                                showMenu = false
+                                onDeleteClick()
+                            },
+                            leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = null) }
+                        )
+                    }
+                }
             )
         },
         bottomBar = {
-            // Handle IME and navigation bar insets
             BottomFormattingBar(
                 modifier = Modifier
                     .windowInsetsPadding(
@@ -113,16 +146,21 @@ fun NoteEditScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp, vertical = 32.dp)
             ) {
-                // Placeholder for rich text editing (e.g. Markwon)
                 BasicTextField(
-                    value = content,
-                    onValueChange = { content = it },
+                    value = uiState.content,
+                    onValueChange = onContentChange,
                     textStyle = TextStyle(
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.onBackground,
@@ -137,13 +175,48 @@ fun NoteEditScreen(
 }
 
 @Composable
+fun TagSelectionDialog(
+    tags: List<Tag>,
+    onDismissRequest: () -> Unit,
+    onTagSelected: (Tag) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text("选择标签") },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                tags.forEach { tag ->
+                    TextButton(
+                        onClick = { onTagSelected(tag) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = tag.name,
+                            modifier = Modifier.fillMaxWidth(),
+                            style = TextStyle(fontSize = 16.sp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text("取消")
+            }
+        }
+    )
+}
+
+@Composable
 fun TopBar(
     title: String,
     tagName: String?,
     onTitleChange: (String) -> Unit,
     onBackClick: () -> Unit,
     onMoreClick: () -> Unit,
-    onTagClick: () -> Unit
+    onTagClick: () -> Unit,
+    menu: @Composable () -> Unit = {}
 ) {
     Column(modifier = Modifier.statusBarsPadding()) {
         Row(
@@ -179,7 +252,7 @@ fun TopBar(
                     decorationBox = { innerTextField ->
                         if (title.isEmpty()) {
                             Text(
-                                text = "Untitled Note",
+                                text = "无标题",
                                 style = TextStyle(
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.SemiBold,
@@ -191,18 +264,19 @@ fun TopBar(
                     }
                 )
 
-                if (!tagName.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    TagChip(tagName = tagName, onClick = onTagClick)
-                }
+                Spacer(modifier = Modifier.height(4.dp))
+                TagChip(tagName = tagName ?: "未分类", onClick = onTagClick)
             }
 
-            IconButton(onClick = onMoreClick) {
-                Icon(
-                    imageVector = Icons.Outlined.MoreVert,
-                    contentDescription = "More",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Box {
+                IconButton(onClick = onMoreClick) {
+                    Icon(
+                        imageVector = Icons.Outlined.MoreVert,
+                        contentDescription = "More",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                menu()
             }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -329,9 +403,18 @@ fun AiFeatureButton(
 fun NoteEditScreenPreview() {
     MaterialTheme {
         NoteEditScreen(
-            tagName = "Design System",
+            uiState = NoteEditUiState(
+                title = "Preview Title",
+                content = "Preview Content",
+                currentTag = Tag(1, 1, "Design System", 0)
+            ),
+            onTitleChange = {},
+            onContentChange = {},
             onBackClick = {},
-            onMoreClick = {}
+            onSaveClick = {},
+            onDeleteClick = {},
+            onTagClick = {},
+            onTagSelected = {}
         )
     }
 }
