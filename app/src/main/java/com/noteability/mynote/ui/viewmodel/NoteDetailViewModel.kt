@@ -172,13 +172,9 @@ class NoteDetailViewModel(private val noteRepository: NoteRepository) : ViewMode
         }
     }
     
-    // 设置当前登录用户ID
     fun setLoggedInUserId(userId: Long) {
         loggedInUserId = userId
-        // 更新仓库中的用户ID
-        if (noteRepository is com.noteability.mynote.data.repository.impl.NoteRepositoryImpl) {
-            noteRepository.updateCurrentUserId(userId)
-        }
+        noteRepository.setCurrentUserId(userId)
     }
     
     // 创建新的空笔记

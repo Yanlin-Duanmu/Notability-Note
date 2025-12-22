@@ -70,14 +70,9 @@ class TagsViewModel(private val tagRepository: TagRepository) : ViewModel() {
         }
     }
     
-    // 设置当前登录用户ID
     fun setLoggedInUserId(userId: Long) {
         loggedInUserId = userId
-        // 更新仓库中的用户ID
-        if (tagRepository is com.noteability.mynote.data.repository.impl.TagRepositoryImpl) {
-            tagRepository.updateCurrentUserId(userId)
-        }
-        // 重新加载标签，确保只显示当前用户的标签
+        tagRepository.setCurrentUserId(userId)
         loadTags()
     }
     
