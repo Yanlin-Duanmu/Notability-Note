@@ -149,7 +149,7 @@ fun TopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 4.dp),
+                .padding(horizontal = 4.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBackClick) {
@@ -160,33 +160,42 @@ fun TopBar(
                 )
             }
 
-            BasicTextField(
-                value = title,
-                onValueChange = onTitleChange,
-                textStyle = TextStyle(
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground
-                ),
-                singleLine = true,
+            Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 16.dp),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                decorationBox = { innerTextField ->
-                    if (title.isEmpty()) {
-                        Text(
-                            text = "Untitled Note",
-                            style = TextStyle(
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                    .padding(horizontal = 16.dp)
+            ) {
+                BasicTextField(
+                    value = title,
+                    onValueChange = onTitleChange,
+                    textStyle = TextStyle(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    decorationBox = { innerTextField ->
+                        if (title.isEmpty()) {
+                            Text(
+                                text = "Untitled Note",
+                                style = TextStyle(
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             )
-                        )
+                        }
+                        innerTextField()
                     }
-                    innerTextField()
+                )
+
+                if (!tagName.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    TagChip(tagName = tagName, onClick = onTagClick)
                 }
-            )
+            }
 
             IconButton(onClick = onMoreClick) {
                 Icon(
@@ -196,18 +205,6 @@ fun TopBar(
                 )
             }
         }
-
-        if (!tagName.isNullOrBlank()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 68.dp, end = 16.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TagChip(tagName = tagName, onClick = onTagClick)
-            }
-        }
-
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
@@ -285,10 +282,10 @@ fun TagChip(
 ) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(50)) // Fully rounded
-            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f))
+            .clip(RoundedCornerShape(50.dp))
+            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
             .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 4.dp)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -296,7 +293,7 @@ fun TagChip(
         ) {
             Text(
                 text = tagName,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                 fontWeight = FontWeight.Medium
             )
