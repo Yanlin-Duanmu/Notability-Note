@@ -13,14 +13,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.noteability.mynote.data.repository.impl.NoteRepositoryImpl
 import com.noteability.mynote.data.repository.impl.TagRepositoryImpl
+import com.noteability.mynote.ui.component.WebViewManager
 import com.noteability.mynote.ui.screen.NoteEditScreen
 import com.noteability.mynote.ui.theme.MyNoteTheme
 import com.noteability.mynote.ui.viewmodel.ComposeNoteEditViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class ComposeNoteEditActivity : ComponentActivity() {
 
@@ -59,6 +63,7 @@ class ComposeNoteEditActivity : ComponentActivity() {
         setContent {
             MyNoteTheme {
                 val uiState by viewModel.uiState.collectAsState()
+                val scope = rememberCoroutineScope()
                 
                 // Dialog states managed in Compose
                 var showSaveDialog by remember { mutableStateOf(false) }
@@ -86,10 +91,14 @@ class ComposeNoteEditActivity : ComponentActivity() {
                     onTitleChange = viewModel::updateTitle,
                     onContentChange = viewModel::updateContent,
                     onBackClick = {
-                        if (viewModel.hasUnsavedChanges()) {
-                            showSaveDialog = true
-                        } else {
-                            finish()
+                        scope.launch {
+                            WebViewManager.flushContent()
+                            delay(50)
+                            if (viewModel.hasUnsavedChanges()) {
+                                showSaveDialog = true
+                            } else {
+                                finish()
+                            }
                         }
                     },
                     onSaveClick = viewModel::saveNote,

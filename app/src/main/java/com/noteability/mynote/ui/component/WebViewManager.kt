@@ -82,6 +82,10 @@ object WebViewManager {
         webView?.evaluateJavascript(js, null)
     }
     
+    fun flushContent() {
+        webView?.evaluateJavascript("flushContent()", null)
+    }
+    
     fun detachFromParent() {
         (webView?.parent as? ViewGroup)?.removeView(webView)
     }
