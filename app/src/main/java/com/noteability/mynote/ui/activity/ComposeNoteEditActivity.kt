@@ -6,6 +6,8 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,6 +38,10 @@ class ComposeNoteEditActivity : ComponentActivity() {
     }
 
     private val viewModel: ComposeNoteEditViewModel by viewModels { ViewModelFactory(this) }
+
+    private val pickMedia = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let { viewModel.processLocalImage(this, it) }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -112,6 +118,12 @@ class ComposeNoteEditActivity : ComponentActivity() {
                     onDeleteDialogConfirm = {
                         showDeleteDialog = false
                         viewModel.deleteNote()
+                    },
+                    onPickLocalImage = {
+                        pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
+                    onInsertLocalImage = { _, _ ->
+                        viewModel.clearPendingLocalImage()
                     }
                 )
             }
