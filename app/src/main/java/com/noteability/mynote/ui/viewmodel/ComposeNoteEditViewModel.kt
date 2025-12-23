@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 /**
  * UI State for the Compose Note Edit Screen
@@ -24,7 +25,11 @@ data class NoteEditUiState(
     val allTags: List<Tag> = emptyList(),
     val isSaved: Boolean = false,
     val isDeleted: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    // AI Summary State
+    val isAiSummaryVisible: Boolean = false,
+    val aiSummaryContent: String = "",
+    val isAiGenerating: Boolean = false
 )
 
 /**
@@ -213,5 +218,41 @@ class ComposeNoteEditViewModel(
     
     fun resetSaveState() {
         _uiState.update { it.copy(isSaved = false) }
+    }
+
+    fun triggerAiSummary() {
+        if (_uiState.value.isAiGenerating) return
+        
+        // Open panel first
+        _uiState.update {
+            it.copy(
+                isAiSummaryVisible = true,
+                aiSummaryContent = "",
+                isAiGenerating = true
+            )
+        }
+        
+        // Mock streaming generation
+        viewModelScope.launch {
+            val mockSummary = "这是一段关于笔记的智能摘要。它展示了笔记的主要内容，帮助用户快速回顾。\n\n" +
+                    "1. 关键点一：使用 Compose 构建现代化 UI。\n" +
+                    "2. 关键点二：所见即所得的 Markdown 编辑体验。\n" +
+                    "3. 关键点三：集成 AI 辅助功能，提升效率。\n\n" +
+                    "总体来说，这个应用旨在提供优雅且强大的笔记记录体验。随着内容的增加，摘要也会相应变长，以测试滚动效果。"
+            
+            val chunks = mockSummary.split("") // Split by char for smooth streaming
+            
+            for (char in chunks) {
+                if (!_uiState.value.isAiSummaryVisible) break // Stop if closed
+                delay(30) // Simulate network delay
+                _uiState.update { it.copy(aiSummaryContent = it.aiSummaryContent + char) }
+            }
+            
+            _uiState.update { it.copy(isAiGenerating = false) }
+        }
+    }
+
+    fun closeAiSummary() {
+        _uiState.update { it.copy(isAiSummaryVisible = false, isAiGenerating = false) }
     }
 }
