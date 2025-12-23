@@ -46,6 +46,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -94,7 +95,9 @@ fun NoteEditScreen(
     onSaveDialogDiscard: () -> Unit = {},
     showDeleteDialog: Boolean = false,
     onDeleteDialogDismiss: () -> Unit = {},
-    onDeleteDialogConfirm: () -> Unit = {}
+    onDeleteDialogConfirm: () -> Unit = {},
+    onPickLocalImage: (() -> Unit)? = null,
+    onInsertLocalImage: ((String, String) -> Unit)? = null
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showTagDialog by remember { mutableStateOf(false) }
@@ -126,8 +129,24 @@ fun NoteEditScreen(
             onConfirm = { url, desc ->
                 vditorController?.insertImage(url, desc)
                 showImageDialog = false
-            }
+            },
+            onPickLocalImage = if (onPickLocalImage != null) {
+                {
+                    showImageDialog = false
+                    onPickLocalImage()
+                }
+            } else null
         )
+    }
+    
+    // Handle pending local image insertion via LaunchedEffect
+    LaunchedEffect(uiState.pendingLocalImage, vditorController) {
+        uiState.pendingLocalImage?.let { (path, desc) ->
+            vditorController?.let { controller ->
+                controller.insertImage(path, desc)
+                onInsertLocalImage?.invoke(path, desc)
+            }
+        }
     }
 
     // Link insert dialog
