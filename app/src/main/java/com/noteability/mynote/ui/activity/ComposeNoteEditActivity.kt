@@ -78,7 +78,9 @@ class ComposeNoteEditActivity : ComponentActivity() {
                     onSaveClick = viewModel::saveNote,
                     onDeleteClick = { showDeleteDialog() },
                     onTagClick = { /* TODO: tag selection dialog */ },
-                    onTagSelected = viewModel::updateTag
+                    onTagSelected = viewModel::updateTag,
+                    onAiSummaryClick = viewModel::triggerAiSummary,
+                    onAiSummaryClose = viewModel::closeAiSummary
                 )
             }
         }
