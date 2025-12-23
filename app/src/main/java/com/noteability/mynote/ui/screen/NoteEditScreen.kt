@@ -87,7 +87,10 @@ fun NoteEditScreen(
     onTagClick: () -> Unit,
     onTagSelected: (Tag) -> Unit,
     onAiSummaryClick: () -> Unit = {},
-    onAiSummaryClose: () -> Unit = {}
+    onAiSummaryClose: () -> Unit = {},
+    onAiTaggingClick: () -> Unit = {},
+    onAiTagSelected: (String) -> Unit = {},
+    onAiTagsDialogClose: () -> Unit = {}
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showTagDialog by remember { mutableStateOf(false) }
@@ -125,6 +128,14 @@ fun NoteEditScreen(
                 onTagSelected(it)
                 showTagDialog = false
             }
+        )
+    }
+
+    if (uiState.showAiTagsDialog) {
+        AiTagSelectionDialog(
+            tags = uiState.suggestedTags,
+            onDismissRequest = onAiTagsDialogClose,
+            onTagSelected = onAiTagSelected
         )
     }
 
@@ -172,7 +183,7 @@ fun NoteEditScreen(
                 onImageClick = { showImageDialog = true },
                 onLinkClick = { showLinkDialog = true },
                 onAiSummaryClick = onAiSummaryClick,
-                onAiStyleClick = { /* TODO: AI Style */ },
+                onAiStyleClick = onAiTaggingClick,
                 modifier = Modifier
                     .windowInsetsPadding(
                         WindowInsets.ime.union(WindowInsets.navigationBars)
@@ -239,6 +250,44 @@ fun TagSelectionDialog(
                             modifier = Modifier.fillMaxWidth(),
                             style = TextStyle(fontSize = 16.sp)
                         )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text("取消")
+            }
+        }
+    )
+}
+
+@Composable
+fun AiTagSelectionDialog(
+    tags: List<String>,
+    onDismissRequest: () -> Unit,
+    onTagSelected: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text("AI 推荐标签") },
+        text = {
+            if (tags.isEmpty()) {
+                Text("未找到合适的标签建议")
+            } else {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    tags.forEach { tag ->
+                        TextButton(
+                            onClick = { onTagSelected(tag) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = tag,
+                                modifier = Modifier.fillMaxWidth(),
+                                style = TextStyle(fontSize = 16.sp)
+                            )
+                        }
                     }
                 }
             }
@@ -504,12 +553,12 @@ fun BottomFormattingBar(
             // AI Feature Buttons
             AiFeatureButton(
                 icon = Icons.Outlined.AutoAwesome,
-                contentDescription = "AI Summary",
+                contentDescription = "AI 摘要",
                 onClick = onAiSummaryClick
             )
             AiFeatureButton(
                 icon = Icons.Outlined.Brush,
-                contentDescription = "AI Style",
+                contentDescription = "AI 打标",
                 onClick = onAiStyleClick
             )
         }
