@@ -150,6 +150,50 @@
         .vditor-ir__node--expand .vditor-ir__marker {
             color: var(--editor-text-secondary) !important;
         }
+
+        /* Enhanced image styling */
+        .vditor-reset img {
+            max-width: 100% !important;
+            height: auto !important;
+            border-radius: 12px !important;
+            margin: 16px 0 !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+            display: block !important;
+        }
+
+        .vditor-reset img:hover {
+            transform: scale(1.01) !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06) !important;
+        }
+
+        /* Image container styling for IR mode */
+        .vditor-ir .vditor-ir__node[data-type="img"] {
+            display: block !important;
+            text-align: center !important;
+            margin: 12px 0 !important;
+        }
+
+        /* Image alt text styling */
+        .vditor-ir .vditor-ir__node[data-type="img"] .vditor-ir__marker--info {
+            display: block !important;
+            text-align: center !important;
+            font-size: 13px !important;
+            color: var(--editor-text-secondary) !important;
+            font-style: italic !important;
+            margin-top: 8px !important;
+            opacity: 0.8 !important;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .vditor-reset img {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24), 0 2px 4px rgba(0, 0, 0, 0.16) !important;
+            }
+
+            .vditor-reset img:hover {
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32), 0 4px 8px rgba(0, 0, 0, 0.20) !important;
+            }
+        }
     </style>
 </head>
 <body>
