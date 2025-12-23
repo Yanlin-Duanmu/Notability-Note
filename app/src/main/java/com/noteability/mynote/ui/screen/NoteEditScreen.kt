@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.AddLink
@@ -33,25 +32,18 @@ import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.outlined.DataObject
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FormatBold
 import androidx.compose.material.icons.outlined.FormatItalic
 import androidx.compose.material.icons.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.Save
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -68,14 +60,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.ExperimentalMaterial3Api
 import com.noteability.mynote.data.entity.Tag
 import com.noteability.mynote.ui.component.AiSummaryPanel
+import com.noteability.mynote.ui.component.DeleteConfirmationDialog
+import com.noteability.mynote.ui.component.SaveConfirmationDialog
+import com.noteability.mynote.ui.component.StyledAiTagSelectionDialog
+import com.noteability.mynote.ui.component.StyledInsertImageDialog
+import com.noteability.mynote.ui.component.StyledInsertLinkDialog
+import com.noteability.mynote.ui.component.StyledMoreMenu
+import com.noteability.mynote.ui.component.StyledTagSelectionDialog
 import com.noteability.mynote.ui.component.VditorController
 import com.noteability.mynote.ui.component.VditorWebView
 import com.noteability.mynote.ui.viewmodel.NoteEditUiState
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditScreen(
     uiState: NoteEditUiState,
@@ -90,7 +87,14 @@ fun NoteEditScreen(
     onAiSummaryClose: () -> Unit = {},
     onAiTaggingClick: () -> Unit = {},
     onAiTagSelected: (String) -> Unit = {},
-    onAiTagsDialogClose: () -> Unit = {}
+    onAiTagsDialogClose: () -> Unit = {},
+    showSaveDialog: Boolean = false,
+    onSaveDialogDismiss: () -> Unit = {},
+    onSaveDialogSave: () -> Unit = {},
+    onSaveDialogDiscard: () -> Unit = {},
+    showDeleteDialog: Boolean = false,
+    onDeleteDialogDismiss: () -> Unit = {},
+    onDeleteDialogConfirm: () -> Unit = {}
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showTagDialog by remember { mutableStateOf(false) }
@@ -98,9 +102,26 @@ fun NoteEditScreen(
     var showLinkDialog by remember { mutableStateOf(false) }
     var vditorController by remember { mutableStateOf<VditorController?>(null) }
 
+    // Save confirmation dialog
+    if (showSaveDialog) {
+        SaveConfirmationDialog(
+            onDismiss = onSaveDialogDismiss,
+            onSave = onSaveDialogSave,
+            onDiscard = onSaveDialogDiscard
+        )
+    }
+
+    // Delete confirmation dialog
+    if (showDeleteDialog) {
+        DeleteConfirmationDialog(
+            onDismiss = onDeleteDialogDismiss,
+            onConfirm = onDeleteDialogConfirm
+        )
+    }
+
     // Image insert dialog
     if (showImageDialog) {
-        InsertImageDialog(
+        StyledInsertImageDialog(
             onDismiss = { showImageDialog = false },
             onConfirm = { url, desc ->
                 vditorController?.insertImage(url, desc)
@@ -111,7 +132,7 @@ fun NoteEditScreen(
 
     // Link insert dialog
     if (showLinkDialog) {
-        InsertLinkDialog(
+        StyledInsertLinkDialog(
             onDismiss = { showLinkDialog = false },
             onConfirm = { url, text ->
                 vditorController?.insertLink(url, text)
@@ -120,8 +141,10 @@ fun NoteEditScreen(
         )
     }
 
+    // Tag selection dialog
     if (showTagDialog) {
-        TagSelectionDialog(
+        StyledTagSelectionDialog(
+            title = "选择标签",
             tags = uiState.allTags,
             onDismissRequest = { showTagDialog = false },
             onTagSelected = {
@@ -131,8 +154,9 @@ fun NoteEditScreen(
         )
     }
 
+    // AI tag selection dialog
     if (uiState.showAiTagsDialog) {
-        AiTagSelectionDialog(
+        StyledAiTagSelectionDialog(
             tags = uiState.suggestedTags,
             onDismissRequest = onAiTagsDialogClose,
             onTagSelected = onAiTagSelected
@@ -146,31 +170,12 @@ fun NoteEditScreen(
                 tagName = uiState.currentTag?.name,
                 onTitleChange = onTitleChange,
                 onBackClick = onBackClick,
-                onMoreClick = { showMenu = true },
+                onMoreClick = { showMenu = !showMenu },
                 onTagClick = { showTagDialog = true },
-                menu = {
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("保存") },
-                            onClick = {
-                                showMenu = false
-                                onSaveClick()
-                            },
-                            leadingIcon = { Icon(Icons.Outlined.Save, contentDescription = null) }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("删除") },
-                            onClick = {
-                                showMenu = false
-                                onDeleteClick()
-                            },
-                            leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = null) }
-                        )
-                    }
-                }
+                showMenu = showMenu,
+                onMenuDismiss = { showMenu = false },
+                onSaveClick = onSaveClick,
+                onDeleteClick = onDeleteClick
             )
         },
         bottomBar = {
@@ -230,86 +235,17 @@ fun NoteEditScreen(
 }
 
 @Composable
-fun TagSelectionDialog(
-    tags: List<Tag>,
-    onDismissRequest: () -> Unit,
-    onTagSelected: (Tag) -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = { Text("选择标签") },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                tags.forEach { tag ->
-                    TextButton(
-                        onClick = { onTagSelected(tag) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = tag.name,
-                            modifier = Modifier.fillMaxWidth(),
-                            style = TextStyle(fontSize = 16.sp)
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text("取消")
-            }
-        }
-    )
-}
-
-@Composable
-fun AiTagSelectionDialog(
-    tags: List<String>,
-    onDismissRequest: () -> Unit,
-    onTagSelected: (String) -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = { Text("AI 推荐标签") },
-        text = {
-            if (tags.isEmpty()) {
-                Text("未找到合适的标签建议")
-            } else {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    tags.forEach { tag ->
-                        TextButton(
-                            onClick = { onTagSelected(tag) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = tag,
-                                modifier = Modifier.fillMaxWidth(),
-                                style = TextStyle(fontSize = 16.sp)
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text("取消")
-            }
-        }
-    )
-}
-
-@Composable
-fun TopBar(
+private fun TopBar(
     title: String,
     tagName: String?,
     onTitleChange: (String) -> Unit,
     onBackClick: () -> Unit,
     onMoreClick: () -> Unit,
     onTagClick: () -> Unit,
-    menu: @Composable () -> Unit = {}
+    showMenu: Boolean,
+    onMenuDismiss: () -> Unit,
+    onSaveClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     Column(modifier = Modifier.statusBarsPadding()) {
         Row(
@@ -369,105 +305,18 @@ fun TopBar(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                menu()
+                
+                // Styled dropdown menu
+                StyledMoreMenu(
+                    expanded = showMenu,
+                    onDismissRequest = onMenuDismiss,
+                    onSaveClick = onSaveClick,
+                    onDeleteClick = onDeleteClick
+                )
             }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
-}
-
-@Composable
-fun InsertImageDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (url: String, description: String) -> Unit
-) {
-    var url by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("插入图片") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = { url = it },
-                    label = { Text("图片 URL") },
-                    placeholder = { Text("https://...") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("图片描述（可选）") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onConfirm(url, description) },
-                enabled = url.isNotBlank()
-            ) {
-                Text("插入")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("取消")
-            }
-        }
-    )
-}
-
-@Composable
-fun InsertLinkDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (url: String, text: String) -> Unit
-) {
-    var url by remember { mutableStateOf("") }
-    var text by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("插入链接") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    label = { Text("显示文本") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = { url = it },
-                    label = { Text("链接 URL") },
-                    placeholder = { Text("https://...") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onConfirm(url, text) },
-                enabled = url.isNotBlank()
-            ) {
-                Text("插入")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("取消")
-            }
-        }
-    )
 }
 
 @Composable
