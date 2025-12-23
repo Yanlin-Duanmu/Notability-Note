@@ -1,18 +1,14 @@
 package com.noteability.mynote.ui.component
 
 import android.annotation.SuppressLint
-import android.util.Log
-import android.webkit.ConsoleMessage
-import android.webkit.JavascriptInterface
-import android.webkit.WebChromeClient
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,9 +21,6 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.viewinterop.AndroidView
 import java.util.concurrent.atomic.AtomicReference
 
-private const val TAG = "VditorWebView"
-
-// Controller interface for editor formatting commands
 interface VditorController {
     fun formatBold()
     fun formatItalic()
@@ -59,7 +52,6 @@ fun VditorWebView(
         return
     }
 
-    // Capture theme colors from MaterialTheme
     val backgroundColor = MaterialTheme.colorScheme.background
     val textColor = MaterialTheme.colorScheme.onBackground
     val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -77,135 +69,63 @@ fun VditorWebView(
         )
     }
     
-    // Thread-safe tracking of WebView's actual content
     val webViewContent = remember { AtomicReference(content) }
     val isEditorReady = remember { mutableStateOf(false) }
+    val hasInitialized = remember { mutableStateOf(false) }
     val initialContent = remember { content }
     
-    // WebView reference for controller
-    val webViewRef = remember { AtomicReference<WebView?>(null) }
-    
-    // Ensure callback is always up-to-date in closures
     val currentOnContentChange = rememberUpdatedState(onContentChange)
     val currentOnControllerReady = rememberUpdatedState(onControllerReady)
     
-    // Create and provide controller when editor is ready
+    // Provide controller when editor is ready
     LaunchedEffect(isEditorReady.value) {
         if (isEditorReady.value) {
-            webViewRef.get()?.let { webView ->
+            WebViewManager.getWebView()?.let { webView ->
                 val controller = WebViewVditorController(webView)
                 currentOnControllerReady.value(controller)
             }
         }
     }
+    
+    // Bind callbacks and cleanup
+    DisposableEffect(Unit) {
+        WebViewManager.bindCallbacks(
+            onContentChange = { newContent ->
+                val oldContent = webViewContent.getAndSet(newContent)
+                if (oldContent != newContent) {
+                    currentOnContentChange.value(newContent)
+                }
+            },
+            onEditorReady = {
+                isEditorReady.value = true
+                WebViewManager.evaluateJs(themeJs)
+            },
+            onPageLoaded = {
+                if (!hasInitialized.value) {
+                    hasInitialized.value = true
+                    WebViewManager.initEditor(initialContent)
+                }
+            }
+        )
+        
+        onDispose {
+            WebViewManager.unbindCallbacks()
+            WebViewManager.detachFromParent()
+        }
+    }
 
     AndroidView(
         modifier = modifier,
-        factory = { context ->
-            WebView(context).apply {
-                Log.d(TAG, "WebView factory creating...")
-                layoutParams = android.view.ViewGroup.LayoutParams(
-                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
-                )
-                
-                // Performance: Enable hardware acceleration
-                setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
-
-                settings.apply {
-                    javaScriptEnabled = true
-                    domStorageEnabled = true
-                    allowFileAccess = true
-                    allowContentAccess = true
-                    databaseEnabled = true
-                    setSupportZoom(false)
-                    allowUniversalAccessFromFileURLs = true
-                    allowFileAccessFromFileURLs = true
-                    mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                    useWideViewPort = true
-                    loadWithOverviewMode = true
-                    
-                    // Performance: Cache settings
-                    cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
-                }
-                
-                webChromeClient = object : WebChromeClient() {
-                    override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                        val message = consoleMessage?.message() ?: ""
-                        val level = consoleMessage?.messageLevel() ?: ConsoleMessage.MessageLevel.LOG
-                        val source = "${consoleMessage?.sourceId()}:${consoleMessage?.lineNumber()}"
-                        
-                        when (level) {
-                            ConsoleMessage.MessageLevel.ERROR -> Log.e(TAG, "JS Error: $message at $source")
-                            ConsoleMessage.MessageLevel.WARNING -> Log.w(TAG, "JS Warning: $message at $source")
-                            ConsoleMessage.MessageLevel.LOG -> Log.d(TAG, "JS Log: $message at $source")
-                            else -> Log.v(TAG, "JS Console: $message at $source")
-                        }
-                        return true
-                    }
-                }
-
-                addJavascriptInterface(object {
-                    @JavascriptInterface
-                    fun onContentChange(newContent: String) {
-                        // Atomic update first to prevent race condition with update block
-                        val oldContent = webViewContent.getAndSet(newContent)
-                        if (oldContent != newContent) {
-                            post {
-                                currentOnContentChange.value(newContent)
-                            }
-                        }
-                    }
-                    
-                    @JavascriptInterface
-                    fun onEditorReady() {
-                        Log.d(TAG, "onEditorReady received")
-                        post {
-                            isEditorReady.value = true
-                            evaluateJavascript(themeJs, null)
-                        }
-                    }
-
-                    @JavascriptInterface
-                    fun onPageLoaded() {
-                        Log.d(TAG, "onPageLoaded received from JS")
-                        post {
-                            val escapedContent = escapeJsString(initialContent)
-                            evaluateJavascript("initVditor(`${escapedContent}`)", null)
-                        }
-                    }
-                }, "Android")
-                
-                this.webViewClient = object : WebViewClient() {
-                    override fun onPageFinished(view: WebView?, url: String?) {
-                        super.onPageFinished(view, url)
-                        Log.d(TAG, "onPageFinished: $url")
-                        // Fallback removed or shortened to avoid double init
-                    }
-
-                    override fun onReceivedError(view: WebView?, request: android.webkit.WebResourceRequest?, error: android.webkit.WebResourceError?) {
-                        super.onReceivedError(view, request, error)
-                        Log.e(TAG, "WebView Error: ${error?.description} at ${request?.url}")
-                    }
-                }
-                loadUrl("file:///android_asset/editor.html")
-                
-                // Store WebView reference
-                webViewRef.set(this)
-            }
+        factory = { _ ->
+            WebViewManager.detachFromParent()
+            WebViewManager.getWebView()!!
         },
-        update = { webView ->
-            // Only sync external updates (e.g., AI features) to WebView
-            // Skip if content matches WebView's tracked content to avoid cursor reset
+        update = { _ ->
             val currentWebViewContent = webViewContent.get()
             if (isEditorReady.value && content != currentWebViewContent) {
                 webViewContent.set(content)
-                val escapedContent = escapeJsString(content)
-                webView.evaluateJavascript("setContent(`${escapedContent}`)", null)
+                WebViewManager.setContent(content)
             }
-        },
-        onRelease = { webView ->
-            webView.destroy()
         }
     )
 }
