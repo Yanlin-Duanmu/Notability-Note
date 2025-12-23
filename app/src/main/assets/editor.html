@@ -213,13 +213,23 @@
         function formatBold() {
             if (!vditor) return;
             const selection = vditor.getSelection();
-            vditor.insertValue(selection ? '**' + selection + '**' : '**粗体**', true);
+            if (selection) {
+                vditor.deleteValue();
+                vditor.insertValue('**' + selection + '**', true);
+            } else {
+                vditor.insertValue('**粗体**', true);
+            }
         }
 
         function formatItalic() {
             if (!vditor) return;
             const selection = vditor.getSelection();
-            vditor.insertValue(selection ? '*' + selection + '*' : '*斜体*', true);
+            if (selection) {
+                vditor.deleteValue();
+                vditor.insertValue('*' + selection + '*', true);
+            } else {
+                vditor.insertValue('*斜体*', true);
+            }
         }
 
         function formatList() {
@@ -235,7 +245,12 @@
         function formatCode() {
             if (!vditor) return;
             const selection = vditor.getSelection();
-            vditor.insertValue(selection ? '`' + selection + '`' : '`代码`', true);
+            if (selection) {
+                vditor.deleteValue();
+                vditor.insertValue('`' + selection + '`', true);
+            } else {
+                vditor.insertValue('`代码`', true);
+            }
         }
 
         function insertImage(url, description) {
@@ -248,9 +263,13 @@
         function insertLink(url, text) {
             if (!vditor) return;
             const selection = vditor.getSelection();
-            const linkText = text || selection || '链接';
-            const linkUrl = url || '';
-            vditor.insertValue('[' + linkText + '](' + linkUrl + ')', true);
+            if (selection && !text) {
+                vditor.deleteValue();
+                vditor.insertValue('[' + selection + '](' + (url || '') + ')', true);
+            } else {
+                const linkText = text || '链接';
+                vditor.insertValue('[' + linkText + '](' + (url || '') + ')', true);
+            }
         }
 
         // Notify Android that the page is fully loaded and ready for init
