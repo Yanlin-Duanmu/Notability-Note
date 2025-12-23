@@ -238,6 +238,21 @@ class ComposeNoteEditViewModel(
         _uiState.update { it.copy(isSaved = false) }
     }
 
+    fun hasUnsavedChanges(): Boolean {
+        val currentState = _uiState.value
+        val original = originalNote
+        
+        // New note: unsaved if any content exists
+        if (original == null) {
+            return currentState.title.isNotBlank() || currentState.content.isNotBlank()
+        }
+        
+        // Existing note: compare with original
+        return currentState.title != original.title ||
+               currentState.content != original.content ||
+               currentState.currentTag?.tagId != original.tagId
+    }
+
     fun triggerAiSummary() {
         if (_uiState.value.isAiGenerating) return
 

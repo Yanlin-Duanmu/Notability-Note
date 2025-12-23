@@ -86,8 +86,7 @@ class ComposeNoteEditActivity : ComponentActivity() {
                     onTitleChange = viewModel::updateTitle,
                     onContentChange = viewModel::updateContent,
                     onBackClick = {
-                        // Show save dialog if content exists
-                        if (uiState.title.isNotEmpty() || uiState.content.isNotEmpty()) {
+                        if (viewModel.hasUnsavedChanges()) {
                             showSaveDialog = true
                         } else {
                             finish()
