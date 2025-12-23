@@ -15,12 +15,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.viewinterop.AndroidView
+import java.util.concurrent.atomic.AtomicReference
 
 private const val TAG = "VditorWebView"
 
@@ -62,9 +64,13 @@ fun VditorWebView(
         )
     }
     
-    val lastSentContent = remember { mutableStateOf(content) }
+    // Thread-safe tracking of WebView's actual content
+    val webViewContent = remember { AtomicReference(content) }
     val isEditorReady = remember { mutableStateOf(false) }
     val initialContent = remember { content }
+    
+    // Ensure callback is always up-to-date in closures
+    val currentOnContentChange = rememberUpdatedState(onContentChange)
 
     AndroidView(
         modifier = modifier,
@@ -115,10 +121,11 @@ fun VditorWebView(
                 addJavascriptInterface(object {
                     @JavascriptInterface
                     fun onContentChange(newContent: String) {
-                        post {
-                            if (lastSentContent.value != newContent) {
-                                lastSentContent.value = newContent
-                                onContentChange(newContent)
+                        // Atomic update first to prevent race condition with update block
+                        val oldContent = webViewContent.getAndSet(newContent)
+                        if (oldContent != newContent) {
+                            post {
+                                currentOnContentChange.value(newContent)
                             }
                         }
                     }
@@ -126,9 +133,8 @@ fun VditorWebView(
                     @JavascriptInterface
                     fun onEditorReady() {
                         Log.d(TAG, "onEditorReady received")
-                        isEditorReady.value = true
                         post {
-                            // Apply theme after editor is ready
+                            isEditorReady.value = true
                             evaluateJavascript(themeJs, null)
                         }
                     }
@@ -159,9 +165,11 @@ fun VditorWebView(
             }
         },
         update = { webView ->
-            // Handle external content updates (e.g., from AI features)
-            if (isEditorReady.value && content != lastSentContent.value) {
-                lastSentContent.value = content
+            // Only sync external updates (e.g., AI features) to WebView
+            // Skip if content matches WebView's tracked content to avoid cursor reset
+            val currentWebViewContent = webViewContent.get()
+            if (isEditorReady.value && content != currentWebViewContent) {
+                webViewContent.set(content)
                 val escapedContent = escapeJsString(content)
                 webView.evaluateJavascript("setContent(`${escapedContent}`)", null)
             }
