@@ -224,6 +224,19 @@
             }, DEBOUNCE_DELAY);
         }
 
+        // Flush pending content immediately, cancel debounce
+        function flushContent() {
+            if (inputDebounceTimer) {
+                clearTimeout(inputDebounceTimer);
+                inputDebounceTimer = null;
+            }
+            var value = vditor ? vditor.getValue() : '';
+            if (window.Android && value !== lastSentContent) {
+                lastSentContent = value;
+                window.Android.onContentChange(value);
+            }
+        }
+
         function initVditor(initialContent) {
             if (typeof Vditor === 'undefined') return;
             
