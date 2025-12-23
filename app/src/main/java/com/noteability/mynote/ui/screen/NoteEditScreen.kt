@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.noteability.mynote.data.entity.Tag
+import com.noteability.mynote.ui.component.AiSummaryPanel
 import com.noteability.mynote.ui.component.VditorController
 import com.noteability.mynote.ui.component.VditorWebView
 import com.noteability.mynote.ui.viewmodel.NoteEditUiState
@@ -84,7 +85,9 @@ fun NoteEditScreen(
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onTagClick: () -> Unit,
-    onTagSelected: (Tag) -> Unit
+    onTagSelected: (Tag) -> Unit,
+    onAiSummaryClick: () -> Unit = {},
+    onAiSummaryClose: () -> Unit = {}
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showTagDialog by remember { mutableStateOf(false) }
@@ -168,7 +171,7 @@ fun NoteEditScreen(
                 onCodeClick = { vditorController?.formatCode() },
                 onImageClick = { showImageDialog = true },
                 onLinkClick = { showLinkDialog = true },
-                onAiSummaryClick = { /* TODO: AI Summary */ },
+                onAiSummaryClick = onAiSummaryClick,
                 onAiStyleClick = { /* TODO: AI Style */ },
                 modifier = Modifier
                     .windowInsetsPadding(
@@ -190,6 +193,15 @@ fun NoteEditScreen(
                 onContentChange = onContentChange,
                 onControllerReady = { vditorController = it },
                 modifier = Modifier.fillMaxSize()
+            )
+
+            // AI Summary panel overlay
+            AiSummaryPanel(
+                isVisible = uiState.isAiSummaryVisible,
+                content = uiState.aiSummaryContent,
+                isGenerating = uiState.isAiGenerating,
+                onClose = onAiSummaryClose,
+                modifier = Modifier.align(Alignment.TopCenter)
             )
 
             if (uiState.isLoading) {
