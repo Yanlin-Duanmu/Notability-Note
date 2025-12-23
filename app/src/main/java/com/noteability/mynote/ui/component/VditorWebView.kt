@@ -8,6 +8,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -16,6 +17,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.viewinterop.AndroidView
 
@@ -28,7 +31,6 @@ fun VditorWebView(
     onContentChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // WebView is not supported in Compose Preview (LayoutLib)
     if (LocalInspectionMode.current) {
         Box(
             modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
@@ -42,13 +44,26 @@ fun VditorWebView(
         return
     }
 
-    val webViewClient = remember { WebViewClient() }
+    // Capture theme colors from MaterialTheme
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val borderColor = MaterialTheme.colorScheme.outlineVariant
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val isDarkTheme = isSystemInDarkTheme()
+
+    val themeJs = remember(isDarkTheme) {
+        buildThemeInjectionJs(
+            backgroundColor = backgroundColor,
+            textColor = textColor,
+            textSecondaryColor = textSecondaryColor,
+            borderColor = borderColor,
+            primaryColor = primaryColor
+        )
+    }
     
-    // Use remember to keep track of the last content sent to JS to avoid redundant updates
     val lastSentContent = remember { mutableStateOf(content) }
     val isEditorReady = remember { mutableStateOf(false) }
-
-    // Use a stable reference for the initial content to avoid capturing changing state in factory
     val initialContent = remember { content }
 
     AndroidView(
@@ -100,7 +115,6 @@ fun VditorWebView(
                 addJavascriptInterface(object {
                     @JavascriptInterface
                     fun onContentChange(newContent: String) {
-                        // Use post to ensure we don't block the JS thread
                         post {
                             if (lastSentContent.value != newContent) {
                                 lastSentContent.value = newContent
@@ -113,6 +127,10 @@ fun VditorWebView(
                     fun onEditorReady() {
                         Log.d(TAG, "onEditorReady received")
                         isEditorReady.value = true
+                        post {
+                            // Apply theme after editor is ready
+                            evaluateJavascript(themeJs, null)
+                        }
                     }
 
                     @JavascriptInterface
@@ -158,4 +176,44 @@ private fun escapeJsString(content: String): String {
     return content.replace("\\", "\\\\")
         .replace("`", "\\`")
         .replace("$", "\\$")
+}
+
+private fun Color.toHexString(): String {
+    val argb = this.toArgb()
+    return String.format("#%06X", 0xFFFFFF and argb)
+}
+
+private fun buildThemeInjectionJs(
+    backgroundColor: Color,
+    textColor: Color,
+    textSecondaryColor: Color,
+    borderColor: Color,
+    primaryColor: Color
+): String {
+    val bgHex = backgroundColor.toHexString()
+    val textHex = textColor.toHexString()
+    val textSecondaryHex = textSecondaryColor.toHexString()
+    val borderHex = borderColor.toHexString()
+    val primaryHex = primaryColor.toHexString()
+    
+    return """
+        (function() {
+            var root = document.documentElement;
+            root.style.setProperty('--editor-bg', '$bgHex');
+            root.style.setProperty('--editor-text', '$textHex');
+            root.style.setProperty('--editor-text-secondary', '$textSecondaryHex');
+            root.style.setProperty('--editor-border', '$borderHex');
+            root.style.setProperty('--editor-placeholder', '$textSecondaryHex');
+            root.style.setProperty('--panel-background-color', '$bgHex');
+            root.style.setProperty('--textarea-background-color', '$bgHex');
+            root.style.setProperty('--textarea-text-color', '$textHex');
+            root.style.setProperty('--border-color', '$borderHex');
+            root.style.setProperty('--second-color', '$textSecondaryHex');
+            root.style.setProperty('--ir-heading-color', '$primaryHex');
+            root.style.setProperty('--ir-link-color', '$primaryHex');
+            root.style.setProperty('--ir-title-color', '$primaryHex');
+            root.style.setProperty('--ir-bracket-color', '$primaryHex');
+            document.body.style.backgroundColor = '$bgHex';
+        })();
+    """.trimIndent()
 }
