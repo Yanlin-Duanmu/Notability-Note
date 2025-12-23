@@ -4,8 +4,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -79,7 +79,7 @@ private fun AiSummaryContent(
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val scrollState = rememberScrollState()
     val configuration = LocalConfiguration.current
-    val maxHeight = (configuration.screenHeightDp * 0.25f).dp // Use 25% of screen height
+    val maxHeight = (configuration.screenHeightDp * 0.2f).dp 
 
     // Auto-scroll when content grows
     LaunchedEffect(content) {
@@ -88,19 +88,20 @@ private fun AiSummaryContent(
         }
     }
 
+    val shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
-            ),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-        tonalElevation = 1.dp,
-        shadowElevation = 4.dp
+            .padding(horizontal = 16.dp),
+        shape = shape,
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        shadowElevation = 8.dp,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+        )
     ) {
         Column(
             modifier = Modifier
