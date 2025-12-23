@@ -14,7 +14,6 @@ retrofit = "2.11.0"
 lifecycle = "2.7.0"
 json-lib = "1.6.0"
 okhttp = "4.12.0"
-richeditor = "1.0.0-rc13"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,7 +38,6 @@ okhttp-bom = { group = "com.squareup.okhttp3", name = "okhttp-bom", version.ref 
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp" }
 okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
-richeditor-compose = { group = "com.mohamedrejeb.richeditor", name = "richeditor-compose", version.ref = "richeditor" }
 # Room
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
