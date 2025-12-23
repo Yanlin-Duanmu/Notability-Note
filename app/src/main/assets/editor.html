@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="file:///android_asset/vditor/dist/index.css" />
+    <script src="file:///android_asset/vditor/dist/index.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+        #vditor {
+            border: none !important;
+            height: 100vh !important;
+            width: 100vw !important;
+        }
+        /* Hide toolbar for a cleaner look */
+        .vditor-toolbar {
+            display: none !important;
+        }
+        .vditor-content {
+            padding: 16px !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="vditor"></div>
+    <script>
+        let vditor;
+        console.log("JS: Script block execution started");
+
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error("JS Global Error: " + message + " at " + source + ":" + lineno);
+            return false;
+        };
+        
+        function initVditor(initialContent) {
+            console.log("JS: initVditor called with content length: " + (initialContent ? initialContent.length : 0));
+            if (typeof Vditor === 'undefined') {
+                console.error("JS: Vditor is NOT defined! Check script loading.");
+                return;
+            }
+            try {
+                vditor = new Vditor('vditor', {
+                    height: '100%',
+                    mode: 'ir',
+                    value: initialContent || '',
+                    placeholder: '开始输入...',
+                    cache: {
+                        enable: false
+                    },
+                    cdn: 'file:///android_asset/vditor',
+                    lang: 'zh_CN',
+                    input(value) {
+                        if (window.Android) {
+                            window.Android.onContentChange(value);
+                        }
+                    },
+                    after() {
+                        const contentHtml = document.getElementById('vditor').innerHTML;
+                        console.log("JS: Vditor initialized successfully. Inner HTML length: " + contentHtml.length);
+                        if (window.Android) {
+                            window.Android.onEditorReady();
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("JS: Vditor init failed: " + e.message);
+                console.error(e.stack);
+            }
+        }
+
+        function setContent(content) {
+            if (vditor) {
+                vditor.setValue(content);
+            }
+        }
+
+        function getContent() {
+            return vditor ? vditor.getValue() : '';
+        }
+        // Notify Android that the page is fully loaded and ready for init
+        window.onload = function() {
+            console.log("JS: window.onload");
+            if (window.Android && window.Android.onPageLoaded) {
+                window.Android.onPageLoaded();
+            }
+        };
+    </script>
+</body>
+</html>
