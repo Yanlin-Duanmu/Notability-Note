@@ -258,7 +258,18 @@ class ComposeNoteEditViewModel(
                         model = "qwen3-max",
                         messages = listOf(
                             Message("system", "你是一个专业的摘要助手。"),
-                            Message("user", "请对以下文本进行精简摘要，控制在200字以内：\n\n$content")
+                            Message("user", """
+                                    请对以下文本进行摘要。
+                                    【硬性格式要求】：
+                                    1. 仅限纯文本：禁止使用任何 Markdown 标记。
+                                    2. 禁止加粗：严禁出现 ** 符号。
+                                    3. 禁止无序列表：严禁使用 - 或 * 开头的列表。
+                                    4. 列表方式：如果需要分条，请仅使用“1. ”、“2. ”这种数字形式。
+                                    5. 排版方式：通过“双换行”和“空格”来实现段落美感。
+                                    6. 字数：200字以内。
+                                    【待摘要内容】：
+                                    $content
+                                    """.trimIndent()),
                         ),
                         stream = true
                     )
@@ -336,8 +347,8 @@ class ComposeNoteEditViewModel(
                     现有标签库：[$existingTags]
                     
                     请从标签库中选择最匹配的标签，如果都不匹配，生成新标签。
-                    请仅输出标签，用英文逗号分隔，不要包含任何其他文字，至多 3 个标签。
-                    例如：Android, AI, Coding
+                    请仅输出标签，语言和文本内容保持一致，用英文逗号分隔，不要包含任何其他文字，至多 3 个标签。
+                    例如：学习资料, Kotlin, 娱乐
                 """.trimIndent()
 
                 val response = NetworkModule.api.chat(
