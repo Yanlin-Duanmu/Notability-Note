@@ -6,24 +6,149 @@
     <link rel="stylesheet" href="file:///android_asset/vditor/dist/index.css" />
     <script src="file:///android_asset/vditor/dist/index.min.js"></script>
     <style>
+        :root {
+            /* Light theme colors - aligned with Material Design */
+            --editor-bg: #FFFFFF;
+            --editor-text: #101C22;
+            --editor-text-secondary: #555555;
+            --editor-border: #E2E8F0;
+            --editor-placeholder: #94A3B8;
+            
+            /* Vditor CSS variable overrides */
+            --panel-background-color: #FFFFFF;
+            --textarea-background-color: #FFFFFF;
+            --textarea-text-color: #101C22;
+            --border-color: #E2E8F0;
+            --second-color: #94A3B8;
+            --toolbar-background-color: #FFFFFF;
+            --toolbar-icon-color: #555555;
+            --toolbar-icon-hover-color: #101C22;
+            --ir-heading-color: #13A4EC;
+            --ir-bi-color: #555555;
+            --ir-link-color: #13A4EC;
+            --ir-title-color: #13A4EC;
+            --ir-bracket-color: #13A4EC;
+            --ir-paren-color: #555555;
+            --blockquote-color: #555555;
+            --heading-border-color: #E2E8F0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --editor-bg: #101C22;
+                --editor-text: #E2E8F0;
+                --editor-text-secondary: #999999;
+                --editor-border: #1E2F38;
+                --editor-placeholder: #64748B;
+                
+                --panel-background-color: #101C22;
+                --textarea-background-color: #101C22;
+                --textarea-text-color: #E2E8F0;
+                --border-color: #1E2F38;
+                --second-color: #64748B;
+                --toolbar-background-color: #1E2F38;
+                --toolbar-icon-color: #999999;
+                --toolbar-icon-hover-color: #E2E8F0;
+                --ir-heading-color: #8CD4F8;
+                --ir-bi-color: #999999;
+                --ir-link-color: #8CD4F8;
+                --ir-title-color: #8CD4F8;
+                --ir-bracket-color: #8CD4F8;
+                --ir-paren-color: #999999;
+                --blockquote-color: #999999;
+                --heading-border-color: #1E2F38;
+            }
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
             overflow: hidden;
-            background-color: #ffffff;
+            background-color: var(--editor-bg);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
         }
+
         #vditor {
             border: none !important;
             height: 100vh !important;
             width: 100vw !important;
+            background-color: var(--editor-bg) !important;
         }
-        /* Hide toolbar for a cleaner look */
+
         .vditor-toolbar {
             display: none !important;
         }
+
         .vditor-content {
             padding: 16px !important;
+            background-color: var(--editor-bg) !important;
+        }
+
+        /* IR mode editor area */
+        .vditor-ir pre.vditor-reset {
+            background-color: var(--editor-bg) !important;
+            color: var(--editor-text) !important;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif !important;
+            font-size: 16px !important;
+            line-height: 1.6 !important;
+            padding: 16px !important;
+            caret-color: var(--ir-heading-color);
+        }
+
+        /* Prevent background change on focus */
+        .vditor-ir pre.vditor-reset:focus {
+            background-color: var(--editor-bg) !important;
+            outline: none !important;
+        }
+
+        /* Text content styling */
+        .vditor-reset {
+            color: var(--editor-text) !important;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif !important;
+            font-size: 16px !important;
+            line-height: 1.6 !important;
+        }
+
+        .vditor-reset p {
+            margin-bottom: 12px;
+        }
+
+        .vditor-reset h1, .vditor-reset h2, .vditor-reset h3,
+        .vditor-reset h4, .vditor-reset h5, .vditor-reset h6 {
+            color: var(--editor-text) !important;
+            font-weight: 600;
+            margin-top: 20px;
+            margin-bottom: 12px;
+        }
+
+        .vditor-reset blockquote {
+            color: var(--editor-text-secondary) !important;
+            border-left-color: var(--editor-border) !important;
+        }
+
+        .vditor-reset code:not(.hljs):not(.highlight-chroma) {
+            background-color: var(--editor-border) !important;
+            color: var(--editor-text) !important;
+        }
+
+        /* Placeholder styling */
+        .vditor-ir pre.vditor-reset:empty::before {
+            color: var(--editor-placeholder) !important;
+        }
+
+        /* Remove any unwanted visual effects */
+        .vditor, .vditor * {
+            box-shadow: none !important;
+        }
+
+        .vditor-ir__node--expand .vditor-ir__marker {
+            color: var(--editor-text-secondary) !important;
         }
     </style>
 </head>
