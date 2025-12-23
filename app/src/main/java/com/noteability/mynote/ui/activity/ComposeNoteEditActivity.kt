@@ -80,7 +80,10 @@ class ComposeNoteEditActivity : ComponentActivity() {
                     onTagClick = { /* TODO: tag selection dialog */ },
                     onTagSelected = viewModel::updateTag,
                     onAiSummaryClick = viewModel::triggerAiSummary,
-                    onAiSummaryClose = viewModel::closeAiSummary
+                    onAiSummaryClose = viewModel::closeAiSummary,
+                    onAiTaggingClick = viewModel::triggerAiTagging,
+                    onAiTagSelected = viewModel::applyAiTag,
+                    onAiTagsDialogClose = viewModel::closeAiTagsDialog
                 )
             }
         }

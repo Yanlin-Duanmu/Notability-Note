@@ -1,5 +1,6 @@
 package com.noteability.mynote.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 // Request payload for the API
@@ -7,7 +8,8 @@ import kotlinx.serialization.Serializable
 data class ChatRequest(
     val model: String = "",
     val messages: List<Message>,
-    val temperature: Double = 0.7
+    val temperature: Double = 0.7,
+    val stream: Boolean = false
 )
 
 // Message format
@@ -17,7 +19,7 @@ data class Message(
     val content: String
 )
 
-// API response payload
+// API response payload (non-streaming)
 @Serializable
 data class ChatResponse(
     val choices: List<Choice>
@@ -25,5 +27,14 @@ data class ChatResponse(
 
 @Serializable
 data class Choice(
-    val message: Message
+    val message: Message? = null,
+    val delta: Delta? = null,
+    @SerialName("finish_reason") val finishReason: String? = null
+)
+
+// Streaming delta
+@Serializable
+data class Delta(
+    val content: String? = null,
+    val role: String? = null
 )
