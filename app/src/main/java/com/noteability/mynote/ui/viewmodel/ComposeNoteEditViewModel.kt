@@ -1,6 +1,7 @@
 package com.noteability.mynote.ui.viewmodel
 
-import android.util.Log
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.noteability.mynote.BuildConfig
@@ -12,6 +13,7 @@ import com.noteability.mynote.model.ChatRequest
 import com.noteability.mynote.model.ChatResponse
 import com.noteability.mynote.model.Message
 import com.noteability.mynote.model.NetworkModule
+import com.noteability.mynote.util.ImageStorageManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,7 +42,9 @@ data class NoteEditUiState(
     val isAiGenerating: Boolean = false,
     // AI Tagging State
     val suggestedTags: List<String> = emptyList(),
-    val showAiTagsDialog: Boolean = false
+    val showAiTagsDialog: Boolean = false,
+    // Local image insertion state (path, description)
+    val pendingLocalImage: Pair<String, String>? = null
 )
 
 /**
@@ -414,5 +418,34 @@ class ComposeNoteEditViewModel(
                 _uiState.update { it.copy(error = "应用标签失败: ${e.message}") }
             }
         }
+    }
+    
+    fun processLocalImage(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            
+            ImageStorageManager.saveImageFromUri(context, uri)
+                .onSuccess { relativePath ->
+                    val absolutePath = ImageStorageManager.getFileUri(context, relativePath)
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            pendingLocalImage = absolutePath to ""
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = "保存图片失败: ${e.message}"
+                        )
+                    }
+                }
+        }
+    }
+    
+    fun clearPendingLocalImage() {
+        _uiState.update { it.copy(pendingLocalImage = null) }
     }
 }
