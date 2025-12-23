@@ -16,7 +16,7 @@ object NetworkModule {
 
     val api: OpenAiApi by lazy {
         val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = HttpLoggingInterceptor.Level.HEADERS
         }
 
         val client = OkHttpClient.Builder()
