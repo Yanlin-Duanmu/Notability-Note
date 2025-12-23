@@ -1,6 +1,5 @@
 package com.noteability.mynote.ui.activity
 
-import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
@@ -10,21 +9,23 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import com.noteability.mynote.data.repository.impl.NoteRepositoryImpl
 import com.noteability.mynote.data.repository.impl.TagRepositoryImpl
 import com.noteability.mynote.ui.screen.NoteEditScreen
 import com.noteability.mynote.ui.theme.MyNoteTheme
 import com.noteability.mynote.ui.viewmodel.ComposeNoteEditViewModel
-import kotlinx.coroutines.launch
 
 class ComposeNoteEditActivity : ComponentActivity() {
 
     private class ViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(ComposeNoteEditViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
                 return ComposeNoteEditViewModel(
                     NoteRepositoryImpl(context),
                     TagRepositoryImpl(context)
@@ -52,6 +53,10 @@ class ComposeNoteEditActivity : ComponentActivity() {
         setContent {
             MyNoteTheme {
                 val uiState by viewModel.uiState.collectAsState()
+                
+                // Dialog states managed in Compose
+                var showSaveDialog by remember { mutableStateOf(false) }
+                var showDeleteDialog by remember { mutableStateOf(false) }
 
                 // Handle one-shot events
                 if (uiState.isSaved) {
@@ -66,55 +71,50 @@ class ComposeNoteEditActivity : ComponentActivity() {
                 }
                 
                 uiState.error?.let {
-                     Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
-                     viewModel.clearError()
+                    Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
+                    viewModel.clearError()
                 }
 
                 NoteEditScreen(
                     uiState = uiState,
                     onTitleChange = viewModel::updateTitle,
                     onContentChange = viewModel::updateContent,
-                    onBackClick = { handleBackPress(uiState.title, uiState.content) },
+                    onBackClick = {
+                        // Show save dialog if content exists
+                        if (uiState.title.isNotEmpty() || uiState.content.isNotEmpty()) {
+                            showSaveDialog = true
+                        } else {
+                            finish()
+                        }
+                    },
                     onSaveClick = viewModel::saveNote,
-                    onDeleteClick = { showDeleteDialog() },
-                    onTagClick = { /* TODO: tag selection dialog */ },
+                    onDeleteClick = { showDeleteDialog = true },
+                    onTagClick = { },
                     onTagSelected = viewModel::updateTag,
                     onAiSummaryClick = viewModel::triggerAiSummary,
                     onAiSummaryClose = viewModel::closeAiSummary,
                     onAiTaggingClick = viewModel::triggerAiTagging,
                     onAiTagSelected = viewModel::applyAiTag,
-                    onAiTagsDialogClose = viewModel::closeAiTagsDialog
+                    onAiTagsDialogClose = viewModel::closeAiTagsDialog,
+                    // Compose-managed dialog states
+                    showSaveDialog = showSaveDialog,
+                    onSaveDialogDismiss = { showSaveDialog = false },
+                    onSaveDialogSave = {
+                        showSaveDialog = false
+                        viewModel.saveNote()
+                    },
+                    onSaveDialogDiscard = {
+                        showSaveDialog = false
+                        finish()
+                    },
+                    showDeleteDialog = showDeleteDialog,
+                    onDeleteDialogDismiss = { showDeleteDialog = false },
+                    onDeleteDialogConfirm = {
+                        showDeleteDialog = false
+                        viewModel.deleteNote()
+                    }
                 )
             }
         }
-    }
-
-    private fun handleBackPress(title: String, content: String) {
-        if (title.isNotEmpty() || content.isNotEmpty()) {
-             AlertDialog.Builder(this)
-                .setTitle("保存笔记")
-                .setMessage("是否保存当前笔记？")
-                .setPositiveButton("保存") { _, _ ->
-                    viewModel.saveNote()
-                }
-                .setNegativeButton("不保存") { _, _ ->
-                    finish()
-                }
-                .setNeutralButton("取消", null)
-                .show()
-        } else {
-            finish()
-        }
-    }
-    
-    private fun showDeleteDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("删除笔记")
-            .setMessage("确定要删除这篇笔记吗？")
-            .setPositiveButton("删除") { _, _ ->
-                viewModel.deleteNote()
-            }
-            .setNegativeButton("取消", null)
-            .show()
     }
 }
