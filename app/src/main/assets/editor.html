@@ -7,7 +7,7 @@
     <script src="file:///android_asset/vditor/dist/index.min.js"></script>
     <style>
         :root {
-            /* Light theme colors - aligned with Material Design */
+            /* Light theme colors */
             --editor-bg: #FFFFFF;
             --editor-text: #101C22;
             --editor-text-secondary: #555555;
@@ -200,51 +200,67 @@
     <div id="vditor"></div>
     <script>
         let vditor;
-        console.log("JS: Script block execution started");
+        let inputDebounceTimer = null;
+        let lastSentContent = '';
+        const DEBOUNCE_DELAY = 150;
 
         window.onerror = function(message, source, lineno, colno, error) {
-            console.error("JS Global Error: " + message + " at " + source + ":" + lineno);
+            console.error("JS Error: " + message);
             return false;
         };
-        
+
+        function notifyContentChange(value) {
+            if (value === lastSentContent) return;
+            
+            if (inputDebounceTimer) {
+                clearTimeout(inputDebounceTimer);
+            }
+            
+            inputDebounceTimer = setTimeout(function() {
+                if (window.Android && value !== lastSentContent) {
+                    lastSentContent = value;
+                    window.Android.onContentChange(value);
+                }
+            }, DEBOUNCE_DELAY);
+        }
+
         function initVditor(initialContent) {
-            console.log("JS: initVditor called with content length: " + (initialContent ? initialContent.length : 0));
-            if (typeof Vditor === 'undefined') {
-                console.error("JS: Vditor is NOT defined! Check script loading.");
+            if (typeof Vditor === 'undefined') return;
+            
+            // If vditor exists, just set content
+            if (vditor) {
+                lastSentContent = initialContent || '';
+                vditor.setValue(initialContent || '');
+                if (window.Android) {
+                    window.Android.onEditorReady();
+                }
                 return;
             }
-            try {
-                vditor = new Vditor('vditor', {
-                    height: '100%',
-                    mode: 'ir',
-                    value: initialContent || '',
-                    placeholder: '开始输入...',
-                    cache: {
-                        enable: false
-                    },
-                    cdn: 'file:///android_asset/vditor',
-                    lang: 'zh_CN',
-                    input(value) {
-                        if (window.Android) {
-                            window.Android.onContentChange(value);
-                        }
-                    },
-                    after() {
-                        const contentHtml = document.getElementById('vditor').innerHTML;
-                        console.log("JS: Vditor initialized successfully. Inner HTML length: " + contentHtml.length);
-                        if (window.Android) {
-                            window.Android.onEditorReady();
-                        }
+            
+            lastSentContent = initialContent || '';
+            
+            vditor = new Vditor('vditor', {
+                height: '100%',
+                mode: 'ir',
+                value: initialContent || '',
+                placeholder: '开始输入...',
+                cache: { enable: false },
+                cdn: 'file:///android_asset/vditor',
+                lang: 'zh_CN',
+                toolbarConfig: { hide: true },
+                preview: { hljs: { enable: false } },
+                input: notifyContentChange,
+                after() {
+                    if (window.Android) {
+                        window.Android.onEditorReady();
                     }
-                });
-            } catch (e) {
-                console.error("JS: Vditor init failed: " + e.message);
-                console.error(e.stack);
-            }
+                }
+            });
         }
 
         function setContent(content) {
             if (vditor) {
+                lastSentContent = content;
                 vditor.setValue(content);
             }
         }
@@ -253,13 +269,12 @@
             return vditor ? vditor.getValue() : '';
         }
 
-        // Format commands called from Android
         function formatBold() {
             if (!vditor) return;
-            const selection = vditor.getSelection();
-            if (selection) {
+            const sel = vditor.getSelection();
+            if (sel) {
                 vditor.deleteValue();
-                vditor.insertValue('**' + selection + '**', true);
+                vditor.insertValue('**' + sel + '**', true);
             } else {
                 vditor.insertValue('**粗体**', true);
             }
@@ -267,10 +282,10 @@
 
         function formatItalic() {
             if (!vditor) return;
-            const selection = vditor.getSelection();
-            if (selection) {
+            const sel = vditor.getSelection();
+            if (sel) {
                 vditor.deleteValue();
-                vditor.insertValue('*' + selection + '*', true);
+                vditor.insertValue('*' + sel + '*', true);
             } else {
                 vditor.insertValue('*斜体*', true);
             }
@@ -288,10 +303,10 @@
 
         function formatCode() {
             if (!vditor) return;
-            const selection = vditor.getSelection();
-            if (selection) {
+            const sel = vditor.getSelection();
+            if (sel) {
                 vditor.deleteValue();
-                vditor.insertValue('`' + selection + '`', true);
+                vditor.insertValue('`' + sel + '`', true);
             } else {
                 vditor.insertValue('`代码`', true);
             }
@@ -299,26 +314,21 @@
 
         function insertImage(url, description) {
             if (!vditor) return;
-            const desc = description || '图片';
-            const imgUrl = url || '';
-            vditor.insertValue('![' + desc + '](' + imgUrl + ')', true);
+            vditor.insertValue('![' + (description || '图片') + '](' + (url || '') + ')', true);
         }
 
         function insertLink(url, text) {
             if (!vditor) return;
-            const selection = vditor.getSelection();
-            if (selection && !text) {
+            const sel = vditor.getSelection();
+            if (sel && !text) {
                 vditor.deleteValue();
-                vditor.insertValue('[' + selection + '](' + (url || '') + ')', true);
+                vditor.insertValue('[' + sel + '](' + (url || '') + ')', true);
             } else {
-                const linkText = text || '链接';
-                vditor.insertValue('[' + linkText + '](' + (url || '') + ')', true);
+                vditor.insertValue('[' + (text || '链接') + '](' + (url || '') + ')', true);
             }
         }
 
-        // Notify Android that the page is fully loaded and ready for init
         window.onload = function() {
-            console.log("JS: window.onload");
             if (window.Android && window.Android.onPageLoaded) {
                 window.Android.onPageLoaded();
             }

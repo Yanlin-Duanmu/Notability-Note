@@ -119,10 +119,12 @@ class ComposeNoteEditViewModel(
     }
 
     fun updateTitle(newTitle: String) {
+        if (_uiState.value.title == newTitle) return
         _uiState.update { it.copy(title = newTitle) }
     }
 
     fun updateContent(newContent: String) {
+        if (_uiState.value.content == newContent) return
         _uiState.update { it.copy(content = newContent) }
     }
 
