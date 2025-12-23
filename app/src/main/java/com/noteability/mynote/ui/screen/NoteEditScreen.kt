@@ -48,12 +48,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.noteability.mynote.data.entity.Tag
+import com.noteability.mynote.ui.component.VditorController
 import com.noteability.mynote.ui.component.VditorWebView
 import com.noteability.mynote.ui.viewmodel.NoteEditUiState
 
@@ -87,7 +88,31 @@ fun NoteEditScreen(
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showTagDialog by remember { mutableStateOf(false) }
-    
+    var showImageDialog by remember { mutableStateOf(false) }
+    var showLinkDialog by remember { mutableStateOf(false) }
+    var vditorController by remember { mutableStateOf<VditorController?>(null) }
+
+    // Image insert dialog
+    if (showImageDialog) {
+        InsertImageDialog(
+            onDismiss = { showImageDialog = false },
+            onConfirm = { url, desc ->
+                vditorController?.insertImage(url, desc)
+                showImageDialog = false
+            }
+        )
+    }
+
+    // Link insert dialog
+    if (showLinkDialog) {
+        InsertLinkDialog(
+            onDismiss = { showLinkDialog = false },
+            onConfirm = { url, text ->
+                vditorController?.insertLink(url, text)
+                showLinkDialog = false
+            }
+        )
+    }
 
     if (showTagDialog) {
         TagSelectionDialog(
@@ -136,6 +161,15 @@ fun NoteEditScreen(
         },
         bottomBar = {
             BottomFormattingBar(
+                onBoldClick = { vditorController?.formatBold() },
+                onItalicClick = { vditorController?.formatItalic() },
+                onListClick = { vditorController?.formatList() },
+                onQuoteClick = { vditorController?.formatQuote() },
+                onCodeClick = { vditorController?.formatCode() },
+                onImageClick = { showImageDialog = true },
+                onLinkClick = { showLinkDialog = true },
+                onAiSummaryClick = { /* TODO: AI Summary */ },
+                onAiStyleClick = { /* TODO: AI Style */ },
                 modifier = Modifier
                     .windowInsetsPadding(
                         WindowInsets.ime.union(WindowInsets.navigationBars)
@@ -154,6 +188,7 @@ fun NoteEditScreen(
             VditorWebView(
                 content = uiState.content,
                 onContentChange = onContentChange,
+                onControllerReady = { vditorController = it },
                 modifier = Modifier.fillMaxSize()
             )
 
@@ -281,7 +316,112 @@ fun TopBar(
 }
 
 @Composable
-fun BottomFormattingBar(modifier: Modifier = Modifier) {
+fun InsertImageDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (url: String, description: String) -> Unit
+) {
+    var url by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("插入图片") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    label = { Text("图片 URL") },
+                    placeholder = { Text("https://...") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("图片描述（可选）") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(url, description) },
+                enabled = url.isNotBlank()
+            ) {
+                Text("插入")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
+}
+
+@Composable
+fun InsertLinkDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (url: String, text: String) -> Unit
+) {
+    var url by remember { mutableStateOf("") }
+    var text by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("插入链接") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text("显示文本") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    label = { Text("链接 URL") },
+                    placeholder = { Text("https://...") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(url, text) },
+                enabled = url.isNotBlank()
+            ) {
+                Text("插入")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
+}
+
+@Composable
+fun BottomFormattingBar(
+    onBoldClick: () -> Unit,
+    onItalicClick: () -> Unit,
+    onListClick: () -> Unit,
+    onQuoteClick: () -> Unit,
+    onCodeClick: () -> Unit,
+    onImageClick: () -> Unit,
+    onLinkClick: () -> Unit,
+    onAiSummaryClick: () -> Unit,
+    onAiStyleClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -297,11 +437,31 @@ fun BottomFormattingBar(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Standard Formatting Icons
-            FormattingIconButton(icon = Icons.Outlined.FormatBold, contentDescription = "Bold")
-            FormattingIconButton(icon = Icons.Outlined.FormatItalic, contentDescription = "Italic")
-            FormattingIconButton(icon = Icons.Outlined.FormatListBulleted, contentDescription = "List")
-            FormattingIconButton(icon = Icons.Outlined.FormatQuote, contentDescription = "Quote")
-            FormattingIconButton(icon = Icons.Outlined.DataObject, contentDescription = "Code")
+            FormattingIconButton(
+                icon = Icons.Outlined.FormatBold,
+                contentDescription = "Bold",
+                onClick = onBoldClick
+            )
+            FormattingIconButton(
+                icon = Icons.Outlined.FormatItalic,
+                contentDescription = "Italic",
+                onClick = onItalicClick
+            )
+            FormattingIconButton(
+                icon = Icons.Outlined.FormatListBulleted,
+                contentDescription = "List",
+                onClick = onListClick
+            )
+            FormattingIconButton(
+                icon = Icons.Outlined.FormatQuote,
+                contentDescription = "Quote",
+                onClick = onQuoteClick
+            )
+            FormattingIconButton(
+                icon = Icons.Outlined.DataObject,
+                contentDescription = "Code",
+                onClick = onCodeClick
+            )
 
             VerticalDivider(
                 modifier = Modifier
@@ -311,8 +471,16 @@ fun BottomFormattingBar(modifier: Modifier = Modifier) {
             )
 
             // Insertion Icons
-            FormattingIconButton(icon = Icons.Outlined.AddPhotoAlternate, contentDescription = "Image")
-            FormattingIconButton(icon = Icons.Outlined.AddLink, contentDescription = "Link")
+            FormattingIconButton(
+                icon = Icons.Outlined.AddPhotoAlternate,
+                contentDescription = "Image",
+                onClick = onImageClick
+            )
+            FormattingIconButton(
+                icon = Icons.Outlined.AddLink,
+                contentDescription = "Link",
+                onClick = onLinkClick
+            )
 
             VerticalDivider(
                 modifier = Modifier
@@ -322,8 +490,16 @@ fun BottomFormattingBar(modifier: Modifier = Modifier) {
             )
 
             // AI Feature Buttons
-            AiFeatureButton(icon = Icons.Outlined.AutoAwesome, contentDescription = "AI Summary")
-            AiFeatureButton(icon = Icons.Outlined.Brush, contentDescription = "AI Style")
+            AiFeatureButton(
+                icon = Icons.Outlined.AutoAwesome,
+                contentDescription = "AI Summary",
+                onClick = onAiSummaryClick
+            )
+            AiFeatureButton(
+                icon = Icons.Outlined.Brush,
+                contentDescription = "AI Style",
+                onClick = onAiStyleClick
+            )
         }
     }
 }

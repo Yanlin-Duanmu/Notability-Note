@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -26,11 +27,23 @@ import java.util.concurrent.atomic.AtomicReference
 
 private const val TAG = "VditorWebView"
 
+// Controller interface for editor formatting commands
+interface VditorController {
+    fun formatBold()
+    fun formatItalic()
+    fun formatList()
+    fun formatQuote()
+    fun formatCode()
+    fun insertImage(url: String, description: String)
+    fun insertLink(url: String, text: String)
+}
+
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun VditorWebView(
     content: String,
     onContentChange: (String) -> Unit,
+    onControllerReady: (VditorController) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     if (LocalInspectionMode.current) {
@@ -69,8 +82,22 @@ fun VditorWebView(
     val isEditorReady = remember { mutableStateOf(false) }
     val initialContent = remember { content }
     
+    // WebView reference for controller
+    val webViewRef = remember { AtomicReference<WebView?>(null) }
+    
     // Ensure callback is always up-to-date in closures
     val currentOnContentChange = rememberUpdatedState(onContentChange)
+    val currentOnControllerReady = rememberUpdatedState(onControllerReady)
+    
+    // Create and provide controller when editor is ready
+    LaunchedEffect(isEditorReady.value) {
+        if (isEditorReady.value) {
+            webViewRef.get()?.let { webView ->
+                val controller = WebViewVditorController(webView)
+                currentOnControllerReady.value(controller)
+            }
+        }
+    }
 
     AndroidView(
         modifier = modifier,
@@ -162,6 +189,9 @@ fun VditorWebView(
                     }
                 }
                 loadUrl("file:///android_asset/editor.html")
+                
+                // Store WebView reference
+                webViewRef.set(this)
             }
         },
         update = { webView ->
@@ -224,4 +254,40 @@ private fun buildThemeInjectionJs(
             document.body.style.backgroundColor = '$bgHex';
         })();
     """.trimIndent()
+}
+
+// Controller implementation that executes JS commands via WebView
+private class WebViewVditorController(private val webView: WebView) : VditorController {
+    
+    override fun formatBold() {
+        webView.evaluateJavascript("formatBold()", null)
+    }
+    
+    override fun formatItalic() {
+        webView.evaluateJavascript("formatItalic()", null)
+    }
+    
+    override fun formatList() {
+        webView.evaluateJavascript("formatList()", null)
+    }
+    
+    override fun formatQuote() {
+        webView.evaluateJavascript("formatQuote()", null)
+    }
+    
+    override fun formatCode() {
+        webView.evaluateJavascript("formatCode()", null)
+    }
+    
+    override fun insertImage(url: String, description: String) {
+        val escapedUrl = escapeJsString(url)
+        val escapedDesc = escapeJsString(description)
+        webView.evaluateJavascript("insertImage(`$escapedUrl`, `$escapedDesc`)", null)
+    }
+    
+    override fun insertLink(url: String, text: String) {
+        val escapedUrl = escapeJsString(url)
+        val escapedText = escapeJsString(text)
+        webView.evaluateJavascript("insertLink(`$escapedUrl`, `$escapedText`)", null)
+    }
 }

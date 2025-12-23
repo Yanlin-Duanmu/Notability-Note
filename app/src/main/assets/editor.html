@@ -208,6 +208,70 @@
         function getContent() {
             return vditor ? vditor.getValue() : '';
         }
+
+        // Format commands called from Android
+        function formatBold() {
+            if (!vditor) return;
+            const selection = vditor.getSelection();
+            if (selection) {
+                vditor.deleteValue();
+                vditor.insertValue('**' + selection + '**', true);
+            } else {
+                vditor.insertValue('**粗体**', true);
+            }
+        }
+
+        function formatItalic() {
+            if (!vditor) return;
+            const selection = vditor.getSelection();
+            if (selection) {
+                vditor.deleteValue();
+                vditor.insertValue('*' + selection + '*', true);
+            } else {
+                vditor.insertValue('*斜体*', true);
+            }
+        }
+
+        function formatList() {
+            if (!vditor) return;
+            vditor.insertValue('\n- ', true);
+        }
+
+        function formatQuote() {
+            if (!vditor) return;
+            vditor.insertValue('\n> ', true);
+        }
+
+        function formatCode() {
+            if (!vditor) return;
+            const selection = vditor.getSelection();
+            if (selection) {
+                vditor.deleteValue();
+                vditor.insertValue('`' + selection + '`', true);
+            } else {
+                vditor.insertValue('`代码`', true);
+            }
+        }
+
+        function insertImage(url, description) {
+            if (!vditor) return;
+            const desc = description || '图片';
+            const imgUrl = url || '';
+            vditor.insertValue('![' + desc + '](' + imgUrl + ')', true);
+        }
+
+        function insertLink(url, text) {
+            if (!vditor) return;
+            const selection = vditor.getSelection();
+            if (selection && !text) {
+                vditor.deleteValue();
+                vditor.insertValue('[' + selection + '](' + (url || '') + ')', true);
+            } else {
+                const linkText = text || '链接';
+                vditor.insertValue('[' + linkText + '](' + (url || '') + ')', true);
+            }
+        }
+
         // Notify Android that the page is fully loaded and ready for init
         window.onload = function() {
             console.log("JS: window.onload");
