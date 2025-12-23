@@ -129,8 +129,6 @@ dependencies {
 
     implementation(libs.androidx.material.icons.extended)
 
-    // Rich Text Editor
-    implementation(libs.richeditor.compose)
 }
 
 
