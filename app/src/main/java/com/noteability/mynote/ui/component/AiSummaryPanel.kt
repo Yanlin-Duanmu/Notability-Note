@@ -2,8 +2,8 @@ package com.noteability.mynote.ui.component
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -27,21 +26,20 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private const val SWIPE_THRESHOLD = -60f
 
+// Slide-in panel for AI-generated summary with swipe-to-dismiss
 @Composable
 fun AiSummaryPanel(
     isVisible: Boolean,
@@ -52,13 +50,13 @@ fun AiSummaryPanel(
 ) {
     AnimatedVisibility(
         visible = isVisible,
-        enter = slideInVertically(
-            initialOffsetY = { -it },
-            animationSpec = tween(durationMillis = 400)
+        enter = expandVertically(
+            expandFrom = Alignment.Top,
+            animationSpec = tween(durationMillis = 350)
         ),
-        exit = slideOutVertically(
-            targetOffsetY = { -it },
-            animationSpec = tween(durationMillis = 300)
+        exit = shrinkVertically(
+            shrinkTowards = Alignment.Top,
+            animationSpec = tween(durationMillis = 250)
         ),
         modifier = modifier
     ) {
@@ -76,54 +74,32 @@ private fun AiSummaryContent(
     isGenerating: Boolean,
     onClose: () -> Unit
 ) {
-    var dragOffset by remember { mutableFloatStateOf(0f) }
+    val dragOffset = remember { mutableFloatStateOf(0f) }
     val scrollState = rememberScrollState()
-    val configuration = LocalConfiguration.current
-    val maxHeight = (configuration.screenHeightDp * 0.2f).dp 
+    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.2f).dp
 
-    // Auto-scroll when content grows
+    // Auto-scroll to bottom when streaming content
     LaunchedEffect(content) {
-        if (isGenerating) {
-            scrollState.animateScrollTo(scrollState.maxValue)
-        }
+        if (isGenerating) scrollState.animateScrollTo(scrollState.maxValue)
     }
-
-    val shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        shape = shape,
+        shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
         shadowElevation = 8.dp,
-        border = BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-        )
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .pointerInput(Unit) {
-                    detectVerticalDragGestures(
-                        onDragEnd = {
-                            if (dragOffset < SWIPE_THRESHOLD) {
-                                onClose()
-                            }
-                            dragOffset = 0f
-                        },
-                        onDragCancel = { dragOffset = 0f },
-                        onVerticalDrag = { _, dragAmount ->
-                            dragOffset += dragAmount
-                        }
-                    )
-                }
+                .swipeToDismiss(dragOffset, onClose)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Content area
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -132,50 +108,78 @@ private fun AiSummaryContent(
                     .padding(horizontal = 20.dp)
             ) {
                 if (content.isEmpty() && isGenerating) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(14.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "AI 正在思考...",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                    }
+                    LoadingIndicator()
                 } else {
-                    Text(
-                        text = content,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 15.sp,
-                            lineHeight = 22.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
-                        )
-                    )
+                    SummaryText(content)
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-
-            // Minimalist Drag handle
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(32.dp)
-                        .height(3.dp)
-                        .clip(RoundedCornerShape(1.5.dp))
-                        .background(MaterialTheme.colorScheme.outlineVariant)
-                )
-            }
+            DragHandle()
         }
+    }
+}
+
+// Swipe-up gesture to dismiss panel
+private fun Modifier.swipeToDismiss(
+    dragOffset: MutableFloatState,
+    onClose: () -> Unit
+): Modifier = pointerInput(Unit) {
+    detectVerticalDragGestures(
+        onDragEnd = {
+            if (dragOffset.floatValue < SWIPE_THRESHOLD) onClose()
+            dragOffset.floatValue = 0f
+        },
+        onDragCancel = { dragOffset.floatValue = 0f },
+        onVerticalDrag = { _, dragAmount -> dragOffset.floatValue += dragAmount }
+    )
+}
+
+@Composable
+private fun LoadingIndicator() {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(14.dp),
+            strokeWidth = 2.dp,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = "AI 正在思考...",
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        )
+    }
+}
+
+@Composable
+private fun SummaryText(content: String) {
+    Text(
+        text = content,
+        style = MaterialTheme.typography.bodyMedium.copy(
+            fontSize = 15.sp,
+            lineHeight = 22.sp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
+        )
+    )
+}
+
+@Composable
+private fun DragHandle() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .width(32.dp)
+                .height(3.dp)
+                .clip(RoundedCornerShape(1.5.dp))
+                .background(MaterialTheme.colorScheme.outlineVariant)
+        )
     }
 }
