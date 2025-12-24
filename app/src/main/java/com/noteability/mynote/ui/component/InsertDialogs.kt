@@ -85,7 +85,6 @@ fun StyledInsertImageDialog(
             DialogButtonRow(
                 onCancel = onDismiss,
                 onConfirm = { onConfirm(url, description) },
-                confirmText = "插入",
                 confirmEnabled = url.isNotBlank()
             )
         }
@@ -131,7 +130,6 @@ fun StyledInsertLinkDialog(
             DialogButtonRow(
                 onCancel = onDismiss,
                 onConfirm = { onConfirm(url, text) },
-                confirmText = "插入",
                 confirmEnabled = url.isNotBlank()
             )
         }
@@ -236,7 +234,7 @@ private fun OrDivider() {
 private fun DialogButtonRow(
     onCancel: () -> Unit,
     onConfirm: () -> Unit,
-    confirmText: String,
+    confirmText: String = "插入",
     confirmEnabled: Boolean = true
 ) {
     Row(
@@ -315,7 +313,6 @@ private fun InsertImageDialogContent() {
         DialogButtonRow(
             onCancel = {},
             onConfirm = {},
-            confirmText = "插入",
             confirmEnabled = false
         )
     }
@@ -357,9 +354,7 @@ private fun InsertLinkDialogContent() {
         Spacer(modifier = Modifier.height(28.dp))
         DialogButtonRow(
             onCancel = {},
-            onConfirm = {},
-            confirmText = "插入",
-            confirmEnabled = true
+            onConfirm = {}
         )
     }
 }

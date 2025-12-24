@@ -52,7 +52,7 @@ class ComposeNoteEditActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
         val loggedInUserId = sharedPreferences.getLong("logged_in_user_id", 1L)
         viewModel.setLoggedInUserId(loggedInUserId)
 
@@ -65,10 +65,16 @@ class ComposeNoteEditActivity : ComponentActivity() {
             MyNoteTheme {
                 val uiState by viewModel.uiState.collectAsState()
                 val scope = rememberCoroutineScope()
-                
+
                 // Dialog states managed in Compose
                 var showSaveDialog by remember { mutableStateOf(false) }
                 var showDeleteDialog by remember { mutableStateOf(false) }
+
+                // State toggle actions
+                val openSaveDialog: () -> Unit = { showSaveDialog = true }
+                val closeSaveDialog: () -> Unit = { showSaveDialog = false }
+                val openDeleteDialog: () -> Unit = { showDeleteDialog = true }
+                val closeDeleteDialog: () -> Unit = { showDeleteDialog = false }
 
                 // Shared back navigation handler
                 val handleBack: () -> Unit = {
@@ -76,7 +82,7 @@ class ComposeNoteEditActivity : ComponentActivity() {
                         WebViewManager.flushContent()
                         delay(50)
                         if (viewModel.hasUnsavedChanges()) {
-                            showSaveDialog = true
+                            openSaveDialog()
                         } else {
                             finish()
                         }
@@ -92,12 +98,12 @@ class ComposeNoteEditActivity : ComponentActivity() {
                     viewModel.resetSaveState()
                     finish()
                 }
-                
+
                 if (uiState.isDeleted) {
                     Toast.makeText(this, "笔记已删除", Toast.LENGTH_SHORT).show()
                     finish()
                 }
-                
+
                 uiState.error?.let {
                     Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
                     viewModel.clearError()
@@ -109,8 +115,7 @@ class ComposeNoteEditActivity : ComponentActivity() {
                     onContentChange = viewModel::updateContent,
                     onBackClick = handleBack,
                     onSaveClick = viewModel::saveNote,
-                    onDeleteClick = { showDeleteDialog = true },
-                    onTagClick = { },
+                    onDeleteClick = openDeleteDialog,
                     onTagSelected = viewModel::updateTag,
                     onAiSummaryClick = viewModel::triggerAiSummary,
                     onAiSummaryClose = viewModel::closeAiSummary,
@@ -119,19 +124,19 @@ class ComposeNoteEditActivity : ComponentActivity() {
                     onAiTagsDialogClose = viewModel::closeAiTagsDialog,
                     // Compose-managed dialog states
                     showSaveDialog = showSaveDialog,
-                    onSaveDialogDismiss = { showSaveDialog = false },
+                    onSaveDialogDismiss = closeSaveDialog,
                     onSaveDialogSave = {
-                        showSaveDialog = false
+                        closeSaveDialog()
                         viewModel.saveNote()
                     },
                     onSaveDialogDiscard = {
-                        showSaveDialog = false
+                        closeSaveDialog()
                         finish()
                     },
                     showDeleteDialog = showDeleteDialog,
-                    onDeleteDialogDismiss = { showDeleteDialog = false },
+                    onDeleteDialogDismiss = closeDeleteDialog,
                     onDeleteDialogConfirm = {
-                        showDeleteDialog = false
+                        closeDeleteDialog()
                         viewModel.deleteNote()
                     },
                     onPickLocalImage = {

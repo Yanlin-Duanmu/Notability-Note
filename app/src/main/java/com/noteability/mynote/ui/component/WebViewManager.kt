@@ -4,22 +4,31 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.view.ContextThemeWrapper
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.noteability.mynote.R
 import java.util.concurrent.atomic.AtomicBoolean
 
-@SuppressLint("SetJavaScriptEnabled")
+/**
+ * Manages a single pre-warmed WebView instance for the editor.
+ * Uses Application Context to avoid Activity memory leaks.
+ */
+@SuppressLint("SetJavaScriptEnabled", "StaticFieldLeak")
 object WebViewManager {
-    
+
+    // We use Application Context and need a static reference for prewarming.
     private var webView: WebView? = null
+    
     private val isPrewarmed = AtomicBoolean(false)
     private val isPageLoaded = AtomicBoolean(false)
     private val mainHandler = Handler(Looper.getMainLooper())
     
+    // Callbacks
     private var onContentChangeCallback: ((String) -> Unit)? = null
     private var onEditorReadyCallback: (() -> Unit)? = null
     private var onPageLoadedCallback: (() -> Unit)? = null
@@ -29,8 +38,10 @@ object WebViewManager {
     fun prewarm(context: Context) {
         if (isPrewarmed.getAndSet(true)) return
         
+        // Use Application Context to prevent Activity leaks
+        val appContext = context.applicationContext
         mainHandler.post {
-            webView = createWebView(context.applicationContext)
+            webView = createWebView(appContext)
             webView?.loadUrl(EDITOR_URL)
         }
     }
@@ -46,7 +57,7 @@ object WebViewManager {
         onEditorReadyCallback = onEditorReady
         onPageLoadedCallback = onPageLoaded
         
-        // If page already loaded during prewarm, trigger immediately
+        // If page is already loaded, trigger callback immediately
         if (isPageLoaded.get()) {
             mainHandler.post { onPageLoaded() }
         }
@@ -59,39 +70,59 @@ object WebViewManager {
     }
     
     fun initEditor(content: String) {
-        webView?.let { wv ->
-            val escaped = content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
-            wv.evaluateJavascript("initVditor(`$escaped`)", null)
-        }
+        executeJs("initVditor(`${escapeJs(content)}`)")
     }
     
     fun setContent(content: String) {
-        webView?.let { wv ->
-            val escaped = content.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
-            wv.evaluateJavascript("setContent(`$escaped`)", null)
-        }
-    }
-    
-    fun resetEditor() {
-        isPageLoaded.set(false)
-        webView?.evaluateJavascript("if(vditor){vditor.destroy();vditor=null;}", null)
-        webView?.loadUrl(EDITOR_URL)
+        executeJs("setContent(`${escapeJs(content)}`)")
     }
     
     fun evaluateJs(js: String) {
-        webView?.evaluateJavascript(js, null)
+        executeJs(js)
     }
     
     fun flushContent() {
-        webView?.evaluateJavascript("flushContent()", null)
+        executeJs("flushContent()")
     }
     
     fun detachFromParent() {
         (webView?.parent as? ViewGroup)?.removeView(webView)
     }
+
+    /**
+     * Release WebView resources. Call from Application.onTerminate() or when no longer needed.
+     */
+    fun destroy() {
+        mainHandler.post {
+            webView?.let { wv ->
+                (wv.parent as? ViewGroup)?.removeView(wv)
+                wv.stopLoading()
+                wv.clearHistory()
+                wv.clearCache(true)
+                wv.removeAllViews()
+                wv.destroy()
+            }
+            webView = null
+            isPrewarmed.set(false)
+            isPageLoaded.set(false)
+            unbindCallbacks()
+        }
+    }
+
+    private fun executeJs(script: String) {
+        webView?.evaluateJavascript(script, null)
+    }
+
+    private fun escapeJs(content: String): String {
+        return content.replace("\\", "\\\\")
+            .replace("`", "\\`")
+            .replace("$", "\\$")
+    }
     
     private fun createWebView(context: Context): WebView {
-        return WebView(context).apply {
+        // Wrap context with theme to apply selection handle colors
+        val themedContext = ContextThemeWrapper(context, R.style.Theme_MyNote)
+        return WebView(themedContext).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -103,14 +134,13 @@ object WebViewManager {
                 domStorageEnabled = true
                 allowFileAccess = true
                 allowContentAccess = true
-                databaseEnabled = true
                 setSupportZoom(false)
-                @Suppress("DEPRECATION")
-                allowUniversalAccessFromFileURLs = true
-                @Suppress("DEPRECATION")
-                allowFileAccessFromFileURLs = true
                 mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                 cacheMode = WebSettings.LOAD_DEFAULT
+                
+                // Required for loading local images from app's internal storage (file://)
+                @Suppress("DEPRECATION")
+                allowFileAccessFromFileURLs = true
             }
             
             webChromeClient = WebChromeClient()
@@ -127,6 +157,8 @@ object WebViewManager {
         }
     }
     
+    // Suppress unused: Methods are called from JavaScript
+    @Suppress("unused")
     private class JsBridge {
         @JavascriptInterface
         fun onContentChange(content: String) {

@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.AddLink
 import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material.icons.outlined.AutoAwesome
@@ -34,7 +35,6 @@ import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.outlined.DataObject
 import androidx.compose.material.icons.outlined.FormatBold
 import androidx.compose.material.icons.outlined.FormatItalic
-import androidx.compose.material.icons.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
@@ -82,7 +82,6 @@ fun NoteEditScreen(
     onBackClick: () -> Unit,
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    onTagClick: () -> Unit,
     onTagSelected: (Tag) -> Unit,
     onAiSummaryClick: () -> Unit = {},
     onAiSummaryClose: () -> Unit = {},
@@ -105,7 +104,17 @@ fun NoteEditScreen(
     var showLinkDialog by remember { mutableStateOf(false) }
     var vditorController by remember { mutableStateOf<VditorController?>(null) }
 
-    // Save confirmation dialog
+    // State toggle actions
+    val toggleMenu: () -> Unit = { showMenu = !showMenu }
+    val hideMenu: () -> Unit = { showMenu = false }
+    val openTagDialog: () -> Unit = { showTagDialog = true }
+    val closeTagDialog: () -> Unit = { showTagDialog = false }
+    val openImageDialog: () -> Unit = { showImageDialog = true }
+    val closeImageDialog: () -> Unit = { showImageDialog = false }
+    val openLinkDialog: () -> Unit = { showLinkDialog = true }
+    val closeLinkDialog: () -> Unit = { showLinkDialog = false }
+
+    // Save confirmation
     if (showSaveDialog) {
         SaveConfirmationDialog(
             onDismiss = onSaveDialogDismiss,
@@ -114,7 +123,7 @@ fun NoteEditScreen(
         )
     }
 
-    // Delete confirmation dialog
+    // Delete confirmation
     if (showDeleteDialog) {
         DeleteConfirmationDialog(
             onDismiss = onDeleteDialogDismiss,
@@ -122,24 +131,24 @@ fun NoteEditScreen(
         )
     }
 
-    // Image insert dialog
+    // Image insertion
     if (showImageDialog) {
         StyledInsertImageDialog(
-            onDismiss = { showImageDialog = false },
+            onDismiss = closeImageDialog,
             onConfirm = { url, desc ->
                 vditorController?.insertImage(url, desc)
-                showImageDialog = false
+                closeImageDialog()
             },
             onPickLocalImage = if (onPickLocalImage != null) {
                 {
-                    showImageDialog = false
+                    closeImageDialog()
                     onPickLocalImage()
                 }
             } else null
         )
     }
-    
-    // Handle pending local image insertion via LaunchedEffect
+
+    // Handle pending local image insertion
     LaunchedEffect(uiState.pendingLocalImage, vditorController) {
         uiState.pendingLocalImage?.let { (path, desc) ->
             vditorController?.let { controller ->
@@ -149,31 +158,31 @@ fun NoteEditScreen(
         }
     }
 
-    // Link insert dialog
+    // Link insertion
     if (showLinkDialog) {
         StyledInsertLinkDialog(
-            onDismiss = { showLinkDialog = false },
+            onDismiss = closeLinkDialog,
             onConfirm = { url, text ->
                 vditorController?.insertLink(url, text)
-                showLinkDialog = false
+                closeLinkDialog()
             }
         )
     }
 
-    // Tag selection dialog
+    // Tag selection
     if (showTagDialog) {
         StyledTagSelectionDialog(
             title = "选择标签",
             tags = uiState.allTags,
-            onDismissRequest = { showTagDialog = false },
+            onDismissRequest = closeTagDialog,
             onTagSelected = {
                 onTagSelected(it)
-                showTagDialog = false
+                closeTagDialog()
             }
         )
     }
 
-    // AI tag selection dialog
+    // AI tag selection
     if (uiState.showAiTagsDialog) {
         StyledAiTagSelectionDialog(
             tags = uiState.suggestedTags,
@@ -189,10 +198,10 @@ fun NoteEditScreen(
                 tagName = uiState.currentTag?.name,
                 onTitleChange = onTitleChange,
                 onBackClick = onBackClick,
-                onMoreClick = { showMenu = !showMenu },
-                onTagClick = { showTagDialog = true },
+                onMoreClick = toggleMenu,
+                onTagClick = openTagDialog,
                 showMenu = showMenu,
-                onMenuDismiss = { showMenu = false },
+                onMenuDismiss = hideMenu,
                 onSaveClick = onSaveClick,
                 onDeleteClick = onDeleteClick
             )
@@ -204,8 +213,8 @@ fun NoteEditScreen(
                 onListClick = { vditorController?.formatList() },
                 onQuoteClick = { vditorController?.formatQuote() },
                 onCodeClick = { vditorController?.formatCode() },
-                onImageClick = { showImageDialog = true },
-                onLinkClick = { showLinkDialog = true },
+                onImageClick = openImageDialog,
+                onLinkClick = openLinkDialog,
                 onAiSummaryClick = onAiSummaryClick,
                 onAiStyleClick = onAiTaggingClick,
                 modifier = Modifier
@@ -226,8 +235,8 @@ fun NoteEditScreen(
             VditorWebView(
                 content = uiState.content,
                 onContentChange = onContentChange,
-                onControllerReady = { vditorController = it },
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                onControllerReady = { vditorController = it }
             )
 
             // AI Summary panel overlay
@@ -365,7 +374,7 @@ fun BottomFormattingBar(
             horizontalArrangement = Arrangement.spacedBy(0.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Standard Formatting Icons
+            // Formatting tools
             FormattingIconButton(
                 icon = Icons.Outlined.FormatBold,
                 contentDescription = "Bold",
@@ -377,7 +386,7 @@ fun BottomFormattingBar(
                 onClick = onItalicClick
             )
             FormattingIconButton(
-                icon = Icons.Outlined.FormatListBulleted,
+                icon = Icons.AutoMirrored.Outlined.FormatListBulleted,
                 contentDescription = "List",
                 onClick = onListClick
             )
@@ -399,7 +408,7 @@ fun BottomFormattingBar(
                 color = MaterialTheme.colorScheme.outlineVariant
             )
 
-            // Insertion Icons
+            // Insert tools
             FormattingIconButton(
                 icon = Icons.Outlined.AddPhotoAlternate,
                 contentDescription = "Image",
@@ -418,7 +427,7 @@ fun BottomFormattingBar(
                 color = MaterialTheme.colorScheme.outlineVariant
             )
 
-            // AI Feature Buttons
+            // AI features
             AiFeatureButton(
                 icon = Icons.Outlined.AutoAwesome,
                 contentDescription = "AI 摘要",
@@ -515,7 +524,6 @@ fun NoteEditScreenPreview() {
             onBackClick = {},
             onSaveClick = {},
             onDeleteClick = {},
-            onTagClick = {},
             onTagSelected = {}
         )
     }
