@@ -89,9 +89,8 @@ class ComposeNoteEditViewModel(
                          noteRepository.getNoteById(noteId).collect { note ->
                             note?.let { n ->
                                 originalNote = n
-                                // Find the tag object from the loaded tags list
-                                val tag = sortedTags.find { it.tagId == n.tagId } 
-                                    ?: sortedTags.firstOrNull() // Fallback
+                                val tag = sortedTags.find { it.tagId == n.tagId }
+                                    ?: sortedTags.firstOrNull()
                                 
                                 _uiState.update { state ->
                                     state.copy(
@@ -244,10 +243,13 @@ class ComposeNoteEditViewModel(
         val currentState = _uiState.value
         val original = originalNote
             ?: return currentState.title.isNotBlank() || currentState.content.isNotBlank()
-        
-        // Existing note: compare with original
+
+        // Normalize trailing whitespace to avoid false positives from editor formatting
+        val normalizedOriginal = original.content.trimEnd()
+        val normalizedCurrent = currentState.content.trimEnd()
+
         return currentState.title != original.title ||
-               currentState.content != original.content ||
+               normalizedCurrent != normalizedOriginal ||
                currentState.currentTag?.tagId != original.tagId
     }
 
