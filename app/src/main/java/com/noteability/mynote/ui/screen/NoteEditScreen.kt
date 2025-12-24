@@ -104,6 +104,16 @@ fun NoteEditScreen(
     var showLinkDialog by remember { mutableStateOf(false) }
     var vditorController by remember { mutableStateOf<VditorController?>(null) }
 
+    // State toggle actions
+    val toggleMenu: () -> Unit = { showMenu = !showMenu }
+    val hideMenu: () -> Unit = { showMenu = false }
+    val openTagDialog: () -> Unit = { showTagDialog = true }
+    val closeTagDialog: () -> Unit = { showTagDialog = false }
+    val openImageDialog: () -> Unit = { showImageDialog = true }
+    val closeImageDialog: () -> Unit = { showImageDialog = false }
+    val openLinkDialog: () -> Unit = { showLinkDialog = true }
+    val closeLinkDialog: () -> Unit = { showLinkDialog = false }
+
     // Save confirmation
     if (showSaveDialog) {
         SaveConfirmationDialog(
@@ -124,20 +134,20 @@ fun NoteEditScreen(
     // Image insertion
     if (showImageDialog) {
         StyledInsertImageDialog(
-            onDismiss = { showImageDialog = false },
+            onDismiss = closeImageDialog,
             onConfirm = { url, desc ->
                 vditorController?.insertImage(url, desc)
-                showImageDialog = false
+                closeImageDialog()
             },
             onPickLocalImage = if (onPickLocalImage != null) {
                 {
-                    showImageDialog = false
+                    closeImageDialog()
                     onPickLocalImage()
                 }
             } else null
         )
     }
-    
+
     // Handle pending local image insertion
     LaunchedEffect(uiState.pendingLocalImage, vditorController) {
         uiState.pendingLocalImage?.let { (path, desc) ->
@@ -151,10 +161,10 @@ fun NoteEditScreen(
     // Link insertion
     if (showLinkDialog) {
         StyledInsertLinkDialog(
-            onDismiss = { showLinkDialog = false },
+            onDismiss = closeLinkDialog,
             onConfirm = { url, text ->
                 vditorController?.insertLink(url, text)
-                showLinkDialog = false
+                closeLinkDialog()
             }
         )
     }
@@ -164,10 +174,10 @@ fun NoteEditScreen(
         StyledTagSelectionDialog(
             title = "选择标签",
             tags = uiState.allTags,
-            onDismissRequest = { showTagDialog = false },
+            onDismissRequest = closeTagDialog,
             onTagSelected = {
                 onTagSelected(it)
-                showTagDialog = false
+                closeTagDialog()
             }
         )
     }
@@ -188,10 +198,10 @@ fun NoteEditScreen(
                 tagName = uiState.currentTag?.name,
                 onTitleChange = onTitleChange,
                 onBackClick = onBackClick,
-                onMoreClick = { showMenu = !showMenu },
-                onTagClick = { showTagDialog = true },
+                onMoreClick = toggleMenu,
+                onTagClick = openTagDialog,
                 showMenu = showMenu,
-                onMenuDismiss = { showMenu = false },
+                onMenuDismiss = hideMenu,
                 onSaveClick = onSaveClick,
                 onDeleteClick = onDeleteClick
             )
@@ -203,8 +213,8 @@ fun NoteEditScreen(
                 onListClick = { vditorController?.formatList() },
                 onQuoteClick = { vditorController?.formatQuote() },
                 onCodeClick = { vditorController?.formatCode() },
-                onImageClick = { showImageDialog = true },
-                onLinkClick = { showLinkDialog = true },
+                onImageClick = openImageDialog,
+                onLinkClick = openLinkDialog,
                 onAiSummaryClick = onAiSummaryClick,
                 onAiStyleClick = onAiTaggingClick,
                 modifier = Modifier
