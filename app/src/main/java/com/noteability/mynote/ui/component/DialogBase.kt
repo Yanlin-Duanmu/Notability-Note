@@ -4,10 +4,14 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -23,10 +27,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.noteability.mynote.ui.theme.MyNoteTheme
 
 // Semi-transparent backdrop dialog container
 @Composable
@@ -165,3 +171,82 @@ fun StyledButton(
         )
     }
 }
+
+// region Previews
+
+@Preview(showBackground = true, name = "Styled Input Field")
+@Composable
+private fun StyledInputFieldPreview() {
+    MyNoteTheme {
+        Surface(
+            modifier = Modifier.padding(16.dp),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Column {
+                StyledInputField(
+                    value = "",
+                    onValueChange = {},
+                    label = "空输入框",
+                    placeholder = "请输入内容..."
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                StyledInputField(
+                    value = "已填写的内容",
+                    onValueChange = {},
+                    label = "已填写输入框",
+                    placeholder = "请输入内容..."
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Styled Buttons")
+@Composable
+private fun StyledButtonsPreview() {
+    MyNoteTheme {
+        Surface(
+            modifier = Modifier.padding(16.dp),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StyledButton(
+                        text = "主要按钮",
+                        onClick = {},
+                        modifier = Modifier.weight(1f)
+                    )
+                    StyledButton(
+                        text = "次要按钮",
+                        onClick = {},
+                        isPrimary = false,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StyledButton(
+                        text = "禁用主要",
+                        onClick = {},
+                        enabled = false,
+                        modifier = Modifier.weight(1f)
+                    )
+                    StyledButton(
+                        text = "禁用次要",
+                        onClick = {},
+                        isPrimary = false,
+                        enabled = false,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+// endregion
