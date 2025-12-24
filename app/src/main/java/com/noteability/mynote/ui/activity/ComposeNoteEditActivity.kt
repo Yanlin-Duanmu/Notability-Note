@@ -110,7 +110,6 @@ class ComposeNoteEditActivity : ComponentActivity() {
                     onBackClick = handleBack,
                     onSaveClick = viewModel::saveNote,
                     onDeleteClick = { showDeleteDialog = true },
-                    onTagClick = { },
                     onTagSelected = viewModel::updateTag,
                     onAiSummaryClick = viewModel::triggerAiSummary,
                     onAiSummaryClose = viewModel::closeAiSummary,

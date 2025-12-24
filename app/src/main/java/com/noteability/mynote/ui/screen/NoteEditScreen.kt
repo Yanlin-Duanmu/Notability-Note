@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.AddLink
 import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material.icons.outlined.AutoAwesome
@@ -34,7 +35,6 @@ import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.outlined.DataObject
 import androidx.compose.material.icons.outlined.FormatBold
 import androidx.compose.material.icons.outlined.FormatItalic
-import androidx.compose.material.icons.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
@@ -82,7 +82,6 @@ fun NoteEditScreen(
     onBackClick: () -> Unit,
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    onTagClick: () -> Unit,
     onTagSelected: (Tag) -> Unit,
     onAiSummaryClick: () -> Unit = {},
     onAiSummaryClose: () -> Unit = {},
@@ -105,7 +104,7 @@ fun NoteEditScreen(
     var showLinkDialog by remember { mutableStateOf(false) }
     var vditorController by remember { mutableStateOf<VditorController?>(null) }
 
-    // Save confirmation dialog
+    // Save confirmation
     if (showSaveDialog) {
         SaveConfirmationDialog(
             onDismiss = onSaveDialogDismiss,
@@ -114,7 +113,7 @@ fun NoteEditScreen(
         )
     }
 
-    // Delete confirmation dialog
+    // Delete confirmation
     if (showDeleteDialog) {
         DeleteConfirmationDialog(
             onDismiss = onDeleteDialogDismiss,
@@ -122,7 +121,7 @@ fun NoteEditScreen(
         )
     }
 
-    // Image insert dialog
+    // Image insertion
     if (showImageDialog) {
         StyledInsertImageDialog(
             onDismiss = { showImageDialog = false },
@@ -139,7 +138,7 @@ fun NoteEditScreen(
         )
     }
     
-    // Handle pending local image insertion via LaunchedEffect
+    // Handle pending local image insertion
     LaunchedEffect(uiState.pendingLocalImage, vditorController) {
         uiState.pendingLocalImage?.let { (path, desc) ->
             vditorController?.let { controller ->
@@ -149,7 +148,7 @@ fun NoteEditScreen(
         }
     }
 
-    // Link insert dialog
+    // Link insertion
     if (showLinkDialog) {
         StyledInsertLinkDialog(
             onDismiss = { showLinkDialog = false },
@@ -160,7 +159,7 @@ fun NoteEditScreen(
         )
     }
 
-    // Tag selection dialog
+    // Tag selection
     if (showTagDialog) {
         StyledTagSelectionDialog(
             title = "选择标签",
@@ -173,7 +172,7 @@ fun NoteEditScreen(
         )
     }
 
-    // AI tag selection dialog
+    // AI tag selection
     if (uiState.showAiTagsDialog) {
         StyledAiTagSelectionDialog(
             tags = uiState.suggestedTags,
@@ -365,7 +364,7 @@ fun BottomFormattingBar(
             horizontalArrangement = Arrangement.spacedBy(0.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Standard Formatting Icons
+            // Formatting tools
             FormattingIconButton(
                 icon = Icons.Outlined.FormatBold,
                 contentDescription = "Bold",
@@ -377,7 +376,7 @@ fun BottomFormattingBar(
                 onClick = onItalicClick
             )
             FormattingIconButton(
-                icon = Icons.Outlined.FormatListBulleted,
+                icon = Icons.AutoMirrored.Outlined.FormatListBulleted,
                 contentDescription = "List",
                 onClick = onListClick
             )
@@ -399,7 +398,7 @@ fun BottomFormattingBar(
                 color = MaterialTheme.colorScheme.outlineVariant
             )
 
-            // Insertion Icons
+            // Insert tools
             FormattingIconButton(
                 icon = Icons.Outlined.AddPhotoAlternate,
                 contentDescription = "Image",
@@ -418,7 +417,7 @@ fun BottomFormattingBar(
                 color = MaterialTheme.colorScheme.outlineVariant
             )
 
-            // AI Feature Buttons
+            // AI features
             AiFeatureButton(
                 icon = Icons.Outlined.AutoAwesome,
                 contentDescription = "AI 摘要",
@@ -515,7 +514,6 @@ fun NoteEditScreenPreview() {
             onBackClick = {},
             onSaveClick = {},
             onDeleteClick = {},
-            onTagClick = {},
             onTagSelected = {}
         )
     }
