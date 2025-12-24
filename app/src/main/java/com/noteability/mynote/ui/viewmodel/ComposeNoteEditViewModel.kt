@@ -59,6 +59,7 @@ class ComposeNoteEditViewModel(
     private val _uiState = MutableStateFlow(NoteEditUiState())
     val uiState: StateFlow<NoteEditUiState> = _uiState.asStateFlow()
 
+    // Cached original note for change detection
     private var originalNote: Note? = null
     private var loggedInUserId: Long = 1L
     private val apiKey = "Bearer ${BuildConfig.OPENAI_API_KEY}"
@@ -178,26 +179,27 @@ class ComposeNoteEditViewModel(
 
                 val noteId = currentState.noteId
 
-                if (noteId != null && originalNote != null) {
-                    // Update existing note - check for changes
-                    if (originalNote?.title != title) {
+                val cached = originalNote
+                if (noteId != null && cached != null) {
+                    // Partial update: only changed fields
+                    if (cached.title != title) {
                         noteRepository.updateNoteTitle(noteId, title)
                     }
-                    if (originalNote?.content != content) {
+                    if (cached.content != content) {
                         noteRepository.updateNoteContent(noteId, content)
                     }
-                    if (originalNote?.tagId != tagIdToUse) {
+                    if (cached.tagId != tagIdToUse) {
                         noteRepository.updateNoteTag(noteId, tagIdToUse)
                     }
                 } else {
-                    // Create new note or full update
+                    // New note creation
                     val note = Note(
                         noteId = noteId ?: 0,
                         userId = loggedInUserId,
                         tagId = tagIdToUse,
                         title = title,
                         content = content,
-                        createdAt = if (noteId == null) System.currentTimeMillis() else originalNote?.createdAt ?: System.currentTimeMillis(),
+                        createdAt = System.currentTimeMillis(),
                         updatedAt = System.currentTimeMillis()
                     )
 
@@ -241,11 +243,7 @@ class ComposeNoteEditViewModel(
     fun hasUnsavedChanges(): Boolean {
         val currentState = _uiState.value
         val original = originalNote
-        
-        // New note: unsaved if any content exists
-        if (original == null) {
-            return currentState.title.isNotBlank() || currentState.content.isNotBlank()
-        }
+            ?: return currentState.title.isNotBlank() || currentState.content.isNotBlank()
         
         // Existing note: compare with original
         return currentState.title != original.title ||
@@ -321,8 +319,8 @@ class ComposeNoteEditViewModel(
                                                 it.copy(aiSummaryContent = it.aiSummaryContent + delta)
                                             }
                                         }
-                                    } catch (e: Exception) {
-                                        // Skip invalid JSON chunks
+                                    } catch (_: Exception) {
+                                        // Skip malformed JSON chunks
                                     }
                                 }
                             }
@@ -355,7 +353,7 @@ class ComposeNoteEditViewModel(
             return
         }
 
-        val existingTags = _uiState.value.allTags.map { it.name }.joinToString(", ")
+        val existingTags = _uiState.value.allTags.joinToString(", ") { it.name }
 
         _uiState.update { it.copy(isAiGenerating = true) }
 
