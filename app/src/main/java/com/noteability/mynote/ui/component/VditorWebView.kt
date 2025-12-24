@@ -36,61 +36,56 @@ interface VditorController {
 fun VditorWebView(
     content: String,
     onContentChange: (String) -> Unit,
-    onControllerReady: (VditorController) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onControllerReady: (VditorController) -> Unit = {}
 ) {
+    // Handle Preview mode
     if (LocalInspectionMode.current) {
-        Box(
-            modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Vditor Editor Preview\n(WebView not available in Preview)",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        VditorPreviewPlaceholder(modifier)
         return
     }
 
-    val backgroundColor = MaterialTheme.colorScheme.background
-    val textColor = MaterialTheme.colorScheme.onBackground
-    val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val borderColor = MaterialTheme.colorScheme.outlineVariant
-    val primaryColor = MaterialTheme.colorScheme.primary
+    // Theme configuration
+    val colors = VditorColors(
+        background = MaterialTheme.colorScheme.background,
+        text = MaterialTheme.colorScheme.onBackground,
+        textSecondary = MaterialTheme.colorScheme.onSurfaceVariant,
+        border = MaterialTheme.colorScheme.outlineVariant,
+        primary = MaterialTheme.colorScheme.primary
+    )
     val isDarkTheme = isSystemInDarkTheme()
 
-    val themeJs = remember(isDarkTheme) {
-        buildThemeInjectionJs(
-            backgroundColor = backgroundColor,
-            textColor = textColor,
-            textSecondaryColor = textSecondaryColor,
-            borderColor = borderColor,
-            primaryColor = primaryColor
-        )
+    // Generate theme JS only when colors or theme changes
+    val themeJs = remember(isDarkTheme, colors) {
+        buildThemeInjectionJs(colors)
     }
-    
+
+    // State management
     val webViewContent = remember { AtomicReference(content) }
     val isEditorReady = remember { mutableStateOf(false) }
     val hasInitialized = remember { mutableStateOf(false) }
-    val initialContent = remember { content }
     
+    // Store initial content to init editor once ready
+    val initialContent = remember { content }
+
+    // Keep latest lambdas for callbacks
     val currentOnContentChange = rememberUpdatedState(onContentChange)
     val currentOnControllerReady = rememberUpdatedState(onControllerReady)
-    
-    // Provide controller when editor is ready
+
+    // Notify controller ready
     LaunchedEffect(isEditorReady.value) {
         if (isEditorReady.value) {
             WebViewManager.getWebView()?.let { webView ->
-                val controller = WebViewVditorController(webView)
-                currentOnControllerReady.value(controller)
+                currentOnControllerReady.value(WebViewVditorController(webView))
             }
         }
     }
-    
-    // Bind callbacks and cleanup
+
+    // Manage WebView lifecycle and callbacks
     DisposableEffect(Unit) {
         WebViewManager.bindCallbacks(
             onContentChange = { newContent ->
+                // Avoid loop: only notify if content actually changed from WebView side
                 val oldContent = webViewContent.getAndSet(newContent)
                 if (oldContent != newContent) {
                     currentOnContentChange.value(newContent)
@@ -107,22 +102,25 @@ fun VditorWebView(
                 }
             }
         )
-        
+
         onDispose {
             WebViewManager.unbindCallbacks()
             WebViewManager.detachFromParent()
         }
     }
 
+    // WebView Interop
     AndroidView(
         modifier = modifier,
         factory = { _ ->
+            // Ensure WebView is detached from any previous parent before reuse
             WebViewManager.detachFromParent()
-            WebViewManager.getWebView()!!
+            WebViewManager.getWebView() ?: throw IllegalStateException("WebView not prewarmed")
         },
         update = { _ ->
-            val currentWebViewContent = webViewContent.get()
-            if (isEditorReady.value && content != currentWebViewContent) {
+            // Sync content from Compose to WebView if changed externally
+            val currentStored = webViewContent.get()
+            if (isEditorReady.value && content != currentStored) {
                 webViewContent.set(content)
                 WebViewManager.setContent(content)
             }
@@ -130,30 +128,35 @@ fun VditorWebView(
     )
 }
 
-private fun escapeJsString(content: String): String {
-    return content.replace("\\", "\\\\")
-        .replace("`", "\\`")
-        .replace("$", "\\$")
+@Composable
+private fun VditorPreviewPlaceholder(modifier: Modifier) {
+    Box(
+        modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Vditor Editor Preview\n(WebView not available in Preview)",
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
-private fun Color.toHexString(): String {
-    val argb = this.toArgb()
-    return String.format("#%06X", 0xFFFFFF and argb)
-}
+// Wrapper for colors to simplify passing around
+private data class VditorColors(
+    val background: Color,
+    val text: Color,
+    val textSecondary: Color,
+    val border: Color,
+    val primary: Color
+)
 
-private fun buildThemeInjectionJs(
-    backgroundColor: Color,
-    textColor: Color,
-    textSecondaryColor: Color,
-    borderColor: Color,
-    primaryColor: Color
-): String {
-    val bgHex = backgroundColor.toHexString()
-    val textHex = textColor.toHexString()
-    val textSecondaryHex = textSecondaryColor.toHexString()
-    val borderHex = borderColor.toHexString()
-    val primaryHex = primaryColor.toHexString()
-    
+private fun buildThemeInjectionJs(colors: VditorColors): String {
+    val bgHex = colors.background.toHexString()
+    val textHex = colors.text.toHexString()
+    val textSecondaryHex = colors.textSecondary.toHexString()
+    val borderHex = colors.border.toHexString()
+    val primaryHex = colors.primary.toHexString()
+
     return """
         (function() {
             var root = document.documentElement;
@@ -176,38 +179,33 @@ private fun buildThemeInjectionJs(
     """.trimIndent()
 }
 
-// Controller implementation that executes JS commands via WebView
+private fun Color.toHexString(): String {
+    val argb = this.toArgb()
+    return String.format("#%06X", 0xFFFFFF and argb)
+}
+
+private fun escapeJsString(content: String): String {
+    return content.replace("\\", "\\\\")
+        .replace("`", "\\`")
+        .replace("$", "\\$")
+}
+
 private class WebViewVditorController(private val webView: WebView) : VditorController {
-    
-    override fun formatBold() {
-        webView.evaluateJavascript("formatBold()", null)
-    }
-    
-    override fun formatItalic() {
-        webView.evaluateJavascript("formatItalic()", null)
-    }
-    
-    override fun formatList() {
-        webView.evaluateJavascript("formatList()", null)
-    }
-    
-    override fun formatQuote() {
-        webView.evaluateJavascript("formatQuote()", null)
-    }
-    
-    override fun formatCode() {
-        webView.evaluateJavascript("formatCode()", null)
-    }
+    override fun formatBold() = evaluate("formatBold()")
+    override fun formatItalic() = evaluate("formatItalic()")
+    override fun formatList() = evaluate("formatList()")
+    override fun formatQuote() = evaluate("formatQuote()")
+    override fun formatCode() = evaluate("formatCode()")
     
     override fun insertImage(url: String, description: String) {
-        val escapedUrl = escapeJsString(url)
-        val escapedDesc = escapeJsString(description)
-        webView.evaluateJavascript("insertImage(`$escapedUrl`, `$escapedDesc`)", null)
+        evaluate("insertImage(`${escapeJsString(url)}`, `${escapeJsString(description)}`)")
     }
     
     override fun insertLink(url: String, text: String) {
-        val escapedUrl = escapeJsString(url)
-        val escapedText = escapeJsString(text)
-        webView.evaluateJavascript("insertLink(`$escapedUrl`, `$escapedText`)", null)
+        evaluate("insertLink(`${escapeJsString(url)}`, `${escapeJsString(text)}`)")
+    }
+
+    private fun evaluate(script: String) {
+        webView.evaluateJavascript(script, null)
     }
 }
