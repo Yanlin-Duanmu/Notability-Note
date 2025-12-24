@@ -1,5 +1,6 @@
 package com.noteability.mynote.ui.component
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,7 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.noteability.mynote.ui.theme.MyNoteTheme
 
 // Image insertion with URL input and local picker
 @Composable
@@ -253,3 +257,111 @@ private fun DialogButtonRow(
         )
     }
 }
+
+// region Previews
+
+@Composable
+private fun DialogPreviewWrapper(content: @Composable () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 16.dp,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+        )
+    ) {
+        content()
+    }
+}
+
+@Preview(showBackground = true, name = "Insert Image Dialog")
+@Composable
+private fun InsertImageDialogPreview() {
+    MyNoteTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            DialogPreviewWrapper {
+                InsertImageDialogContent()
+            }
+        }
+    }
+}
+
+@Composable
+private fun InsertImageDialogContent() {
+    Column(modifier = Modifier.padding(24.dp)) {
+        DialogHeader(
+            icon = Icons.Outlined.AddPhotoAlternate,
+            title = "插入图片"
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        StyledInputField(
+            value = "",
+            onValueChange = {},
+            label = "图片链接",
+            placeholder = "https://example.com/image.png"
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        StyledInputField(
+            value = "",
+            onValueChange = {},
+            label = "图片描述（可选）",
+            placeholder = "描述图片内容"
+        )
+        Spacer(modifier = Modifier.height(28.dp))
+        DialogButtonRow(
+            onCancel = {},
+            onConfirm = {},
+            confirmText = "插入",
+            confirmEnabled = false
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Insert Link Dialog")
+@Composable
+private fun InsertLinkDialogPreview() {
+    MyNoteTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            DialogPreviewWrapper {
+                InsertLinkDialogContent()
+            }
+        }
+    }
+}
+
+@Composable
+private fun InsertLinkDialogContent() {
+    Column(modifier = Modifier.padding(24.dp)) {
+        DialogHeader(
+            icon = Icons.Outlined.AddLink,
+            title = "插入链接"
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        StyledInputField(
+            value = "Kotlin 官方文档",
+            onValueChange = {},
+            label = "显示文本",
+            placeholder = "链接的显示文字"
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        StyledInputField(
+            value = "https://kotlinlang.org",
+            onValueChange = {},
+            label = "链接地址",
+            placeholder = "https://example.com"
+        )
+        Spacer(modifier = Modifier.height(28.dp))
+        DialogButtonRow(
+            onCancel = {},
+            onConfirm = {},
+            confirmText = "插入",
+            confirmEnabled = true
+        )
+    }
+}
+
+// endregion
