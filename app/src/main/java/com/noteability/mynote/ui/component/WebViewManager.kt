@@ -4,12 +4,14 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.view.ContextThemeWrapper
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.noteability.mynote.R
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -118,7 +120,9 @@ object WebViewManager {
     }
     
     private fun createWebView(context: Context): WebView {
-        return WebView(context).apply {
+        // Wrap context with theme to apply selection handle colors
+        val themedContext = ContextThemeWrapper(context, R.style.Theme_MyNote)
+        return WebView(themedContext).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
