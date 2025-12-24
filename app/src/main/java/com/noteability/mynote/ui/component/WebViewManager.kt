@@ -135,7 +135,6 @@ object WebViewManager {
                 cacheMode = WebSettings.LOAD_DEFAULT
                 
                 // Required for loading local images from app's internal storage (file://)
-                // when WebView is loaded from assets (file:///android_asset/)
                 @Suppress("DEPRECATION")
                 allowFileAccessFromFileURLs = true
             }
