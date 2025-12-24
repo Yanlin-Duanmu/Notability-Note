@@ -34,8 +34,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.noteability.mynote.ui.theme.MyNoteTheme
 
 private const val SWIPE_THRESHOLD = -60f
 
@@ -180,6 +182,46 @@ private fun DragHandle() {
                 .height(3.dp)
                 .clip(RoundedCornerShape(1.5.dp))
                 .background(MaterialTheme.colorScheme.outlineVariant)
+        )
+    }
+}
+
+// region Previews
+@Preview(showBackground = true, name = "With Content")
+@Composable
+private fun AiSummaryPanelPreview() {
+    MyNoteTheme {
+        AiSummaryPanel(
+            isVisible = true,
+            content = "这是一段AI生成的摘要内容。笔记主要讨论了Kotlin协程的使用方法，包括suspend函数、Flow的应用场景以及结构化并发的最佳实践。",
+            isGenerating = false,
+            onClose = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Loading State")
+@Composable
+private fun AiSummaryPanelLoadingPreview() {
+    MyNoteTheme {
+        AiSummaryPanel(
+            isVisible = true,
+            content = "",
+            isGenerating = true,
+            onClose = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Streaming Content")
+@Composable
+private fun AiSummaryPanelStreamingPreview() {
+    MyNoteTheme {
+        AiSummaryPanel(
+            isVisible = true,
+            content = "AI正在生成中...",
+            isGenerating = true,
+            onClose = {}
         )
     }
 }
