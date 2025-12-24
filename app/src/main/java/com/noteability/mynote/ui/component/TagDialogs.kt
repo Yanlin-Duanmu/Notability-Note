@@ -1,5 +1,6 @@
 package com.noteability.mynote.ui.component
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -15,14 +16,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.noteability.mynote.data.entity.Tag
+import com.noteability.mynote.ui.theme.MyNoteTheme
 
 // Tag selection list dialog
 @Composable
@@ -195,3 +199,120 @@ private fun CancelButton(onClick: () -> Unit) {
         )
     }
 }
+
+// region Previews
+
+@Composable
+private fun DialogPreviewWrapper(content: @Composable () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 16.dp,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+        )
+    ) {
+        content()
+    }
+}
+
+@Preview(showBackground = true, name = "Tag Selection Dialog")
+@Composable
+private fun TagSelectionDialogPreview() {
+    MyNoteTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            DialogPreviewWrapper {
+                TagSelectionDialogContent()
+            }
+        }
+    }
+}
+
+@Composable
+private fun TagSelectionDialogContent() {
+    val sampleTags = listOf("未分类", "工作", "学习", "生活", "技术", "读书笔记")
+
+    Column(modifier = Modifier.padding(vertical = 20.dp)) {
+        Text(
+            text = "选择标签",
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            ),
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+            sampleTags.forEach { tag ->
+                TagItem(tagName = tag, onClick = {})
+            }
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        Spacer(modifier = Modifier.height(12.dp))
+        CancelButton(onClick = {})
+    }
+}
+
+@Preview(showBackground = true, name = "AI Tag Selection Dialog")
+@Composable
+private fun AiTagSelectionDialogPreview() {
+    MyNoteTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            DialogPreviewWrapper {
+                AiTagSelectionDialogContent()
+            }
+        }
+    }
+}
+
+@Composable
+private fun AiTagSelectionDialogContent() {
+    val sampleTags = listOf("Android 开发", "Kotlin", "Compose UI")
+
+    Column(modifier = Modifier.padding(vertical = 20.dp)) {
+        Row(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "AI 推荐标签",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = "AI",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+            sampleTags.forEach { tag ->
+                TagItem(tagName = tag, onClick = {})
+            }
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        Spacer(modifier = Modifier.height(12.dp))
+        CancelButton(onClick = {})
+    }
+}
+
+// endregion
