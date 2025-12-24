@@ -54,7 +54,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.noteability.mynote.data.entity.Tag
 import com.noteability.mynote.ui.theme.MyNoteTheme
 
-// Base styled dialog container
+// Reusable dialog container with semi-transparent backdrop
 @Composable
 fun StyledDialog(
     onDismissRequest: () -> Unit,
@@ -96,15 +96,15 @@ fun StyledDialog(
     }
 }
 
-// Styled text input field
+// Text input field with label and placeholder support
 @Composable
 fun StyledInputField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
+    modifier: Modifier = Modifier,
     placeholder: String = "",
-    singleLine: Boolean = true,
-    modifier: Modifier = Modifier
+    singleLine: Boolean = true
 ) {
     Column(modifier = modifier) {
         Text(
@@ -150,7 +150,7 @@ fun StyledInputField(
     }
 }
 
-// Styled action button
+// Primary/secondary action button with enabled state
 @Composable
 fun StyledButton(
     text: String,
@@ -192,7 +192,7 @@ fun StyledButton(
     }
 }
 
-// Save confirmation dialog
+// Confirmation dialog for unsaved changes
 @Composable
 fun SaveConfirmationDialog(
     onDismiss: () -> Unit,
@@ -275,7 +275,7 @@ fun SaveConfirmationDialog(
     }
 }
 
-// Delete confirmation dialog
+// Destructive action confirmation dialog
 @Composable
 fun DeleteConfirmationDialog(
     onDismiss: () -> Unit,
@@ -363,7 +363,7 @@ fun DeleteConfirmationDialog(
     }
 }
 
-// Insert image dialog with local image picker support
+// Image insertion dialog with URL input and local picker option
 @Composable
 fun StyledInsertImageDialog(
     onDismiss: () -> Unit,
@@ -506,7 +506,7 @@ fun StyledInsertImageDialog(
     }
 }
 
-// Insert link dialog
+// Hyperlink insertion dialog with URL and display text
 @Composable
 fun StyledInsertLinkDialog(
     onDismiss: () -> Unit,
@@ -589,7 +589,7 @@ fun StyledInsertLinkDialog(
     }
 }
 
-// Styled tag selection dialog
+// Tag selection list dialog
 @Composable
 fun StyledTagSelectionDialog(
     title: String,
@@ -653,7 +653,7 @@ fun StyledTagSelectionDialog(
     }
 }
 
-// Styled AI tag selection dialog
+// AI-suggested tag selection dialog with badge
 @Composable
 fun StyledAiTagSelectionDialog(
     tags: List<String>,
@@ -775,7 +775,7 @@ private fun TagItem(
     }
 }
 
-// Styled dropdown menu for more options
+// Dropdown menu with save/delete actions
 @Composable
 fun StyledMoreMenu(
     expanded: Boolean,
@@ -857,8 +857,7 @@ private fun StyledMenuItem(
     }
 }
 
-// ==================== Previews ====================
-
+// Composable Previews
 @Preview(showBackground = true, name = "Save Confirmation Dialog")
 @Composable
 private fun SaveConfirmationDialogPreview() {
