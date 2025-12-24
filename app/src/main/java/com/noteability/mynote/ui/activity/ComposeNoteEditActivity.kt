@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
@@ -69,6 +70,22 @@ class ComposeNoteEditActivity : ComponentActivity() {
                 var showSaveDialog by remember { mutableStateOf(false) }
                 var showDeleteDialog by remember { mutableStateOf(false) }
 
+                // Shared back navigation handler
+                val handleBack: () -> Unit = {
+                    scope.launch {
+                        WebViewManager.flushContent()
+                        delay(50)
+                        if (viewModel.hasUnsavedChanges()) {
+                            showSaveDialog = true
+                        } else {
+                            finish()
+                        }
+                    }
+                }
+
+                // Intercept system back press
+                BackHandler(enabled = true, onBack = handleBack)
+
                 // Handle one-shot events
                 if (uiState.isSaved) {
                     Toast.makeText(this, "笔记已保存", Toast.LENGTH_SHORT).show()
@@ -90,17 +107,7 @@ class ComposeNoteEditActivity : ComponentActivity() {
                     uiState = uiState,
                     onTitleChange = viewModel::updateTitle,
                     onContentChange = viewModel::updateContent,
-                    onBackClick = {
-                        scope.launch {
-                            WebViewManager.flushContent()
-                            delay(50)
-                            if (viewModel.hasUnsavedChanges()) {
-                                showSaveDialog = true
-                            } else {
-                                finish()
-                            }
-                        }
-                    },
+                    onBackClick = handleBack,
                     onSaveClick = viewModel::saveNote,
                     onDeleteClick = { showDeleteDialog = true },
                     onTagClick = { },
