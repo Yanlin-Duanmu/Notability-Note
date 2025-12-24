@@ -226,8 +226,8 @@ fun NoteEditScreen(
             VditorWebView(
                 content = uiState.content,
                 onContentChange = onContentChange,
-                onControllerReady = { vditorController = it },
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                onControllerReady = { vditorController = it }
             )
 
             // AI Summary panel overlay
