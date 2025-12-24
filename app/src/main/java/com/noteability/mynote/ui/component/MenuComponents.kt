@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,8 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import com.noteability.mynote.ui.theme.MyNoteTheme
 
 // Dropdown with save/delete actions
 @Composable
@@ -109,3 +112,42 @@ fun StyledMenuItem(
         )
     }
 }
+
+// region Previews
+
+@Preview(showBackground = true, name = "More Menu")
+@Composable
+private fun MoreMenuPreview() {
+    MyNoteTheme {
+        Surface(
+            modifier = Modifier.padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 12.dp,
+            border = BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .width(180.dp)
+                    .padding(vertical = 4.dp)
+            ) {
+                StyledMenuItem(
+                    icon = Icons.Outlined.Save,
+                    text = "保存",
+                    onClick = {}
+                )
+                StyledMenuItem(
+                    icon = Icons.Outlined.Delete,
+                    text = "删除",
+                    onClick = {},
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+}
+
+// endregion
